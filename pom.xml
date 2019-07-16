@@ -11,11 +11,11 @@
 
 	<groupId>org.mineacademy</groupId>
 	<artifactId>BungeeFoundation</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<packaging>jar</packaging>
 
 	<name>BungeeFoundation</name>
-	<description>Create unique high quality Bungeecords plugins blazingly fast.</description>
+	<description>Create unique high quality BungeeCord plugins blazingly fast.</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -38,20 +38,17 @@
 			<groupId>net.md-5</groupId>
 			<artifactId>bungeecord-api</artifactId>
 			<version>1.14-SNAPSHOT</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mineacademy.server</groupId>
 			<artifactId>BungeeCord</artifactId>
 			<version>SNAPSHOT-1417</version>
-			<scope>provided</scope>
 		</dependency>
 		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.8</version>
-			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 	<build>
