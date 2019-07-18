@@ -181,7 +181,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			}*/
 
 			// Load bungee suite
-			Common.registerEvents(new BungeeListener.BungeePluginMessageListener());
+			Common.registerEvents(new BungeeListener.BungeeListenerImpl());
 			final SimpleBungee bungee = getBungeeCord();
 
 			if (bungee != null) {

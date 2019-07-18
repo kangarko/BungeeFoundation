@@ -62,12 +62,12 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * The usage for this cmd
 	 */
-	private final String usage = null;
+	private String usage = null;
 
 	/**
 	 * The description of how to use this cmd
 	 */
-	private final String description = null;
+	private String description = null;
 
 	/**
 	 * The permission for this cmd, or null
@@ -810,6 +810,24 @@ public abstract class SimpleCommand extends Command {
 	 */
 	protected final void setCooldownMessage(String cooldownMessage) {
 		this.cooldownMessage = cooldownMessage;
+	}
+
+	/**
+	 * Sets the usage message for this command
+	 *
+	 * @param usage
+	 */
+	protected final void setUsage(String usage) {
+		this.usage = usage;
+	}
+
+	/**
+	 * Sets the description message of this command
+	 *
+	 * @param description
+	 */
+	protected final void setDescription(String description) {
+		this.description = description;
 	}
 
 	/**

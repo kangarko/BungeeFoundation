@@ -86,7 +86,7 @@ public final class PlayerUtil {
 		final Title packet = new Title();
 
 		packet.setAction(Action.ACTIONBAR);
-		packet.setText(Variables.replace(title, player));
+		packet.setText(Common.toJson(Variables.replace(title, player)));
 
 		player.unsafe().sendPacket(packet);
 	}

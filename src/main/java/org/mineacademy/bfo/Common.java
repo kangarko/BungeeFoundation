@@ -52,7 +52,7 @@ public final class Common {
 			if (message != null) {
 				message = Variables.replace(message, sender);
 
-				sender.sendMessage(message);
+				sender.sendMessage(toComponent(message));
 			}
 	}
 
@@ -95,6 +95,17 @@ public final class Common {
 
 			log("&7" + consoleLine());
 		}
+	}
+
+	/**
+	 * Convert a message into a TextComponent replacing & letters with legacy color
+	 * codes
+	 *
+	 * @param message
+	 * @return
+	 */
+	public static BaseComponent[] toComponentColorized(String message) {
+		return toComponent(colorize(message));
 	}
 
 	/**

@@ -106,16 +106,16 @@ public abstract class BungeeListener implements Listener {
 	}
 
 	/**
-	 * Distributes received plugin message accross all {@link BungeeListener} classes
+	 * Distributes received plugin message across all {@link BungeeListener} classes
 	 *
 	 * @deprecated internal use only
 	 */
 	@Deprecated
-	public static final class BungeePluginMessageListener implements Listener {
+	public static final class BungeeListenerImpl implements Listener {
 
 		private static boolean registered = false;
 
-		public BungeePluginMessageListener() {
+		public BungeeListenerImpl() {
 			Valid.checkBoolean(!registered, "Already registered!");
 
 			registered = true;
@@ -124,7 +124,7 @@ public abstract class BungeeListener implements Listener {
 		/**
 		 * Handle the received message automatically if it matches our tag
 		 *
-		 * @param even
+		 * @param event
 		 */
 		@EventHandler
 		public void onPluginMessage(PluginMessageEvent event) {
