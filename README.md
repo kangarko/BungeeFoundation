@@ -1,3 +1,10 @@
+<p align="center">
+  Do you want to code using this library?
+  <a href="https://mineacademy.org/gh-join">
+    <img src="https://i.imgur.com/SuIyaDV.png" />
+  </a>
+</p>
+
 [![](https://jitpack.io/v/kangarko/BungeeFoundation.svg)](https://jitpack.io/#kangarko/BungeeFoundation)
 
 BungeeFoundation is a library for bootstrapping BungeeCord plugins.
