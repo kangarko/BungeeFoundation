@@ -136,6 +136,16 @@ public final class Common {
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
+	 * Replace the & letter with the {@link org.bukkit.ChatColor.COLOR_CHAR} in the message.
+	 *
+	 * @param messages the messages to replace color codes with '&'
+	 * @return the colored message
+	 */
+	public static String colorize(String... messages) {
+		return colorize(String.join("\n", messages));
+	}
+
+	/**
 	 * Replaces & characters with colors.
 	 *
 	 * @param message
