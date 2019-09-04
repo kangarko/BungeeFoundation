@@ -112,6 +112,11 @@ public abstract class SimpleCommand extends Command {
 	private String cooldownMessage = null;
 
 	/**
+	 * The no permission message. Use {permission} to translate into the missing permission
+	 */
+	private String permissionMessage = null;
+
+	/**
 	 * Should we automatically send usage message when the first argument
 	 * equals to "help" or "?" ?
 	 */
@@ -834,7 +839,16 @@ public abstract class SimpleCommand extends Command {
 	 * Get the permission for this command, either the one you set or our from Localization
 	 */
 	public final String getPermissionMessage() {
-		return Common.getOrDefault(getPermissionMessage(), "&cInsufficient permission ({permission})");
+		return Common.getOrDefault(permissionMessage, "&cInsufficient permission ({permission})");
+	}
+
+	/**
+	 * Set the permission message, you can use {permission} to replace with the missing permission
+	 *
+	 * @param permissionMessage the permissionMessage to set
+	 */
+	public final void setPermissionMessage(String permissionMessage) {
+		this.permissionMessage = permissionMessage;
 	}
 
 	/**
