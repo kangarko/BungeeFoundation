@@ -315,7 +315,7 @@ public abstract class SimpleCommand extends Command {
 				tell(ex.getMessages());
 
 		} catch (final Throwable t) {
-			tellNoPrefix("&l&4Houps! &cThere was a problem running this command: {error}".replace("{error}", t.toString()));
+			tellNoPrefix("&l&4Oups! &cThere was a problem running this command: {error}".replace("{error}", t.toString()));
 
 			Common.error(t, "Failed to execute command /" + getLabel() + " " + String.join(" ", args));
 		}
