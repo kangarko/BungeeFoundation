@@ -3,70 +3,80 @@
 	MineAcademy.org. All infringements will be prosecuted. If you are the personal 
 	owner of the MineAcademy.org End User License then you may use it for your 
 	own use in plugins but not for any other purpose. -->
-  
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.mineacademy</groupId>
-	<artifactId>BungeeFoundation</artifactId>
-	<version>1.0.3</version>
-	<packaging>jar</packaging>
+    <groupId>org.mineacademy</groupId>
+    <artifactId>BungeeFoundation</artifactId>
+    <version>1.0.3</version>
+    <packaging>jar</packaging>
 
-	<name>BungeeFoundation</name>
-	<description>Create unique high quality BungeeCord plugins blazingly fast.</description>
+    <name>BungeeFoundation</name>
+    <description>Create unique high quality BungeeCord plugins blazingly fast.</description>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>1.8</java.version>
-	</properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
+    </properties>
 
-	<repositories>
+    <repositories>
+        <repository>
+            <id>bungeecord-repo</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+        <repository>
+            <id>mineacademy-repo</id>
+            <url>https://bitbucket.org/mineacademy/libraries/raw/master</url>
+        </repository>
 		<repository>
-			<id>bungeecord-repo</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
 		</repository>
-		<repository>
-			<id>mineacademy-repo</id>
-			<url>https://bitbucket.org/mineacademy/libraries/raw/master</url>
-		</repository>
-	</repositories>
+    </repositories>
 
-	<dependencies>
-		<dependency>
-			<groupId>net.md-5</groupId>
-			<artifactId>bungeecord-api</artifactId>
-			<version>1.14-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.mineacademy.server</groupId>
-			<artifactId>BungeeCord</artifactId>
-			<version>SNAPSHOT-1417</version>
-		</dependency>
-		<!-- Lombok -->
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<version>1.18.8</version>
-		</dependency>
-	</dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.1.2</version>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
-				<configuration>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+    <dependencies>
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-api</artifactId>
+            <version>1.14-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mineacademy.server</groupId>
+            <artifactId>BungeeCord</artifactId>
+            <version>SNAPSHOT-1417</version>
+        </dependency>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.JavaFactoryDev</groupId>
+            <artifactId>LightningStorage</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
