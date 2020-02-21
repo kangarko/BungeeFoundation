@@ -1,21 +1,6 @@
 package org.mineacademy.bfo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.mineacademy.bfo.collection.StrictList;
-import org.mineacademy.bfo.debug.Debugger;
-import org.mineacademy.bfo.exception.FoException;
-import org.mineacademy.bfo.model.Variables;
-import org.mineacademy.bfo.plugin.SimplePlugin;
-
 import com.google.gson.Gson;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
@@ -23,8 +8,17 @@ import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.plugin.Cancellable;
+import net.md_5.bungee.api.plugin.Event;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.chat.ComponentSerializer;
+import org.mineacademy.bfo.collection.StrictList;
+import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.exception.FoException;
+import org.mineacademy.bfo.model.Variables;
+import org.mineacademy.bfo.plugin.SimplePlugin;
+
+import java.util.*;
 
 /**
  * A generic utility class
@@ -39,7 +33,7 @@ public final class Common {
 
 	/**
 	 * Send a colorized message to the player.
-	 *
+	 * <p>
 	 * Variables from {@link Variables} are replaced.
 	 *
 	 * @param sender
@@ -56,9 +50,14 @@ public final class Common {
 			}
 	}
 
+	public static boolean callEvent(Event event) {
+		ProxyServer.getInstance().getPluginManager().callEvent(event);
+		return !(event instanceof Cancellable) || !((Cancellable) event).isCancelled();
+	}
+
 	/**
 	 * Logs a bunch of messages to the console, & colors are supported
-	 *
+	 * <p>
 	 * Variables from {@link Variables} are replaced.
 	 *
 	 * @param messages
@@ -187,7 +186,7 @@ public final class Common {
 	/**
 	 * Logs the messages in frame (if not null),
 	 * saves the error to errors.log and then throws it
-	 *
+	 * <p>
 	 * Possible to use %error variable
 	 *
 	 * @param throwable
@@ -318,7 +317,6 @@ public final class Common {
 	 * is a list, return its array, otherwise return an array only containing the
 	 * object as the first element
 	 *
-	 *
 	 * @param obj
 	 * @return
 	 */
@@ -329,7 +327,7 @@ public final class Common {
 			return toArray(cast);
 		}
 
-		return new String[] { obj.toString() };
+		return new String[]{obj.toString()};
 	}
 
 	/**
@@ -346,7 +344,7 @@ public final class Common {
 	 * Returns the value or its default counterpart in case it is null
 	 *
 	 * @param value the primary value
-	 * @param def the default value
+	 * @param def   the default value
 	 * @return the value, or default it the value is null
 	 */
 	public static <T> T getOrDefault(T value, T def) {
@@ -739,7 +737,7 @@ public final class Common {
 
 	/**
 	 * Limits length to 60 chars.
-	 *
+	 * <p>
 	 * If JSON, unpacks it and display [json] prefix.
 	 */
 	public static String formatStringHover(String msg) {
@@ -805,14 +803,14 @@ public final class Common {
 
 	/**
 	 * Generates a bar indicating progress. Example:
-	 *
+	 * <p>
 	 * ##-----
 	 * ###----
 	 * ####---
 	 *
-	 * @param min the min progress
+	 * @param min            the min progress
 	 * @param minChar
-	 * @param max the max prograss
+	 * @param max            the max prograss
 	 * @param maxChar
 	 * @param delimiterColor
 	 * @return
