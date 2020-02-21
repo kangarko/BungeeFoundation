@@ -8,6 +8,8 @@ import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.plugin.Cancellable;
+import net.md_5.bungee.api.plugin.Event;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.chat.ComponentSerializer;
 import org.mineacademy.bfo.collection.StrictList;
@@ -46,6 +48,11 @@ public final class Common {
 
 				sender.sendMessage(toComponent(message));
 			}
+	}
+
+	public static boolean callEvent(Event event) {
+		ProxyServer.getInstance().getPluginManager().callEvent(event);
+		return !(event instanceof Cancellable) || !((Cancellable) event).isCancelled();
 	}
 
 	/**
