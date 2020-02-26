@@ -1,5 +1,6 @@
 package org.mineacademy.bfo.settings;
 
+import de.leonhard.storage.Config;
 import de.leonhard.storage.Yaml;
 import de.leonhard.storage.util.ClassWrapper;
 import de.leonhard.storage.util.Valid;
@@ -9,6 +10,7 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.collection.StrictList;
+import org.mineacademy.bfo.constants.FoConstants;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.model.Replacer;
 import org.mineacademy.bfo.plugin.SimplePlugin;
@@ -16,11 +18,12 @@ import org.mineacademy.bfo.plugin.SimplePlugin;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.List;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class YamlStaticConfig {
-	private static Yaml internalYaml;
+	private static Yaml TEMPORARY_INSTANCE;
 
 	protected void beforeLoad() {
 	}
@@ -33,30 +36,55 @@ public abstract class YamlStaticConfig {
 	 * Set the config using cfg(Yaml yaml)
 	 * Must be used
 	 */
-	public abstract Yaml getConfigInstance();
+	protected abstract Yaml getConfigInstance();
 
 	// ----------------------------------------------------------------------------------------------------
 	// Methods for using our yaml
 	// ----------------------------------------------------------------------------------------------------
 
 	public static void pathPrefix(@NonNull String pathPrefix) {
-		cfg().setPathPrefix(pathPrefix);
+		temporaryInstance().setPathPrefix(pathPrefix);
 	}
 
 	public static String pathPrefix() {
-		return cfg().getPathPrefix();
+		return temporaryInstance().getPathPrefix();
 	}
 
-	public static Object get(@NonNull final String key) {
-		return cfg().get(key);
+	// ----------------------------------------------------------------------------------------------------
+	//
+	// ----------------------------------------------------------------------------------------------------
+
+	protected static void set(String path, Object value) {
+		temporaryInstance().set(path, value);
+		temporaryInstance().setHeader(Arrays.asList(FoConstants.Header.UPDATED_FILE));
 	}
 
-	public static boolean contains(@NonNull final String key) {
-		return internalYaml.contains(key);
+	protected static boolean contains(@NonNull final String key) {
+		return TEMPORARY_INSTANCE.contains(key);
+	}
+
+	protected static boolean isSet(String path) {
+		return temporaryInstance().contains(path);
+	}
+
+	protected static String getFileName() {
+		return temporaryInstance().getName();
+	}
+
+	// ----------------------------------------------------------------------------------------------------
+	// Primitive getters used in our other methods
+	// ----------------------------------------------------------------------------------------------------
+
+	protected static Object get(@NonNull final String key) {
+		return temporaryInstance().get(key);
+	}
+
+	protected static Object getObject(@NonNull String key) {
+		return temporaryInstance().get(key);
 	}
 
 	protected static <T> T getOrDefault(@NonNull final String key, final T def) {
-		return cfg().getOrDefault(key, def);
+		return temporaryInstance().getOrDefault(key, def);
 	}
 
 	protected static <T> T getOrError(@NonNull String key, @NonNull final Class<T> type) {
@@ -66,41 +94,24 @@ public abstract class YamlStaticConfig {
 		return ClassWrapper.getFromDef(get(key), type);
 	}
 
-	protected static Object getObject(@NonNull String key) {
-		return cfg().get(key);
-	}
-
-
-	protected static void set(String path, Object value) {
-		cfg().set(path, value);
-	}
-
-	protected static boolean isSet(String path) {
-		return cfg().contains(path);
-	}
-
-	protected static String getFileName() {
-		return cfg().getName();
-	}
-
-	// -----------------------------------------------------------------------------------------------------
-	// Config manipulators
-	// -----------------------------------------------------------------------------------------------------
+	// ----------------------------------------------------------------------------------------------------
+	// More advanced setters
+	// ----------------------------------------------------------------------------------------------------
 
 	protected static StrictList<String> getCommandList(String path) {
 		return new StrictList<>(getStringList(path));
 	}
 
 	protected static List<String> getStringList(String path) {
-		return cfg().getStringList(path);
+		return temporaryInstance().getStringList(path);
 	}
 
 	protected static boolean getBoolean(String path) {
-		return cfg().getBoolean(path);
+		return temporaryInstance().getBoolean(path);
 	}
 
 	protected static String getString(String path) {
-		return cfg().getString(path);
+		return temporaryInstance().getString(path);
 	}
 
 	/**
@@ -127,11 +138,11 @@ public abstract class YamlStaticConfig {
 	}
 
 	protected static final int getInteger(String path) {
-		return cfg().getInt(path);
+		return temporaryInstance().getInt(path);
 	}
 
 	protected static final double getDouble(String path) {
-		return cfg().getDouble(path);
+		return temporaryInstance().getDouble(path);
 	}
 
 
@@ -139,11 +150,14 @@ public abstract class YamlStaticConfig {
 	// Setting up our internal config & load our data via reflection.
 	// ----------------------------------------------------------------------------------------------------
 
-	public static Yaml cfg() {
-		Valid.notNull(internalYaml, "Please set the Yaml using cfg() to set your Config-Instance first");
-		return internalYaml;
+	protected static Yaml temporaryInstance() {
+		Valid.notNull(TEMPORARY_INSTANCE, "Temporary instance is null", "Make sure to set your temporaryInstance.");
+		return TEMPORARY_INSTANCE;
 	}
 
+	// ----------------------------------------------------------------------------------------------------
+	// Loading our config
+	// ----------------------------------------------------------------------------------------------------
 
 	@SneakyThrows
 	public static void loadAll(@NonNull final List<Class<? extends YamlStaticConfig>> classes) {
@@ -153,8 +167,9 @@ public abstract class YamlStaticConfig {
 		}
 	}
 
+
 	public void load() {
-		internalYaml = getConfigInstance();
+		TEMPORARY_INSTANCE = getConfigInstance();
 		loadViaReflection();
 	}
 
@@ -179,7 +194,6 @@ public abstract class YamlStaticConfig {
 
 		}
 	}
-
 
 	/**
 	 * Invoke all "private static void init()" methods in the class and its subclasses
@@ -207,22 +221,21 @@ public abstract class YamlStaticConfig {
 	 * @throws Exception
 	 */
 	private void invokeMethodsIn(Class<?> clazz) throws Exception {
-		for (final Method m : clazz.getDeclaredMethods()) {
+		for (final Method method : clazz.getDeclaredMethods()) {
 
 			if (!SimplePlugin.getInstance().isEnabled()) // Disable if plugin got shutdown for an error
 				return;
 
-			final int mod = m.getModifiers();
+			final int mod = method.getModifiers();
 
-			if (m.getName().equals("init")) {
-				Valid.checkBoolean(Modifier.isPrivate(mod) && Modifier.isStatic(mod) && m.getReturnType() == Void.TYPE && m.getParameterTypes().length == 0,
-						"Method '" + m.getName() + "' in " + clazz + " must be 'private static void init()'");
+			if (method.getName().equals("init")) {
+				Valid.checkBoolean(Modifier.isPrivate(mod) && Modifier.isStatic(mod) && method.getReturnType() == Void.TYPE && method.getParameterTypes().length == 0,
+					"Method '" + method.getName() + "' in " + clazz + " must be 'private static void init()'");
 
-				m.setAccessible(true);
-				m.invoke(null);
+				method.setAccessible(true);
+				method.invoke(null);
 			}
 		}
-
 		checkFields(clazz);
 	}
 
@@ -233,18 +246,18 @@ public abstract class YamlStaticConfig {
 	 * @throws Exception
 	 */
 	private void checkFields(Class<?> clazz) throws Exception {
-		for (final Field f : clazz.getDeclaredFields()) {
-			f.setAccessible(true);
+		for (final Field field : clazz.getDeclaredFields()) {
+			field.setAccessible(true);
 
-			if (Modifier.isPublic(f.getModifiers()))
-				Valid.checkBoolean(!f.getType().isPrimitive(), "Field '" + f.getName() + "' in " + clazz + " must not be primitive!");
+			if (Modifier.isPublic(field.getModifiers()))
+				Valid.checkBoolean(!field.getType().isPrimitive(), "Field '" + field.getName() + "' in " + clazz + " must not be primitive!");
 
 			Object result = null;
 			try {
-				result = f.get(null);
+				result = field.get(null);
 			} catch (final NullPointerException ex) {
 			}
-			Valid.notNull(result, "Null " + f.getType().getSimpleName() + " field '" + f.getName() + "' in " + clazz);
+			Valid.notNull(result, "Null " + field.getType().getSimpleName() + " field '" + field.getName() + "' in " + clazz);
 		}
 	}
 }

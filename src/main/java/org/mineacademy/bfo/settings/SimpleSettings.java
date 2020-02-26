@@ -1,5 +1,7 @@
 package org.mineacademy.bfo.settings;
 
+import de.leonhard.storage.Config;
+import de.leonhard.storage.Yaml;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.StrictList;
@@ -8,6 +10,8 @@ import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.debug.LagCatcher;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+
+import java.util.List;
 
 /**
  * A simple implementation of a typical main plugin settings
@@ -19,10 +23,15 @@ import org.mineacademy.bfo.plugin.SimplePlugin;
 @SuppressWarnings("unused")
 public abstract class SimpleSettings extends YamlStaticConfig {
 
+	@Override protected final Config getConfigInstance() {
+		return new Config("settings.yml", SimplePlugin.getData().getAbsolutePath());
+	}
+
+
 	/**
 	 * A flag indicating that this class has been loaded
-	 * <p>
-	 * You can place this class to {@link SimplePlugin} to make
+	 *
+	 * You can place this class to {@link SimplePlugin#getSettingsClasses()} to make
 	 * it load automatically
 	 */
 	private static boolean settingsClassCalled;
@@ -53,7 +62,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	 * Set and update the config version automatically, however the {@link #VERSION} will
 	 * contain the older version used in the file on the disk so you can use
 	 * it for comparing in the init() methods
-	 * <p>
+	 *
 	 * Please call this as a super method when overloading this!
 	 */
 	@Override
@@ -67,7 +76,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 
 	/**
 	 * Return the very latest config version
-	 * <p>
+	 *
 	 * Any changes here must also be made to the "Version" key in your settings file.
 	 *
 	 * @return
@@ -82,26 +91,26 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	/**
 	 * What debug sections should we enable in {@link Debugger} ? When you call {@link Debugger#debug(String, String...)}
 	 * those that are specified in this settings are logged into the console, otherwise no message is shown.
-	 * <p>
+	 *
 	 * Typically this is left empty: Debug: []
 	 */
 	public static StrictList<String> DEBUG_SECTIONS = new StrictList<>();
 
 	/**
 	 * The plugin prefix in front of chat/console messages, added automatically unless
-	 * disabled in {@link Common} and .
-	 * <p>
+	 * disabled in {@link Common#ADD_LOG_PREFIX} and {@link Common#ADD_TELL_PREFIX}.
+	 *
 	 * Typically for ChatControl:
-	 * <p>
+	 *
 	 * Prefix: "&8[&3ChatControl&8]&7 "
 	 */
 	public static String PLUGIN_PREFIX = "&7" + SimplePlugin.getNamed() + " //";
 
 	/**
 	 * The lag threshold used for {@link LagCatcher} in milliseconds. Set to -1 to disable.
-	 * <p>
+	 *
 	 * Typically for ChatControl:
-	 * <p>
+	 *
 	 * Log_Lag_Over_Milis: 100
 	 */
 	public static Integer LAG_THRESHOLD_MILLIS = 100;
@@ -109,67 +118,80 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	/**
 	 * When processing regular expressions, limit executing to the specified time.
 	 * This prevents server freeze/crash on malformed regex (loops).
-	 * <p>
+	 *
 	 * Regex_Timeout_Milis: 100
 	 */
 	public static Integer REGEX_TIMEOUT = 100;
 
 	/**
-	 * What commands should trigger the your main plugin command (separated by a comma ,)? See {@link SimplePlugin}
-	 * <p>
+	 * What commands should trigger the your main plugin command (separated by a comma ,)? See {@link SimplePlugin#getMainCommand()}
+	 *
 	 * Typical values for ChatControl:
-	 * <p>
+	 *
 	 * Command_Aliases: [chatcontrol, chc, cc]
-	 * <p>
-	 * // ONLY MANDATORY IF YOU OVERRIDE {@link SimplePlugin} //
+	 *
+	 * // ONLY MANDATORY IF YOU OVERRIDE {@link SimplePlugin#getMainCommand()} //
 	 */
 	public static StrictList<String> MAIN_COMMAND_ALIASES = new StrictList<>();
 
 	/**
 	 * The localization prefix, given you are using {@link SimpleLocalization} class to load and manage your
 	 * locale file. Typically the file path is: localization/messages_PREFIX.yml with this prefix below.
-	 * <p>
+	 *
 	 * Typically: Locale: en
-	 * <p>
+	 *
 	 * // ONLY MANDATORY IF YOU USE SIMPLELOCALIZATION //
 	 */
 	public static String LOCALE_PREFIX = "en";
 
 	/**
 	 * The server name used in {server_name} variable or BungeeCord, if your plugin supports either of those.
-	 * <p>
+	 *
 	 * Typically for ChatControl:
-	 * <p>
+	 *
 	 * Server_Name: "My ChatControl Server"
-	 * <p>
+	 *
 	 * // NOT MANDATORY //
 	 */
 	public static String SERVER_NAME = "Server";
 
 	/**
 	 * The server name identifier
-	 * <p>
+	 *
 	 * Mandatory if using BungeeCord
 	 */
 	public static String BUNGEE_SERVER_NAME = "Server";
 
 	/**
 	 * Antipiracy stuff for our protected software, leave empty to Serialization: ""
-	 * <p>
+	 *
 	 * // NOT MANDATORY //
 	 */
 	public static String SECRET_KEY = "";
+
+	/**
+	 * Should we check for updates from SpigotMC and notify the console and users with permission?
+	 *
+	 * See {@link SimplePlugin#getUpdateCheck()} that you can make to return {@link SpigotUpdater} with your Spigot plugin ID.
+	 *
+	 * Typically for ChatControl:
+	 *
+	 * Notify_Updates: true
+	 *
+	 * // ONLY MANDATORY IF YOU OVERRIDE {@link SimplePlugin#getUpdateCheck()} //
+	 */
+	public static Boolean NOTIFY_UPDATES = false;
 
 	/**
 	 * Should we enable inbuilt advertisements?
 	 * ** We found out that users really hate this feature, you may want not to use this completelly **
 	 * ** If you want to broadcast important messages regardless of this feature just implement your **
 	 * ** own Runnable that checks for a YAML file on your external server on plugin load. **
-	 * <p>
+	 *
 	 * Typically for ChatControl:
-	 * <p>
+	 *
 	 * Notify_Promotions: true
-	 * <p>
+	 *
 	 * // NOT MANDATORY //
 	 */
 	public static Boolean NOTIFY_PROMOTIONS = true;
@@ -181,6 +203,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 		Valid.checkBoolean(!settingsClassCalled, "Settings class already loaded!");
 
 		pathPrefix(null);
+		upgradeOldSettings();
 
 		if (isSet("Prefix"))
 			PLUGIN_PREFIX = getString("Prefix");
@@ -223,9 +246,9 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 
 			if (SimplePlugin.getInstance().getBungeeCord() != null && BUNGEE_SERVER_NAME.equals("undefined")) {
 				Common.logFramed(true,
-						"Please change your Bungee_Server_Name in",
-						"settings.yml to the exact name of this server",
-						"as you have in config.yml of your BungeeCord.");
+					"Please change your Bungee_Server_Name in",
+					"settings.yml to the exact name of this server",
+					"as you have in config.yml of your BungeeCord.");
 			}
 		}
 
@@ -237,6 +260,26 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 				throw new FoException("Since you have your Localization class you must set the 'Locale' key in " + getFileName());
 
 			LOCALE_PREFIX = keySet ? getString("Locale") : LOCALE_PREFIX;
+		}
+
+		{ // Load main command alias
+
+			final boolean keySet = isSet("Command_Aliases");
+
+//			if (SimplePlugin.getInstance().getMainCommand() != null && !keySet)
+//				throw new FoException("Since you override getMainCommand in your main plugin class you must set the 'Command_Aliases' key in " + getFileName());
+
+			MAIN_COMMAND_ALIASES = keySet ? getCommandList("Command_Aliases") : MAIN_COMMAND_ALIASES;
+		}
+
+		{ // Load updates notifier
+
+//			final boolean keySet = isSet("Notify_Updates");
+
+//			if (SimplePlugin.getInstance().getUpdateCheck() != null && !keySet)
+//				throw new FoException("Since you override getUpdateCheck in your main plugin class you must set the 'Notify_Updates' key in " + getFileName());
+
+//			NOTIFY_UPDATES = keySet ? getBoolean("Notify_Updates") : NOTIFY_UPDATES;
 		}
 
 		settingsClassCalled = true;
@@ -260,13 +303,44 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 		return localeClasses == 1;
 	}
 
+	/**
+	 * Upgrade some of the old and ancient settings from our premium plugins.
+	 */
+	private static void upgradeOldSettings() {
+		//TODO
+//		{ // Debug
+//			if (isSetAbsolute("Debugger"))
+//				move("Debugger", "Debug");
+//
+//			if (isSetAbsolute("Serialization_Number"))
+//				move("Serialization_Number", "Serialization");
+//
+//			// ChatControl
+//			if (isSetAbsolute("Debugger.Keys")) {
+//				move("Debugger.Keys", "Serialization");
+//				move("Debugger.Sections", "Debug");
+//			}
+//
+//			// Archaic
+//			if (isSetAbsolute("Debug") && !(getObject("Debug") instanceof List))
+//				set("Debug", null);
+//		}
+//
+//		{ // Prefix
+//			if (isSetAbsolute("Plugin_Prefix"))
+//				move("Plugin_Prefix", "Prefix");
+//
+//			if (isSetAbsolute("Check_Updates"))
+//				move("Check_Updates", "Notify_Updates");
+//		}
+	}
 
 	/**
 	 * Was this class loaded?
 	 *
 	 * @return
 	 */
-	public static Boolean isSettingsCalled() {
+	public static final Boolean isSettingsCalled() {
 		return settingsClassCalled;
 	}
 
@@ -274,7 +348,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	 * Reset the flag indicating that the class has been loaded,
 	 * used in reloading.
 	 */
-	public static void resetSettingsCall() {
+	public static final void resetSettingsCall() {
 		settingsClassCalled = false;
 	}
 }
