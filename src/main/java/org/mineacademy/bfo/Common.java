@@ -83,10 +83,21 @@ public final class Common {
 
 	/**
 	 * Logs a bunch of messages to the console in a {@link #consoleLine()} frame.
+	 * <p>
+	 * Used when an error occurs, can also disable the plugin
 	 *
 	 * @param messages
 	 */
 	public static void logFramed(String... messages) {
+		logFramed(false, messages);
+	}
+
+	/**
+	 * Logs a bunch of messages to the console in a {@link #consoleLine()} frame.
+	 *
+	 * @param messages
+	 */
+	public static void logFramed(boolean disablePlugin, String... messages) {
 		if (messages != null && !Valid.isNullOrEmpty(messages)) {
 			log("&7" + consoleLine());
 			for (final String msg : messages)
@@ -94,6 +105,8 @@ public final class Common {
 
 			log("&7" + consoleLine());
 		}
+		if(disablePlugin)
+			SimplePlugin.disablePlugin();
 	}
 
 	/**
@@ -135,7 +148,7 @@ public final class Common {
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Replace the & letter with the {@link org.bukkit.ChatColor.COLOR_CHAR} in the message.
+	 * Replace the & letter with the {@link ChatColor.COLOR_CHAR} in the message.
 	 *
 	 * @param messages the messages to replace color codes with '&'
 	 * @return the colored message

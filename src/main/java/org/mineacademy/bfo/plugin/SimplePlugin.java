@@ -1,33 +1,35 @@
 /**
- * 	(c) 2013 - 2019 - All rights reserved.
- *
- *	Do not share, copy, reproduce or sell any part of this library
- *	unless you have written permission from MineAcademy.org.
- *	All infringements will be prosecuted.
- *
- *	If you are the personal owner of the MineAcademy.org End User License
- *	then you may use it for your own use in plugins but not for any other purpose.
+ * (c) 2013 - 2019 - All rights reserved.
+ * <p>
+ * Do not share, copy, reproduce or sell any part of this library
+ * unless you have written permission from MineAcademy.org.
+ * All infringements will be prosecuted.
+ * <p>
+ * If you are the personal owner of the MineAcademy.org End User License
+ * then you may use it for your own use in plugins but not for any other purpose.
  */
 package org.mineacademy.bfo.plugin;
-
-import java.io.File;
-import java.util.Objects;
-import java.util.logging.Logger;
-
-import org.mineacademy.bfo.Common;
-import org.mineacademy.bfo.bungee.BungeeListener;
-import org.mineacademy.bfo.bungee.SimpleBungee;
-import org.mineacademy.bfo.command.SimpleCommand;
-import org.mineacademy.bfo.debug.Debugger;
 
 import lombok.Getter;
 import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
+import org.mineacademy.bfo.Common;
+import org.mineacademy.bfo.bungee.BungeeListener;
+import org.mineacademy.bfo.bungee.SimpleBungee;
+import org.mineacademy.bfo.command.SimpleCommand;
+import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.settings.YamlStaticConfig;
+
+import java.io.File;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
  * Represents a basic Java plugin using enhanced library functionality
  */
+@Getter
 public abstract class SimplePlugin extends Plugin implements Listener {
 
 	// ----------------------------------------------------------------------------------------
@@ -47,11 +49,11 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 	/**
 	 * Returns the instance of {@link SimplePlugin}.
-	 *
+	 * <p>
 	 * It is recommended to override this in your own {@link SimplePlugin}
 	 * implementation so you will get the instance of that, directly.
-	 * @param <T>
 	 *
+	 * @param <T>
 	 * @return this instance
 	 */
 	public static SimplePlugin getInstance() {
@@ -115,6 +117,30 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		return instance != null;
 	}
 
+	/**
+	 * Method to disable the plugin.
+	 * Needed because there is no
+	 * method to disable plugins on Proxy-side.
+	 */
+	public static void disablePlugin() {
+		//Unregistering Commands&Listener
+		getInstance().getProxy().getPluginManager().unregisterCommands(getInstance());
+		getInstance().getProxy().getPluginManager().unregisterListeners(getInstance());
+
+		try {
+			//Canceling scheduler
+			getInstance().getProxy().getScheduler().cancel(getInstance());
+			getInstance().getExecutorService().shutdownNow();
+
+
+		} catch (final Throwable throwable) { //Might be unsafe
+
+			throwable.printStackTrace();
+		}
+		//Calling the on disable
+		getInstance().onDisable();
+	}
+
 	// ----------------------------------------------------------------------------------------
 	// Instance specific
 	// ----------------------------------------------------------------------------------------
@@ -128,7 +154,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	/**
 	 * Is this plugin enabled? Checked for after {@link #onPluginPreStart()}
 	 */
-	protected boolean isEnabled = true;
+	public boolean isEnabled = true;
 
 	/**
 	 * An internal flag to indicate whether we are calling the {@link #onReloadablesStart()}
@@ -173,12 +199,11 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			Common.log(getStartupLogo());
 
 		try {
-
 			// Load our main static settings classes
-			/*if (getSettings() != null) {
-				YamlStaticConfig.load(getSettings());
-				Valid.checkBoolean(SimpleSettings.isSettingsCalled() != null && SimpleLocalization.isLocalizationCalled() != null, "Developer forgot to call Settings or Localization");
-			}*/
+			if (getSettings() != null) {
+				YamlStaticConfig.loadAll(getSettings());
+//				Valid.checkBoolean(SimpleSettings.isSettingsCalled() != null && SimpleLocalization.isLocalizationCalled() != null, "Developer forgot to call Settings or Localization");
+			}
 
 			// Load bungee suite
 			Common.registerEvents(new BungeeListener.BungeeListenerImpl());
@@ -215,7 +240,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	/**
 	 * A dirty way of checking if Foundation has been shaded correctly
 	 */
-	private final void checkShading() {
+	private void checkShading() {
 		try {
 			throw new ShadingException();
 		} catch (final Throwable t) {
@@ -227,7 +252,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * does not match this class' instance, which is most likely caused by wrong repackaging
 	 * or no repackaging at all (two plugins using Foundation must both have different packages
 	 * for their own Foundation version).
-	 *
+	 * <p>
 	 * Or, this is caused by a PlugMan, and we have no mercy for that.
 	 */
 	private final class ShadingException extends Throwable {
@@ -350,11 +375,15 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 	/**
 	 * Register your commands, events, tasks and files here.
-	 *
+	 * <p>
 	 * This is invoked when you start the plugin, call /reload, or the {@link #reload()}
 	 * method.
 	 */
 	protected void onReloadablesStart() {
+	}
+
+	public List<Class<? extends YamlStaticConfig>> getSettings() {
+		return null;
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -495,12 +524,13 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	// ----------------------------------------------------------------------------------------
 
 	/**
-	 * @deprecated 	DO NOT USE
-	 * 				Use Common#log instead
+	 * @deprecated DO NOT USE
+	 * Use Common#log instead
 	 */
 	@Deprecated
 	@Override
 	public Logger getLogger() {
 		return super.getLogger();
 	}
+
 }
