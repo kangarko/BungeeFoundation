@@ -24,10 +24,6 @@
 
     <repositories>
         <repository>
-            <id>bungeecord-repo</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-        <repository>
             <id>mineacademy-repo</id>
             <url>https://bitbucket.org/mineacademy/libraries/raw/master</url>
         </repository>
@@ -35,28 +31,19 @@
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
-        <repository>
-            <id>BungeeCord</id>
-            <url>http://mvn.exceptionflug.de/repository/exceptionflug-public/</url>
-        </repository>
     </repositories>
 
     <dependencies>
         <dependency>
-            <groupId>net.md-5</groupId>
-            <artifactId>bungeecord-api</artifactId>
-            <version>1.14-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mineacademy</groupId>
-            <artifactId>bungeecord-server</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+            <groupId>org.mineacademy.server</groupId>
+            <artifactId>BungeeCord</artifactId>
+            <version>SNAPSHOT-1487</version>
+        </dependency> 
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.8</version>
+            <version>1.18.12</version>
         </dependency>
         <dependency>
             <groupId>com.github.JavaFactoryDev</groupId>
@@ -70,7 +57,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
