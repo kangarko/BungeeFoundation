@@ -958,11 +958,15 @@ public abstract class SimpleCommand extends Command {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof SimpleCommand ? ((SimpleCommand) obj).getLabel().equals(this.getLabel()) && ((SimpleCommand) obj).getAliases().equals(this.getAliases()) : false;
+		return obj instanceof SimpleCommand && (((SimpleCommand) obj).getLabel().equals(this.getLabel()) && ((SimpleCommand) obj).getAliases().equals(this.getAliases()));
 	}
 
 	@Override
 	public String toString() {
 		return "Command{label=/" + label + "}";
+	}
+
+	public void setAliases(final List<String> aliases) {
+
 	}
 }
