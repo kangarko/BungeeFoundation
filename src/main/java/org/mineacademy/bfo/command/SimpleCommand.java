@@ -3,6 +3,7 @@ package org.mineacademy.bfo.command;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import org.mineacademy.bfo.exception.CommandException;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.exception.InvalidCommandArgException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.settings.SimpleLocalization;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -32,19 +34,27 @@ import net.md_5.bungee.api.plugin.PluginManager;
  */
 public abstract class SimpleCommand extends Command {
 
+	private static final List<SimpleCommand> registeredCommands = new ArrayList<>();
+
+	public static List<SimpleCommand> getRegisteredCommands() {
+		return Collections.unmodifiableList(registeredCommands);
+	}
+
 	/**
 	 * The default permission syntax for this command.
 	 */
 	protected static final String DEFAULT_PERMISSION_SYNTAX = "{plugin.name}.command.{label}";
 
 	/**
-	 * You can set the cooldown time before executing the command again. This map
-	 * stores the player uuid and his last execution of the command.
+	 * You can set the cooldown time before executing the command again. This
+	 * map stores the player uuid and his last execution of the command.
 	 */
-	private final ExpiringMap<UUID, Long> cooldownMap = ExpiringMap.builder().expiration(30, TimeUnit.MINUTES).build();
+	private final ExpiringMap<UUID, Long> cooldownMap = ExpiringMap.builder()
+			.expiration(30, TimeUnit.MINUTES).build();
 
 	/**
-	 * A list of placeholders to replace in this command, see {@link Placeholder}
+	 * A list of placeholders to replace in this command, see
+	 * {@link Placeholder}
 	 *
 	 * These are used when sending player messages
 	 */
@@ -54,8 +64,8 @@ public abstract class SimpleCommand extends Command {
 	 * The command label, eg. boss for /boss
 	 *
 	 * This variable is updated dynamically when the command is run with the
-	 * last known version of the label, e.g. /boss or /b will set it to boss or b
-	 * respectively
+	 * last known version of the label, e.g. /boss or /b will set it to boss or
+	 * b respectively
 	 */
 	private String label;
 
@@ -80,14 +90,15 @@ public abstract class SimpleCommand extends Command {
 	private boolean registered = false;
 
 	/**
-	 * Should we add {@link Common#getTellPrefix()} automatically when calling tell and returnTell methods
-	 * from this command?
+	 * Should we add {@link Common#getTellPrefix()} automatically when calling
+	 * tell and returnTell methods from this command?
 	 */
 	private boolean addTellPrefix = true;
 
 	/**
-	 * The {@link Common#getTellPrefix()} custom prefix only used for sending messages in {@link #onCommand()} method
-	 * for this command, empty by default, then we use the one in Common
+	 * The {@link Common#getTellPrefix()} custom prefix only used for sending
+	 * messages in {@link #onCommand()} method for this command, empty by
+	 * default, then we use the one in Common
 	 */
 	private String tellPrefix = "";
 
@@ -103,8 +114,8 @@ public abstract class SimpleCommand extends Command {
 	private int cooldownSeconds = 0;
 
 	/**
-	 * A custom message when the player attempts to run this command
-	 * within {@link #cooldownSeconds}. By default we use the one found in
+	 * A custom message when the player attempts to run this command within
+	 * {@link #cooldownSeconds}. By default we use the one found in
 	 * {@link SimpleLocalization.Commands#COOLDOWN_WAIT}
 	 *
 	 * TIP: Use {duration} to replace the remaining time till next run
@@ -112,13 +123,14 @@ public abstract class SimpleCommand extends Command {
 	private String cooldownMessage = null;
 
 	/**
-	 * The no permission message. Use {permission} to translate into the missing permission
+	 * The no permission message. Use {permission} to translate into the missing
+	 * permission
 	 */
 	private String permissionMessage = null;
 
 	/**
-	 * Should we automatically send usage message when the first argument
-	 * equals to "help" or "?" ?
+	 * Should we automatically send usage message when the first argument equals
+	 * to "help" or "?" ?
 	 */
 	private boolean autoHandleHelp = true;
 
@@ -147,22 +159,23 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Create a new simple command with the given label.
 	 *
-	 * Separate the label with | to split between label and aliases.
-	 * Example: remove|r|rm will create a /remove command that can
-	 * also be run by typing /r and /rm as its aliases.
+	 * Separate the label with | to split between label and aliases. Example:
+	 * remove|r|rm will create a /remove command that can also be run by typing
+	 * /r and /rm as its aliases.
 	 *
 	 * @param label
 	 */
-	protected SimpleCommand(String label) {
+	protected SimpleCommand(final String label) {
 		this(parseLabel0(label), parseAliases0(label));
 	}
 
 	/**
-	 * Create a new simple command from the list. The first
-	 * item in the list is the main label and the other ones are the aliases.
+	 * Create a new simple command from the list. The first item in the list is
+	 * the main label and the other ones are the aliases.
 	 */
-	protected SimpleCommand(StrictList<String> labels) {
-		this(labels.get(0), labels.size() > 1 ? labels.range(1).getSource() : null);
+	protected SimpleCommand(final StrictList<String> labels) {
+		this(labels.get(0),
+				labels.size() > 1 ? labels.range(1).getSource() : null);
 	}
 
 	/**
@@ -171,31 +184,38 @@ public abstract class SimpleCommand extends Command {
 	 * @param label
 	 * @param aliases
 	 */
-	protected SimpleCommand(String label, List<String> aliases) {
-		super(label, null, aliases == null ? null : aliases.toArray(new String[aliases.size()]));
+	protected SimpleCommand(final String label, final List<String> aliases) {
+		super(label, null,
+				aliases == null
+						? null
+						: aliases.toArray(new String[aliases.size()]));
 
 		setLabel(label);
 
 		// Set a default permission for this command
 		setPermission(DEFAULT_PERMISSION_SYNTAX);
+		registeredCommands.add(this);
 	}
 
 	/*
 	 * Split the given label by | and get the first part, used as the main label
 	 */
-	private final static String parseLabel0(String label) {
+	private static String parseLabel0(final String label) {
 		Valid.checkNotNull(label, "Label must not be null!");
 
 		return label.split("\\|")[0];
 	}
 
 	/*
-	 * Split the given label by | and use the second and further parts as aliases
+	 * Split the given label by | and use the second and further parts as
+	 * aliases
 	 */
-	private final static List<String> parseAliases0(String label) {
+	private static List<String> parseAliases0(final String label) {
 		final String[] aliases = label.split("\\|");
 
-		return aliases.length > 0 ? Arrays.asList(Arrays.copyOfRange(aliases, 1, aliases.length)) : new ArrayList<>();
+		return aliases.length > 0
+				? Arrays.asList(Arrays.copyOfRange(aliases, 1, aliases.length))
+				: new ArrayList<>();
 	}
 
 	// ----------------------------------------------------------------------
@@ -208,13 +228,16 @@ public abstract class SimpleCommand extends Command {
 	 * Throws an error if the command {@link #isRegistered()} already.
 	 */
 	public final void register() {
-		Valid.checkBoolean(!registered, "The command /" + getLabel() + " has already been registered!");
+		Valid.checkBoolean(!registered,
+				"The command /" + getLabel() + " has already been registered!");
 
-		final PluginManager pluginManager = ProxyServer.getInstance().getPluginManager();
+		final PluginManager pluginManager = ProxyServer.getInstance()
+				.getPluginManager();
 		final Command oldCommand = findExistingCommand(getLabel());
 
 		if (oldCommand != null) {
-			Common.log("&eCommand &f/" + getLabel() + " &ealready used, unregistering...");
+			Common.log("&eCommand &f/" + getLabel()
+					+ " &ealready used, unregistering...");
 
 			pluginManager.unregisterCommand(oldCommand);
 		}
@@ -223,8 +246,9 @@ public abstract class SimpleCommand extends Command {
 		registered = true;
 	}
 
-	private Command findExistingCommand(String label) {
-		for (final Entry<String, Command> entry : ProxyServer.getInstance().getPluginManager().getCommands())
+	private Command findExistingCommand(final String label) {
+		for (final Entry<String, Command> entry : ProxyServer.getInstance()
+				.getPluginManager().getCommands())
 			if (entry.getKey().equals(label))
 				return entry.getValue();
 
@@ -237,7 +261,8 @@ public abstract class SimpleCommand extends Command {
 	 * Throws an error if the command is not {@link #isRegistered()}.
 	 */
 	public final void unregister() {
-		Valid.checkBoolean(registered, "The command /" + getLabel() + " is not registered!");
+		Valid.checkBoolean(registered,
+				"The command /" + getLabel() + " is not registered!");
 
 		ProxyServer.getInstance().getPluginManager().unregisterCommand(this);
 		registered = false;
@@ -248,14 +273,15 @@ public abstract class SimpleCommand extends Command {
 	// ----------------------------------------------------------------------
 
 	/**
-	 * Execute this command, updates the {@link #sender}, {@link #label} and {@link #args} variables,
-	 * checks permission and returns if the sender lacks it,
-	 * checks minimum arguments and finally passes the command to the child class.
+	 * Execute this command, updates the {@link #sender}, {@link #label} and
+	 * {@link #args} variables, checks permission and returns if the sender
+	 * lacks it, checks minimum arguments and finally passes the command to the
+	 * child class.
 	 *
 	 * Also contains various error handling scenarios
 	 */
 	@Override
-	public void execute(CommandSender sender, String[] args) {
+	public void execute(final CommandSender sender, final String[] args) {
 		// Set variables to re-use later
 		this.sender = sender;
 		this.args = args;
@@ -268,12 +294,15 @@ public abstract class SimpleCommand extends Command {
 				checkPerm(getPermission());
 
 			// Check for minimum required arguments and print help
-			if (args.length < getMinArguments() ||
-					autoHandleHelp && args.length == 1 && ("help".equals(args[0]) || "?".equals(args[0]))) {
+			if (args.length < getMinArguments() || autoHandleHelp
+					&& args.length == 1
+					&& ("help".equals(args[0]) || "?".equals(args[0]))) {
 
 				// Enforce setUsage being used
 				if (Common.getOrEmpty(getUsage()).isEmpty())
-					throw new FoException("If you set getMinArguments you must also call setUsage for /" + getLabel() + " command!");
+					throw new FoException(
+							"If you set getMinArguments you must also call setUsage for /"
+									+ getLabel() + " command!");
 
 				if (!Common.getOrEmpty(getDescription()).isEmpty())
 					tellNoPrefix("&cDescription: " + getDescription());
@@ -282,15 +311,15 @@ public abstract class SimpleCommand extends Command {
 					tellNoPrefix("&cUsages: ");
 					tellNoPrefix(getMultilineUsageMessage());
 
-				} else {
-					if (getMultilineUsageMessage() != null) {
-						tellNoPrefix("&cUsages:");
-						tellNoPrefix(getMultilineUsageMessage());
+				} else if (getMultilineUsageMessage() != null) {
+					tellNoPrefix("&cUsages:");
+					tellNoPrefix(getMultilineUsageMessage());
 
-					} else {
-						tellNoPrefix("&cUsage: /" + label + (!getUsage().startsWith("/") ? " " + Common.stripColors(getUsage()) : ""));
-					}
-				}
+				} else
+					tellNoPrefix("&cUsage: /" + label
+							+ (!getUsage().startsWith("/")
+									? " " + Common.stripColors(getUsage())
+									: ""));
 
 				return;
 			}
@@ -303,8 +332,9 @@ public abstract class SimpleCommand extends Command {
 
 		} catch (final InvalidCommandArgException ex) {
 			if (getMultilineUsageMessage() == null)
-				tellNoPrefix(ex.getMessage() != null ? ex.getMessage() : "&cInvalid sub argument for this command.");
-
+				tellNoPrefix(ex.getMessage() != null
+						? ex.getMessage()
+						: "&cInvalid sub argument for this command.");
 			else {
 				tellNoPrefix("Usage:");
 				tellNoPrefix(getMultilineUsageMessage());
@@ -315,25 +345,37 @@ public abstract class SimpleCommand extends Command {
 				tell(ex.getMessages());
 
 		} catch (final Throwable t) {
-			tellNoPrefix("&l&4Oups! &cThere was a problem running this command: {error}".replace("{error}", t.toString()));
+			tellNoPrefix(
+					"&l&4Oups! &cThere was a problem running this command: {error}"
+							.replace("{error}", t.toString()));
 
-			Common.error(t, "Failed to execute command /" + getLabel() + " " + String.join(" ", args));
+			Common.error(t, "Failed to execute command /" + getLabel() + " "
+					+ String.join(" ", args));
 		}
 	}
 
 	/**
-	 * Check if the command cooldown is active and if the command
-	 * is run within the given limit, we stop it and inform the player
+	 * Check if the command cooldown is active and if the command is run within
+	 * the given limit, we stop it and inform the player
 	 */
-	private final void handleCooldown() {
+	private void handleCooldown() {
 		if (isPlayer()) {
 			final ProxiedPlayer player = getPlayer();
 
-			final long lastExecution = cooldownMap.getOrDefault(player.getUniqueId(), 0L);
-			final long lastExecutionDifference = (System.currentTimeMillis() - lastExecution) / 1000;
+			final long lastExecution = cooldownMap
+					.getOrDefault(player.getUniqueId(), 0L);
+			final long lastExecutionDifference = (System.currentTimeMillis()
+					- lastExecution) / 1000;
 
-			// Check if the command was not run earlier within the wait threshold
-			checkBoolean(lastExecution == 0 || lastExecutionDifference > cooldownSeconds, Common.getOrDefault(cooldownMessage, "Wait {duration} second(s) before running this command again.").replace("{duration}", cooldownSeconds - lastExecutionDifference + 1 + ""));
+			// Check if the command was not run earlier within the wait
+			// threshold
+			checkBoolean(
+					lastExecution == 0
+							|| lastExecutionDifference > cooldownSeconds,
+					Common.getOrDefault(cooldownMessage,
+							"Wait {duration} second(s) before running this command again.")
+							.replace("{duration}", cooldownSeconds
+									- lastExecutionDifference + 1 + ""));
 
 			// Update the last try with the current time
 			cooldownMap.put(player.getUniqueId(), System.currentTimeMillis());
@@ -341,13 +383,14 @@ public abstract class SimpleCommand extends Command {
 	}
 
 	/**
-	 * Executed when the command is run. You can get the variables sender and args directly,
-	 * and use convenience checks in the simple command class.
+	 * Executed when the command is run. You can get the variables sender and
+	 * args directly, and use convenience checks in the simple command class.
 	 */
 	protected abstract void onCommand();
 
 	/**
-	 * Get a custom multilined usagem message to be shown instead of the one line one
+	 * Get a custom multilined usagem message to be shown instead of the one
+	 * line one
 	 *
 	 * @return the multiline custom usage message, or null
 	 */
@@ -373,7 +416,8 @@ public abstract class SimpleCommand extends Command {
 	 */
 	protected final void checkConsole() throws CommandException {
 		if (!isPlayer())
-			throw new CommandException("&cOnly players may execute this command.");
+			throw new CommandException(
+					"&cOnly players may execute this command.");
 	}
 
 	/**
@@ -382,9 +426,11 @@ public abstract class SimpleCommand extends Command {
 	 * @param perm
 	 * @throws CommandException
 	 */
-	public final void checkPerm(@NonNull String perm) throws CommandException {
+	public final void checkPerm(@NonNull final String perm)
+			throws CommandException {
 		if (isPlayer() && !sender.hasPermission(perm))
-			throw new CommandException(getPermissionMessage().replace("{permission}", perm));
+			throw new CommandException(
+					getPermissionMessage().replace("{permission}", perm));
 	}
 
 	/**
@@ -394,7 +440,8 @@ public abstract class SimpleCommand extends Command {
 	 * @param falseMessage
 	 * @throws CommandException
 	 */
-	protected final void checkArgs(int minimumLength, String falseMessage) throws CommandException {
+	protected final void checkArgs(final int minimumLength,
+			final String falseMessage) throws CommandException {
 		if (args.length < minimumLength)
 			returnTell("&c" + falseMessage);
 	}
@@ -406,7 +453,8 @@ public abstract class SimpleCommand extends Command {
 	 * @param falseMessage
 	 * @throws CommandException
 	 */
-	protected final void checkBoolean(boolean value, String falseMessage) throws CommandException {
+	protected final void checkBoolean(final boolean value,
+			final String falseMessage) throws CommandException {
 		if (!value)
 			returnTell("&c" + falseMessage);
 	}
@@ -418,7 +466,8 @@ public abstract class SimpleCommand extends Command {
 	 * @param messageIfNull
 	 * @throws CommandException
 	 */
-	protected final void checkNotNull(Object value, String messageIfNull) throws CommandException {
+	protected final void checkNotNull(final Object value,
+			final String messageIfNull) throws CommandException {
 		if (value == null)
 			returnTell("&c" + messageIfNull);
 	}
@@ -431,19 +480,22 @@ public abstract class SimpleCommand extends Command {
 	 * @return
 	 * @throws CommandException
 	 */
-	protected final ProxiedPlayer findPlayer(String name) throws CommandException {
+	protected final ProxiedPlayer findPlayer(final String name)
+			throws CommandException {
 		return findPlayer(name, "The player {player} is not online.");
 	}
 
 	/**
-	 * Attempts to find a non-vanished online player, failing with a false message
+	 * Attempts to find a non-vanished online player, failing with a false
+	 * message
 	 *
 	 * @param name
 	 * @param falseMessage
 	 * @return
 	 * @throws CommandException
 	 */
-	protected final ProxiedPlayer findPlayer(String name, String falseMessage) throws CommandException {
+	protected final ProxiedPlayer findPlayer(final String name,
+			final String falseMessage) throws CommandException {
 		final ProxiedPlayer player = ProxyServer.getInstance().getPlayer(name);
 		checkBoolean(player != null, falseMessage.replace("{player}", name));
 
@@ -451,8 +503,9 @@ public abstract class SimpleCommand extends Command {
 	}
 
 	/**
-	 * Finds an enumeration of a certain type, if it fails it prints a false message to the player
-	 * You can use the {enum} variable in the false message for the name parameter
+	 * Finds an enumeration of a certain type, if it fails it prints a false
+	 * message to the player You can use the {enum} variable in the false
+	 * message for the name parameter
 	 *
 	 * @param <T>
 	 * @param enumType
@@ -461,7 +514,9 @@ public abstract class SimpleCommand extends Command {
 	 * @return
 	 * @throws CommandException
 	 */
-	protected final <T extends Enum<T>> T findEnum(Class<T> enumType, String name, String falseMessage) throws CommandException {
+	protected final <T extends Enum<T>> T findEnum(final Class<T> enumType,
+			final String name, final String falseMessage)
+			throws CommandException {
 		T found = null;
 
 		try {
@@ -474,8 +529,8 @@ public abstract class SimpleCommand extends Command {
 	}
 
 	/**
-	 * A convenience method for parsing a number that is between two bounds
-	 * You can use {min} and {max} in the message to be automatically replaced
+	 * A convenience method for parsing a number that is between two bounds You
+	 * can use {min} and {max} in the message to be automatically replaced
 	 *
 	 * @param index
 	 * @param min
@@ -483,9 +538,11 @@ public abstract class SimpleCommand extends Command {
 	 * @param falseMessage
 	 * @return
 	 */
-	protected final int findNumber(int index, int min, int max, String falseMessage) {
+	protected final int findNumber(final int index, final int min,
+			final int max, final String falseMessage) {
 		final int number = findNumber(index, falseMessage);
-		checkBoolean(number >= min && number <= max, falseMessage.replace("{min}", min + "").replace("{max}", max + ""));
+		checkBoolean(number >= min && number <= max, falseMessage
+				.replace("{min}", min + "").replace("{max}", max + ""));
 
 		return number;
 	}
@@ -497,7 +554,7 @@ public abstract class SimpleCommand extends Command {
 	 * @param falseMessage
 	 * @return
 	 */
-	protected final int findNumber(int index, String falseMessage) {
+	protected final int findNumber(final int index, final String falseMessage) {
 		checkBoolean(index < args.length, falseMessage);
 
 		Integer parsed = null;
@@ -520,13 +577,13 @@ public abstract class SimpleCommand extends Command {
 	 * A convenience check for quickly determining if the sender has a given
 	 * permission.
 	 *
-	 * TIP: For a more complete check use {@link #checkPerm(String)} that
-	 * will automatically return your command if they lack the permission.
+	 * TIP: For a more complete check use {@link #checkPerm(String)} that will
+	 * automatically return your command if they lack the permission.
 	 *
 	 * @param permission
 	 * @return
 	 */
-	protected final boolean hasPerm(String permission) {
+	protected final boolean hasPerm(final String permission) {
 		return sender.hasPermission(permission);
 	}
 
@@ -539,7 +596,7 @@ public abstract class SimpleCommand extends Command {
 	 *
 	 * @param messages
 	 */
-	protected final void tell(Collection<String> messages) {
+	protected final void tell(final Collection<String> messages) {
 		tell(messages.toArray(new String[messages.size()]));
 	}
 
@@ -548,7 +605,7 @@ public abstract class SimpleCommand extends Command {
 	 *
 	 * @param messages
 	 */
-	protected final void tellNoPrefix(String... messages) {
+	protected final void tellNoPrefix(final String... messages) {
 		final boolean localPrefix = addTellPrefix;
 		addTellPrefix = false;
 
@@ -558,7 +615,8 @@ public abstract class SimpleCommand extends Command {
 	}
 
 	/**
-	 * Sends a multiline message to the player, avoiding prefix if 3 lines or more
+	 * Sends a multiline message to the player, avoiding prefix if 3 lines or
+	 * more
 	 *
 	 * @param messages
 	 */
@@ -568,41 +626,43 @@ public abstract class SimpleCommand extends Command {
 
 			if (!addTellPrefix || messages.length > 2)
 				Common.tell(sender, messages);
-			else {
-				if (tellPrefix.isEmpty())
-					Common.tell(sender, messages);
-				else
-					for (final String message : messages)
-						Common.tell(sender, tellPrefix + " " + message);
-			}
+			else if (tellPrefix.isEmpty())
+				Common.tell(sender, messages);
+			else
+				for (final String message : messages)
+					Common.tell(sender, tellPrefix + " " + message);
 		}
 	}
 
 	/**
-	 * Convenience method for returning the command with the {@link SimpleLocalization.Commands#INVALID_ARGUMENT}
-	 * message for player
+	 * Convenience method for returning the command with the
+	 * {@link SimpleLocalization.Commands#INVALID_ARGUMENT} message for player
 	 */
 	protected final void returnInvalidArgs() {
 		returnTell("Invalid command argument.");
 	}
 
 	/**
-	 * Sends a message to the player and throws a message error, preventing further execution
+	 * Sends a message to the player and throws a message error, preventing
+	 * further execution
 	 *
 	 * @param messages
 	 * @throws CommandException
 	 */
-	protected final void returnTell(Collection<String> messages) throws CommandException {
+	protected final void returnTell(final Collection<String> messages)
+			throws CommandException {
 		returnTell(messages.toArray(new String[messages.size()]));
 	}
 
 	/**
-	 * Sends a message to the player and throws a message error, preventing further execution
+	 * Sends a message to the player and throws a message error, preventing
+	 * further execution
 	 *
 	 * @param messages
 	 * @throws CommandException
 	 */
-	protected final void returnTell(String... messages) throws CommandException {
+	protected final void returnTell(final String... messages)
+			throws CommandException {
 		throw new CommandException(replacePlaceholders(messages));
 	}
 
@@ -611,22 +671,24 @@ public abstract class SimpleCommand extends Command {
 	// ----------------------------------------------------------------------
 
 	/**
-	 * Registers a new placeholder to be used when sending messages to the player
+	 * Registers a new placeholder to be used when sending messages to the
+	 * player
 	 *
 	 * @param placeholder
 	 */
-	protected final void addPlaceholder(BiFunction<CommandSender, String, String> placeholder) {
+	protected final void addPlaceholder(
+			final BiFunction<CommandSender, String, String> placeholder) {
 		placeholders.add(placeholder);
 	}
 
 	/**
-	 * Replaces placeholders in all messages
-	 * To change them override {@link #replacePlaceholders(String)}
+	 * Replaces placeholders in all messages To change them override
+	 * {@link #replacePlaceholders(String)}
 	 *
 	 * @param messages
 	 * @return
 	 */
-	protected final String[] replacePlaceholders(String[] messages) {
+	protected final String[] replacePlaceholders(final String[] messages) {
 		for (int i = 0; i < messages.length; i++)
 			messages[i] = replacePlaceholders(messages[i]);
 
@@ -645,7 +707,8 @@ public abstract class SimpleCommand extends Command {
 
 		// Replace {X} with arguments
 		for (int i = 0; i < args.length; i++)
-			message = message.replace("{" + i + "}", Common.getOrEmpty(args[i]));
+			message = message.replace("{" + i + "}",
+					Common.getOrEmpty(args[i]));
 
 		// Replace saved placeholders
 		for (final BiFunction<CommandSender, String, String> placeholder : placeholders)
@@ -655,24 +718,26 @@ public abstract class SimpleCommand extends Command {
 	}
 
 	/**
-	 * Internal method for replacing {label} {sublabel} and {plugin.name} placeholders
+	 * Internal method for replacing {label} {sublabel} and {plugin.name}
+	 * placeholders
 	 *
 	 * @param message
 	 * @return
 	 */
-	private final String replaceBasicPlaceholders0(String message) {
+	private String replaceBasicPlaceholders0(final String message) {
 		return message.replace("{label}", getLabel());
 	}
 
 	/**
-	 * Utility method to safely update the args, increasing them if the position is too high
+	 * Utility method to safely update the args, increasing them if the position
+	 * is too high
 	 *
 	 * Used in placeholders
 	 *
 	 * @param position
 	 * @param value
 	 */
-	protected final void setArg(int position, String value) {
+	protected final void setArg(final int position, final String value) {
 		if (args.length <= position)
 			args = Arrays.copyOf(args, position + 1);
 
@@ -689,48 +754,48 @@ public abstract class SimpleCommand extends Command {
 	}
 
 	/**
-	 * Copies and returns the arguments {@link #args} from the given range
-	 * to their end
+	 * Copies and returns the arguments {@link #args} from the given range to
+	 * their end
 	 *
 	 * @param from
 	 * @return
 	 */
-	protected final String[] rangeArgs(int from) {
+	protected final String[] rangeArgs(final int from) {
 		return rangeArgs(from, args.length);
 	}
 
 	/**
-	 * Copies and returns the arguments {@link #args} from the given range
-	 * to the given end
+	 * Copies and returns the arguments {@link #args} from the given range to
+	 * the given end
 	 *
 	 * @param from
 	 * @param to
 	 * @return
 	 */
-	protected final String[] rangeArgs(int from, int to) {
+	protected final String[] rangeArgs(final int from, final int to) {
 		return Arrays.copyOfRange(args, from, to);
 	}
 
 	/**
-	 * Copies and returns the arguments {@link #args} from the given range
-	 * to their end joined by spaces
+	 * Copies and returns the arguments {@link #args} from the given range to
+	 * their end joined by spaces
 	 *
 	 * @param from
 	 * @return
 	 */
-	protected final String joinArgs(int from) {
+	protected final String joinArgs(final int from) {
 		return joinArgs(from, args.length);
 	}
 
 	/**
-	 * Copies and returns the arguments {@link #args} from the given range
-	 * to the given end joined by spaces
+	 * Copies and returns the arguments {@link #args} from the given range to
+	 * the given end joined by spaces
 	 *
 	 * @param from
 	 * @param to
 	 * @return
 	 */
-	protected final String joinArgs(int from, int to) {
+	protected final String joinArgs(final int from, final int to) {
 		String message = "";
 
 		for (int i = from; i < args.length && i < to; i++)
@@ -744,8 +809,8 @@ public abstract class SimpleCommand extends Command {
 	// ----------------------------------------------------------------------
 
 	/**
-	 * Attempts to get the sender as player, only works if the sender is actually a player,
-	 * otherwise we return null
+	 * Attempts to get the sender as player, only works if the sender is
+	 * actually a player, otherwise we return null
 	 *
 	 * @return
 	 */
@@ -763,23 +828,23 @@ public abstract class SimpleCommand extends Command {
 	}
 
 	/**
-	 * Should we add {@link Common#getTellPrefix()} automatically when calling tell and returnTell methods
-	 * from this command?
+	 * Should we add {@link Common#getTellPrefix()} automatically when calling
+	 * tell and returnTell methods from this command?
 	 *
 	 * @param addTellPrefix
 	 */
-	protected final void addTellPrefix(boolean addTellPrefix) {
+	protected final void addTellPrefix(final boolean addTellPrefix) {
 		this.addTellPrefix = addTellPrefix;
 	}
 
 	/**
-	 * Sets a custom prefix used in tell messages for this command.
-	 * This overrides {@link Common#getTellPrefix()} however won't work if
+	 * Sets a custom prefix used in tell messages for this command. This
+	 * overrides {@link Common#getTellPrefix()} however won't work if
 	 * {@link #addTellPrefix} is disabled
 	 *
 	 * @param tellPrefix
 	 */
-	protected final void setTellPrefix(String tellPrefix) {
+	protected final void setTellPrefix(final String tellPrefix) {
 		this.tellPrefix = tellPrefix;
 	}
 
@@ -788,8 +853,9 @@ public abstract class SimpleCommand extends Command {
 	 *
 	 * @param minArguments
 	 */
-	protected final void setMinArguments(int minArguments) {
-		Valid.checkBoolean(minArguments >= 0, "Minimum arguments must be 0 or greater");
+	protected final void setMinArguments(final int minArguments) {
+		Valid.checkBoolean(minArguments >= 0,
+				"Minimum arguments must be 0 or greater");
 
 		this.minArguments = minArguments;
 	}
@@ -800,20 +866,22 @@ public abstract class SimpleCommand extends Command {
 	 * @param cooldown
 	 * @param unit
 	 */
-	protected final void setCooldown(int cooldown, TimeUnit unit) {
-		Valid.checkBoolean(cooldown >= 0, "Cooldown must be >= 0 for /" + getLabel());
+	protected final void setCooldown(final int cooldown, final TimeUnit unit) {
+		Valid.checkBoolean(cooldown >= 0,
+				"Cooldown must be >= 0 for /" + getLabel());
 
-		this.cooldownSeconds = (int) unit.toSeconds(cooldown);
+		cooldownSeconds = (int) unit.toSeconds(cooldown);
 	}
 
 	/**
-	 * Set a custom cooldown message, by default we use the one found in {@link SimpleLocalization.Commands#COOLDOWN_WAIT}
+	 * Set a custom cooldown message, by default we use the one found in
+	 * {@link SimpleLocalization.Commands#COOLDOWN_WAIT}
 	 *
 	 * Use {duration} to dynamically replace the remaining time
 	 *
 	 * @param cooldownMessage
 	 */
-	protected final void setCooldownMessage(String cooldownMessage) {
+	protected final void setCooldownMessage(final String cooldownMessage) {
 		this.cooldownMessage = cooldownMessage;
 	}
 
@@ -822,7 +890,7 @@ public abstract class SimpleCommand extends Command {
 	 *
 	 * @param usage
 	 */
-	protected final void setUsage(String usage) {
+	protected final void setUsage(final String usage) {
 		this.usage = usage;
 	}
 
@@ -831,41 +899,48 @@ public abstract class SimpleCommand extends Command {
 	 *
 	 * @param description
 	 */
-	protected final void setDescription(String description) {
+	protected final void setDescription(final String description) {
 		this.description = description;
 	}
 
 	/**
-	 * Get the permission for this command, either the one you set or our from Localization
+	 * Get the permission for this command, either the one you set or our from
+	 * Localization
 	 */
 	public final String getPermissionMessage() {
-		return Common.getOrDefault(permissionMessage, "&cInsufficient permission ({permission})");
+		return Common.getOrDefault(permissionMessage,
+				"&cInsufficient permission ({permission})");
 	}
 
 	/**
-	 * Set the permission message, you can use {permission} to replace with the missing permission
+	 * Set the permission message, you can use {permission} to replace with the
+	 * missing permission
 	 *
-	 * @param permissionMessage the permissionMessage to set
+	 * @param permissionMessage
+	 *            the permissionMessage to set
 	 */
-	public final void setPermissionMessage(String permissionMessage) {
+	public final void setPermissionMessage(final String permissionMessage) {
 		this.permissionMessage = permissionMessage;
 	}
 
 	/**
-	 * By default we check if the player has the permission you set in setPermission.
+	 * By default we check if the player has the permission you set in
+	 * setPermission.
 	 *
 	 * If that is null, we check for the following:
 	 * {yourpluginname}.command.{label} for {@link SimpleCommand}
 	 * {yourpluginname}.command.{label}.{sublabel} for {@link SimpleSubCommand}
 	 *
-	 * We handle lacking permissions automatically and return with an no-permission message
-	 * when the player lacks it.
+	 * We handle lacking permissions automatically and return with an
+	 * no-permission message when the player lacks it.
 	 *
 	 * @return
 	 */
 	@Override
 	public final String getPermission() {
-		return super.getPermission() == null ? null : replaceBasicPlaceholders0(super.getPermission());
+		return super.getPermission() == null
+				? null
+				: replaceBasicPlaceholders0(super.getPermission());
 	}
 
 	/**
@@ -885,7 +960,7 @@ public abstract class SimpleCommand extends Command {
 	 *
 	 * @param
 	 */
-	public final void setPermission(String permission) {
+	public final void setPermission(final String permission) {
 		this.permission = permission;
 	}
 
@@ -940,25 +1015,27 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Updates the label of this command
 	 */
-	public final void setLabel(String name) {
-		this.label = name;
+	public final void setLabel(final String name) {
+		label = name;
 	}
 
 	/**
-	 * Set whether we automatically show usage params in {@link #getMinArguments()}
-	 * and when the first arg == "help" or "?"
+	 * Set whether we automatically show usage params in
+	 * {@link #getMinArguments()} and when the first arg == "help" or "?"
 	 *
 	 * True by default
 	 *
 	 * @param autoHandleHelp
 	 */
-	protected final void setAutoHandleHelp(boolean autoHandleHelp) {
+	protected final void setAutoHandleHelp(final boolean autoHandleHelp) {
 		this.autoHandleHelp = autoHandleHelp;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		return obj instanceof SimpleCommand && (((SimpleCommand) obj).getLabel().equals(this.getLabel()) && ((SimpleCommand) obj).getAliases().equals(this.getAliases()));
+	public boolean equals(final Object obj) {
+		return obj instanceof SimpleCommand
+				&& ((SimpleCommand) obj).getLabel().equals(getLabel())
+				&& ((SimpleCommand) obj).getAliases().equals(getAliases());
 	}
 
 	@Override
