@@ -164,10 +164,9 @@ public final class IncomingMessage extends Message {
 	 * @param info
 	 */
 	public void forwardToOthers() {
-		for (final ServerInfo server : ProxyServer.getInstance().getServers().values()) {
+		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
 			if (!server.getName().equals(getServerName()))
 				forward(server);
-		}
 	}
 
 	/**

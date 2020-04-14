@@ -1,6 +1,5 @@
 package org.mineacademy.bfo;
 
-
 import lombok.experimental.UtilityClass;
 import net.md_5.bungee.api.CommandSender;
 

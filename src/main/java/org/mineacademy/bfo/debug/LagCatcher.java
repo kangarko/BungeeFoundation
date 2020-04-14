@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.MathUtil;
+import org.mineacademy.bfo.settings.SimpleSettings;
 
 /**
  * A simple yet effective way to calculate duration
