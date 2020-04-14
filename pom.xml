@@ -38,7 +38,7 @@
             <groupId>org.mineacademy.server</groupId>
             <artifactId>BungeeCord</artifactId>
             <version>SNAPSHOT-1487</version>
-        </dependency> 
+        </dependency>
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
