@@ -10,11 +10,10 @@
  */
 package org.mineacademy.bfo.plugin;
 
-import java.io.File;
-import java.util.List;
-import java.util.Objects;
-import java.util.logging.Logger;
-
+import lombok.Getter;
+import net.md_5.bungee.api.plugin.Command;
+import net.md_5.bungee.api.plugin.Listener;
+import net.md_5.bungee.api.plugin.Plugin;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.bungee.SimpleBungee;
@@ -22,10 +21,10 @@ import org.mineacademy.bfo.command.SimpleCommand;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.settings.YamlStaticConfig;
 
-import lombok.Getter;
-import net.md_5.bungee.api.plugin.Command;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.api.plugin.Plugin;
+import java.io.File;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
  * Represents a basic Java plugin using enhanced library functionality
@@ -133,6 +132,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			getInstance().getProxy().getScheduler().cancel(getInstance());
 			getInstance().getExecutorService().shutdownNow();
 
+
 		} catch (final Throwable throwable) { //Might be unsafe
 
 			throwable.printStackTrace();
@@ -200,9 +200,10 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 		try {
 			// Load our main static settings classes
-			if (getSettings() != null)
+			if (getSettings() != null) {
 				YamlStaticConfig.loadAll(getSettings());
-			//				Valid.checkBoolean(SimpleSettings.isSettingsCalled() != null && SimpleLocalization.isLocalizationCalled() != null, "Developer forgot to call Settings or Localization");
+//				Valid.checkBoolean(SimpleSettings.isSettingsCalled() != null && SimpleLocalization.isLocalizationCalled() != null, "Developer forgot to call Settings or Localization");
+			}
 
 			// Load bungee suite
 			Common.registerEvents(new BungeeListener.BungeeListenerImpl());

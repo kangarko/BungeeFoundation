@@ -11,7 +11,6 @@ import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.TimeUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.plugin.SimplePlugin;
-import org.mineacademy.bfo.settings.SimpleSettings;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -142,7 +141,7 @@ public final class Debugger {
 				"------------------------------------[ " + TimeUtil.getFormattedDate() + " ]-----------------------------------",
 				header,
 				"Running " + ProxyServer.getInstance().getName() + " " + ProxyServer.getInstance().getVersion() + " and Java " + System.getProperty("java.version"),
-				"Plugins: " + Common.join(ProxyServer.getInstance().getPluginManager().getPlugins(), ", ", plugin -> plugin.getDescription().getName() + " " + plugin.getDescription().getVersion()),
+				"Plugins: " + Common.join(ProxyServer.getInstance().getPluginManager().getPlugins(), ", ", (plugin) -> plugin.getDescription().getName() + " " + plugin.getDescription().getVersion()),
 				"----------------------------------------------------------------------------------------------");
 
 		// Write additional data
@@ -274,10 +273,10 @@ public final class Debugger {
 		Throwable cause = throwable.getCause();
 
 		if (cause != null)
-			do
+			do {
 				if (cause != null)
 					printStackTrace(cause);
-			while ((cause = cause.getCause()) != null);
+			} while ((cause = cause.getCause()) != null);
 	}
 
 	/**

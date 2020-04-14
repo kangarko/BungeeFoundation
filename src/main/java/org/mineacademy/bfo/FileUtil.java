@@ -35,7 +35,6 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
 
 /**
@@ -267,7 +266,7 @@ public final class FileUtil {
 		final Configuration conf;
 
 		try {
-			conf = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+			conf = YamlConfiguration.getProvider(YamlConfiguration.class).load(file);
 
 		} catch (final FileNotFoundException ex) {
 			throw new FoException(ex, "Configuration file missing: " + file.getName());

@@ -1,21 +1,6 @@
 package org.mineacademy.bfo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.mineacademy.bfo.collection.StrictList;
-import org.mineacademy.bfo.debug.Debugger;
-import org.mineacademy.bfo.exception.FoException;
-import org.mineacademy.bfo.model.Variables;
-import org.mineacademy.bfo.plugin.SimplePlugin;
-
 import com.google.gson.Gson;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
@@ -27,6 +12,13 @@ import net.md_5.bungee.api.plugin.Cancellable;
 import net.md_5.bungee.api.plugin.Event;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.chat.ComponentSerializer;
+import org.mineacademy.bfo.collection.StrictList;
+import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.exception.FoException;
+import org.mineacademy.bfo.model.Variables;
+import org.mineacademy.bfo.plugin.SimplePlugin;
+
+import java.util.*;
 
 /**
  * A generic utility class
@@ -113,7 +105,7 @@ public final class Common {
 
 			log("&7" + consoleLine());
 		}
-		if (disablePlugin)
+		if(disablePlugin)
 			SimplePlugin.disablePlugin();
 	}
 
@@ -348,7 +340,7 @@ public final class Common {
 			return toArray(cast);
 		}
 
-		return new String[] { obj.toString() };
+		return new String[]{obj.toString()};
 	}
 
 	/**
@@ -413,7 +405,7 @@ public final class Common {
 	 */
 	public static <T> List<T> toList(Iterable<T> it) {
 		final List<T> list = new ArrayList<>();
-		it.forEach(el -> list.add(el));
+		it.forEach((el) -> list.add(el));
 
 		return list;
 	}
@@ -597,7 +589,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T> String joinToString(Iterable<T> array, String delimiter) {
-		return join(array, delimiter, object -> object == null ? "" : object.toString());
+		return join(array, delimiter, (object) -> object == null ? "" : object.toString());
 	}
 
 	/**
@@ -608,7 +600,7 @@ public final class Common {
 	 * @return
 	 */
 	public static <T extends CommandSender> String joinPlayers(Iterable<T> array) {
-		return join(array, ", ", (Stringer<T>) CommandSender::getName);
+		return join(array, ", ", (Stringer<T>) object -> object.getName());
 	}
 
 	/**

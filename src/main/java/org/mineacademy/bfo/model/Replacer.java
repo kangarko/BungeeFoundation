@@ -1,13 +1,12 @@
 package org.mineacademy.bfo.model;
 
-import java.util.Objects;
-
-import org.mineacademy.bfo.Common;
-import org.mineacademy.bfo.Valid;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.md_5.bungee.api.CommandSender;
+import org.mineacademy.bfo.Common;
+import org.mineacademy.bfo.Valid;
+
+import java.util.Objects;
 
 /**
  * An elegant way to find {variables} and replace them.

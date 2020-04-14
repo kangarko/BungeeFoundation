@@ -17,7 +17,6 @@ import org.mineacademy.bfo.exception.CommandException;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.exception.InvalidCommandArgException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
-import org.mineacademy.bfo.settings.SimpleLocalization;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -283,12 +282,15 @@ public abstract class SimpleCommand extends Command {
 					tellNoPrefix("&cUsages: ");
 					tellNoPrefix(getMultilineUsageMessage());
 
-				} else if (getMultilineUsageMessage() != null) {
-					tellNoPrefix("&cUsages:");
-					tellNoPrefix(getMultilineUsageMessage());
+				} else {
+					if (getMultilineUsageMessage() != null) {
+						tellNoPrefix("&cUsages:");
+						tellNoPrefix(getMultilineUsageMessage());
 
-				} else
-					tellNoPrefix("&cUsage: /" + label + (!getUsage().startsWith("/") ? " " + Common.stripColors(getUsage()) : ""));
+					} else {
+						tellNoPrefix("&cUsage: /" + label + (!getUsage().startsWith("/") ? " " + Common.stripColors(getUsage()) : ""));
+					}
+				}
 
 				return;
 			}
@@ -566,11 +568,13 @@ public abstract class SimpleCommand extends Command {
 
 			if (!addTellPrefix || messages.length > 2)
 				Common.tell(sender, messages);
-			else if (tellPrefix.isEmpty())
-				Common.tell(sender, messages);
-			else
-				for (final String message : messages)
-					Common.tell(sender, tellPrefix + " " + message);
+			else {
+				if (tellPrefix.isEmpty())
+					Common.tell(sender, messages);
+				else
+					for (final String message : messages)
+						Common.tell(sender, tellPrefix + " " + message);
+			}
 		}
 	}
 
@@ -954,7 +958,7 @@ public abstract class SimpleCommand extends Command {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof SimpleCommand && ((SimpleCommand) obj).getLabel().equals(this.getLabel()) && ((SimpleCommand) obj).getAliases().equals(this.getAliases());
+		return obj instanceof SimpleCommand && (((SimpleCommand) obj).getLabel().equals(this.getLabel()) && ((SimpleCommand) obj).getAliases().equals(this.getAliases()));
 	}
 
 	@Override

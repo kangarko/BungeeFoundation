@@ -1,11 +1,10 @@
 package org.mineacademy.bfo.constants;
 
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.UtilityClass;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.TimeUtil;
 import org.mineacademy.bfo.plugin.SimplePlugin;
-
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.UtilityClass;
 
 /**
  * Stores constants for this plugin
@@ -87,7 +86,7 @@ public class FoConstants {
 		/**
 		 * The header for data.db file
 		 */
-		public String[] DATA_FILE = new String[] {
+		public String[] DATA_FILE = new String[]{
 				"",
 				"This file stores various data you create via the plugin.",
 				"",
@@ -99,7 +98,7 @@ public class FoConstants {
 		 * The header that is put into the file that has been automatically
 		 * updated and comments were lost
 		 */
-		public String[] UPDATED_FILE = new String[] {
+		public String[] UPDATED_FILE = new String[]{
 				Common.configLine(),
 				"",
 				" Your file has been automatically updated at " + TimeUtil.getFormattedDate(),

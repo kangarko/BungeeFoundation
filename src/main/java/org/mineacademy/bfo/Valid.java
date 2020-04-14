@@ -4,8 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.mineacademy.bfo.settings.SimpleLocalization;
-
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.api.CommandSender;
