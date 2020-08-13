@@ -39,11 +39,6 @@
 			<artifactId>BungeeCord</artifactId>
 			<version>SNAPSHOT-1529</version>
 		</dependency>
-		<dependency>
-			<groupId>com.github.JavaFactoryDev</groupId>
-			<artifactId>LightningStorage</artifactId>
-			<version>3.1.2</version>
-		</dependency>
 		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>

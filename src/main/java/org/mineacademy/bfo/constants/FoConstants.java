@@ -1,9 +1,5 @@
 package org.mineacademy.bfo.constants;
 
-import org.mineacademy.bfo.Common;
-import org.mineacademy.bfo.TimeUtil;
-import org.mineacademy.bfo.plugin.SimplePlugin;
-
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.UtilityClass;
 
@@ -79,42 +75,4 @@ public class FoConstants {
 			public String CHANNEL_JOINS = "logs/channel-joins.log";
 		}
 	}
-
-	@UtilityClass
-	@FieldDefaults(makeFinal = true)
-	public class Header {
-
-		/**
-		 * The header for data.db file
-		 */
-		public String[] DATA_FILE = new String[] {
-				"",
-				"This file stores various data you create via the plugin.",
-				"",
-				" ** THE FILE IS MACHINE GENERATED. PLEASE DO NOT EDIT **",
-				""
-		};
-
-		/**
-		 * The header that is put into the file that has been automatically
-		 * updated and comments were lost
-		 */
-		public String[] UPDATED_FILE = new String[] {
-				Common.configLine(),
-				"",
-				" Your file has been automatically updated at " + TimeUtil.getFormattedDate(),
-				" to " + SimplePlugin.getNamed() + " " + SimplePlugin.getVersion(),
-				"",
-				" Unfortunatelly, due to how Bukkit saves all .yml files, it was not possible",
-				" preserve the documentation comments in your file. We apologize.",
-				"",
-				" If you'd like to view the default file, you can either:",
-				" a) Open the " + SimplePlugin.getSource().getName() + " with a WinRar or similar",
-				" b) or, visit: https://github.com/kangarko/" + SimplePlugin.getNamed() + "/wiki",
-				"",
-				Common.configLine(),
-				""
-		};
-	}
-
 }

@@ -17,6 +17,7 @@ import org.mineacademy.bfo.plugin.SimplePlugin;
 import com.google.gson.Gson;
 
 import lombok.AccessLevel;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
@@ -27,6 +28,7 @@ import net.md_5.bungee.api.plugin.Cancellable;
 import net.md_5.bungee.api.plugin.Event;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.chat.ComponentSerializer;
+import net.md_5.bungee.config.Configuration;
 
 /**
  * A generic utility class
@@ -110,11 +112,17 @@ public final class Common {
 			log("&7" + consoleLine());
 			for (final String msg : messages)
 				log(" &c" + msg);
-
-			log("&7" + consoleLine());
 		}
-		if (disablePlugin)
+
+		if (disablePlugin) {
 			SimplePlugin.disablePlugin();
+
+			log("&7",
+					"&7The plugin is now disabled.");
+		}
+
+		if (messages != null && !Valid.isNullOrEmpty(messages))
+			log("&7" + consoleLine());
 	}
 
 	/**
@@ -869,5 +877,18 @@ public final class Common {
 			formatted += maxChar;
 
 		return formatted;
+	}
+
+	/**
+	 * Resolves the inner Map in a Bukkit's {@link Configuration}
+	 *
+	 * @param mapOrSection
+	 * @return
+	 */
+	public static Map<String, Object> getMapFromSection(@NonNull final Object mapOrSection) {
+		final Map<String, Object> map = mapOrSection instanceof Map ? (Map<String, Object>) mapOrSection : mapOrSection instanceof Configuration ? ReflectionUtil.getFieldContent(mapOrSection, "self") : null;
+		Valid.checkNotNull(map, "Unexpected " + mapOrSection.getClass().getSimpleName() + " '" + mapOrSection + "'. Must be Map or MemorySection! (Do not just send config name here, but the actual section with get('section'))");
+
+		return map;
 	}
 }

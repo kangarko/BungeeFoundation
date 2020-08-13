@@ -22,4 +22,11 @@ public abstract class StrictCollection {
 	 * The error message when adding duplicate keys
 	 */
 	private final String cannotAddMessage;
+
+	/**
+	 * Convert this object into something that can be safely stored in a settings file
+	 *
+	 * @return
+	 */
+	public abstract Object serialize();
 }

@@ -6,14 +6,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.mineacademy.bfo.SerializeUtil;
 import org.mineacademy.bfo.Valid;
+import org.mineacademy.bfo.exception.FoException;
 
 /**
  * Strict set that only allows to remove elements that are contained within, or add elements that are not.
- *
+ * <p>
  * Failing to do so results in an error, with optional error message.
  */
-public final class StrictSet<E> extends StrictCollection implements Iterable<E> {
+public class StrictSet<E> extends StrictCollection implements Iterable<E> {
 
 	private final Set<E> list = new HashSet<>();
 
@@ -80,7 +82,7 @@ public final class StrictSet<E> extends StrictCollection implements Iterable<E> 
 				return e;
 		}
 
-		throw new RuntimeException("Index (" + index + ") + out of size (" + list.size() + ")");
+		throw new FoException("Index (" + index + ") + out of size (" + list.size() + ")");
 	}
 
 	public void clear() {
@@ -109,7 +111,12 @@ public final class StrictSet<E> extends StrictCollection implements Iterable<E> 
 	}
 
 	@Override
+	public Object serialize() {
+		return SerializeUtil.serializeList(list);
+	}
+
+	@Override
 	public String toString() {
-		return list.toString();
+		return "StrictSet{\n" + list.toString() + "\n}";
 	}
 }

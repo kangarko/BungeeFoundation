@@ -14,17 +14,22 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-import lombok.Getter;
-import net.md_5.bungee.api.plugin.Command;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.api.plugin.Plugin;
+
 import org.mineacademy.bfo.Common;
+import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.bungee.SimpleBungee;
 import org.mineacademy.bfo.command.SimpleCommand;
 import org.mineacademy.bfo.conversation.ConversationManager;
 import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.settings.SimpleLocalization;
+import org.mineacademy.bfo.settings.SimpleSettings;
 import org.mineacademy.bfo.settings.YamlStaticConfig;
+
+import lombok.Getter;
+import net.md_5.bungee.api.plugin.Command;
+import net.md_5.bungee.api.plugin.Listener;
+import net.md_5.bungee.api.plugin.Plugin;
 
 /**
  * Represents a basic Java plugin using enhanced library functionality
@@ -119,24 +124,22 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 	/**
 	 * Method to disable the plugin.
-	 * Needed because there is no
-	 * method to disable plugins on Proxy-side.
 	 */
 	public static void disablePlugin() {
-		//Unregistering Commands&Listener
+
+		// Unregister commands and listener
 		getInstance().getProxy().getPluginManager().unregisterCommands(getInstance());
 		getInstance().getProxy().getPluginManager().unregisterListeners(getInstance());
 
+		// Cancel scheduler
 		try {
-			//Canceling scheduler
 			getInstance().getProxy().getScheduler().cancel(getInstance());
 			getInstance().getExecutorService().shutdownNow();
 
-		} catch (final Throwable throwable) { //Might be unsafe
-
+		} catch (final Throwable throwable) {
 			throwable.printStackTrace();
 		}
-		//Calling the on disable
+
 		getInstance().onDisable();
 	}
 
@@ -181,9 +184,8 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		// Check if Foundation is correctly moved
 		checkShading();
 
-		if (!isEnabled) {
+		if (!isEnabled)
 			return;
-		}
 
 		// --------------------------------------------
 		// Call the main pre start method
@@ -192,20 +194,19 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		// --------------------------------------------
 
 		// Return if plugin pre start indicated a fatal problem
-		if (!isEnabled) {
+		if (!isEnabled)
 			return;
-		}
 
-		if (getStartupLogo() != null) {
+		if (getStartupLogo() != null)
 			Common.log(getStartupLogo());
-		}
 
 		try {
 			// Load our main static settings classes
 			if (getSettings() != null) {
-				YamlStaticConfig.loadAll(getSettings());
+				YamlStaticConfig.load(getSettings());
+
+				Valid.checkBoolean(SimpleSettings.isSettingsCalled() != null && SimpleLocalization.isLocalizationCalled() != null, "Developer forgot to call Settings or Localization");
 			}
-			//				Valid.checkBoolean(SimpleSettings.isSettingsCalled() != null && SimpleLocalization.isLocalizationCalled() != null, "Developer forgot to call Settings or Localization");
 
 			// Load bungee suite
 			Common.registerEvents(new BungeeListener.BungeeListenerImpl());
@@ -228,9 +229,8 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			// --------------------------------------------
 
 			// Return if plugin start indicated a fatal problem
-			if (!isEnabled) {
+			if (!isEnabled)
 				return;
-			}
 
 			// Register our listeners
 			registerEvents(this); // For convenience
@@ -302,14 +302,12 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 				" &cRunning on " + getProxy().getVersion() + " & Java " + System.getProperty("java.version"),
 				"&4!-----------------------------------------------------!");
 
-		while (throwable.getCause() != null) {
+		while (throwable.getCause() != null)
 			throwable = throwable.getCause();
-		}
 
 		String error = "Unable to get the error message, search above.";
-		if (throwable.getMessage() != null && !throwable.getMessage().isEmpty() && !throwable.getMessage().equals("null")) {
+		if (throwable.getMessage() != null && !throwable.getMessage().isEmpty() && !throwable.getMessage().equals("null"))
 			error = throwable.getMessage();
-		}
 
 		Common.log(" &cError: " + error);
 		Common.log("&4!-----------------------------------------------------!");
@@ -325,9 +323,8 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	public final void onDisable() {
 
 		// If the early startup was interrupted, do not call shutdown methods
-		if (!isEnabled) {
+		if (!isEnabled)
 			return;
-		}
 
 		try {
 			onPluginStop();
@@ -336,9 +333,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		}
 
 		unregisterReloadables();
-
-		Objects.requireNonNull(instance, "Instance of " + getDescription().getName() + " already nulled!");
-		instance = null;
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -389,10 +383,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	protected void onReloadablesStart() {
 	}
 
-	public List<Class<? extends YamlStaticConfig>> getSettings() {
-		return null;
-	}
-
 	// ----------------------------------------------------------------------------------------
 	// Reload
 	// ----------------------------------------------------------------------------------------
@@ -413,8 +403,8 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 			onPluginPreReload();
 
-			//if (getSettings() != null)
-			//	YamlStaticConfig.load(getSettings());
+			if (getSettings() != null)
+				YamlStaticConfig.load(getSettings());
 
 			onPluginReload();
 
@@ -432,8 +422,8 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	}
 
 	private void unregisterReloadables() {
-		//SimpleSettings.resetSettingsCall();
-		//SimpleLocalization.resetLocalizationCall();
+		SimpleSettings.resetSettingsCall();
+		SimpleLocalization.resetLocalizationCall();
 
 		getProxy().getScheduler().cancel(this);
 	}
@@ -449,13 +439,11 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * @param condition
 	 */
 	protected final void registerEventsIf(final Listener listener, final boolean condition) {
-		if (condition) {
-			if (startingReloadables) {
+		if (condition)
+			if (startingReloadables)
 				reloadables.registerEvents(listener);
-			} else {
+			else
 				registerEvents(listener);
-			}
-		}
 	}
 
 	/**
@@ -464,11 +452,10 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * @param listener
 	 */
 	protected final void registerEvents(final Listener listener) {
-		if (startingReloadables) {
+		if (startingReloadables)
 			reloadables.registerEvents(listener);
-		} else {
+		else
 			getProxy().getPluginManager().registerListener(this, listener);
-		}
 	}
 
 	/**
@@ -516,9 +503,9 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 *
 	 * @return
 	 */
-	/*public List<Class<? extends YamlStaticConfig>> getSettings() {
+	public List<Class<? extends YamlStaticConfig>> getSettings() {
 		return null;
-	}*/
+	}
 
 	/**
 	 * Get the year of foundation displayed in {@link #getMainCommand()}

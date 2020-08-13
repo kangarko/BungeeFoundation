@@ -2,17 +2,21 @@ package org.mineacademy.bfo.collection;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
+import org.mineacademy.bfo.SerializeUtil;
 import org.mineacademy.bfo.Valid;
 
 /**
  * Strict map that only allows to remove elements that are contained within, or add elements that are not.
- *
+ * <p>
  * Failing to do so results in an error, with optional error message.
  */
 public final class StrictMap<E, T> extends StrictCollection {
@@ -110,7 +114,9 @@ public final class StrictMap<E, T> extends StrictCollection {
 		return defaultToPut;
 	}
 
-	/** CAN BE NULL, NO EXCEPTION THROWING */
+	/**
+	 * CAN BE NULL, NO EXCEPTION THROWING
+	 */
 	public T get(E key) {
 		return map.get(key);
 	}
@@ -157,6 +163,32 @@ public final class StrictMap<E, T> extends StrictCollection {
 
 	public E firstKey() {
 		return map.isEmpty() ? null : map.keySet().iterator().next();
+	}
+
+	public void forEachIterate(BiConsumer<E, T> consumer) {
+		for (final Iterator<Map.Entry<E, T>> it = entrySet().iterator(); it.hasNext();) {
+			final Map.Entry<E, T> entry = it.next();
+
+			consumer.accept(entry.getKey(), entry.getValue());
+		}
+	}
+
+	@Override
+	public Object serialize() {
+		if (!map.isEmpty()) {
+			final Map<Object, Object> copy = new HashMap<>();
+
+			for (final Entry<E, T> e : entrySet()) {
+				final T val = e.getValue();
+
+				if (val != null)
+					copy.put(SerializeUtil.serialize(e.getKey()), SerializeUtil.serialize(val));
+			}
+
+			return copy;
+		}
+
+		return getSource();
 	}
 
 	@Override

@@ -19,6 +19,7 @@ import org.mineacademy.bfo.exception.FoException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Plugin;
 
 /**
@@ -414,6 +415,68 @@ public final class ReflectionUtil {
 		} catch (final IllegalArgumentException ex) {
 			return null;
 		}
+	}
+
+	/**
+	 * Attempts to find an enum, throwing formatted error showing all available
+	 * values if not found
+	 * <p>
+	 * The field name is uppercased, spaces are replaced with underscores and even
+	 * plural S is added in attempts to detect the correct enum
+	 *
+	 * @param enumType
+	 * @param name
+	 * @return the enum or error
+	 */
+	public static <E extends Enum<E>> E lookupEnum(final Class<E> enumType, final String name) {
+		return lookupEnum(enumType, name, "The enum '" + enumType.getSimpleName() + "' does not contain '" + name + "' on MC " + ProxyServer.getInstance().getVersion() + "! Available values: {available}");
+	}
+
+	/**
+	 * Attempts to find an enum, throwing formatted error showing all available
+	 * values if not found Use {available} in errMessage to get all enum values.
+	 * <p>
+	 * The field name is uppercased, spaces are replaced with underscores and even
+	 * plural S is added in attempts to detect the correct enum
+	 *
+	 * @param enumType
+	 * @param name
+	 * @param errMessage
+	 * @return
+	 */
+	public static <E extends Enum<E>> E lookupEnum(final Class<E> enumType, String name, final String errMessage) {
+		Valid.checkNotNull(enumType, "Type missing for " + name);
+		Valid.checkNotNull(name, "Name missing for " + enumType);
+
+		final String oldName = name;
+
+		E result = lookupEnumSilent(enumType, name);
+
+		if (result == null) {
+			name = name.toUpperCase();
+
+			result = lookupEnumSilent(enumType, name);
+		}
+
+		if (result == null) {
+			name = name.replace(" ", "_");
+
+			result = lookupEnumSilent(enumType, name);
+		}
+
+		if (result == null)
+			result = lookupEnumSilent(enumType, name.replace("_", ""));
+
+		if (result == null) {
+			name = name.endsWith("S") ? name.substring(0, name.length() - 1) : name + "S";
+
+			result = lookupEnumSilent(enumType, name);
+		}
+
+		if (result == null)
+			throw new MissingEnumException(oldName, errMessage.replace("{available}", Arrays.asList(enumType.getEnumConstants()).toString()));
+
+		return result;
 	}
 
 	/**

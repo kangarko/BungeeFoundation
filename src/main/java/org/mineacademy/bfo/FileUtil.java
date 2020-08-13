@@ -20,6 +20,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
@@ -413,6 +414,13 @@ public final class FileUtil {
 		return extract(override, from, to, null);
 	}
 
+	public static File extract(boolean override, String from, String to, @Nullable Function<String, String> replacer) {
+		final InputStream is = getInternalResource("/" + from);
+		Valid.checkNotNull(is, "Inbuilt file not found: " + from);
+
+		return extract(override, is, to, replacer);
+	}
+
 	/**
 	 * Copy file from our plugin jar to destination - customizable destination file
 	 * name.
@@ -425,16 +433,13 @@ public final class FileUtil {
 	 *
 	 * @return the extracted file
 	 */
-	public static File extract(boolean override, String from, String to, @Nullable Function<String, String> replacer) {
+	public static File extract(boolean override, @NonNull InputStream is, String to, @Nullable Function<String, String> replacer) {
 		File file = new File(SimplePlugin.getInstance().getDataFolder(), to);
-
-		final InputStream is = FileUtil.getInternalResource("/" + from);
-		Valid.checkNotNull(is, "Inbuilt file not found: " + from);
 
 		if (!override && file.exists())
 			return file;
 
-		file = FileUtil.createFile(to);
+		file = createFile(to);
 
 		try {
 
@@ -455,7 +460,7 @@ public final class FileUtil {
 
 		} catch (final IOException ex) {
 			Common.error(ex,
-					"Failed to extract " + from + " to " + to,
+					"Failed to extract file to " + to,
 					"Error: %error");
 		}
 
@@ -470,15 +475,17 @@ public final class FileUtil {
 	 */
 	public static InputStream getInternalResource(String path) {
 		// First attempt
-		InputStream is = SimplePlugin.getInstance().getClass().getResourceAsStream(path);
+		final InputStream is = SimplePlugin.getInstance().getResourceAsStream(path);
 
 		// The hard way - go in the jar file
 		if (is == null)
-			try (JarFile f = new JarFile(SimplePlugin.getSource())) {
-				final JarEntry e = f.getJarEntry(path);
+			try (JarFile file = new JarFile(SimplePlugin.getSource())) {
+				for (final Enumeration<JarEntry> it = file.entries(); it.hasMoreElements();) {
+					final JarEntry type = it.nextElement();
 
-				if (e != null)
-					is = f.getInputStream(e);
+					if (type.getName().equals(path) || (path.startsWith("/") && type.getName().equals(path.substring(1))))
+						return file.getInputStream(type);
+				}
 
 			} catch (final IOException ex) {
 				ex.printStackTrace();

@@ -1,12 +1,6 @@
 package org.mineacademy.bfo.settings;
 
 import org.mineacademy.bfo.Valid;
-import org.mineacademy.bfo.plugin.SimplePlugin;
-
-import de.leonhard.storage.LightningBuilder;
-import de.leonhard.storage.Yaml;
-import de.leonhard.storage.internal.settings.ConfigSettings;
-import de.leonhard.storage.internal.settings.DataType;
 
 /**
  * A simple implementation of a basic localization file. We create the
@@ -98,13 +92,6 @@ public abstract class SimpleLocalization extends YamlStaticConfig {
 	 */
 	public static void resetLocalizationCall() {
 		localizationClassCalled = false;
-	}
-
-	@Override
-	protected final Yaml getConfigInstance() {
-		final String name = "messages_" + SimpleSettings.LOCALE_PREFIX;
-
-		return LightningBuilder.fromPath(name, SimplePlugin.getData().getAbsolutePath() + "/localization/").addInputStreamFromResource("localization/" + name + ".yml").setConfigSettings(ConfigSettings.PRESERVE_COMMENTS).setDataType(DataType.SORTED).createConfig().addDefaultsFromInputStream();
 	}
 
 	/**

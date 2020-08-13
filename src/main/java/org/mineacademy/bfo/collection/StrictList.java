@@ -5,12 +5,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.mineacademy.bfo.Common;
+import org.mineacademy.bfo.SerializeUtil;
 import org.mineacademy.bfo.Valid;
 
 /**
  * Strict list that only allows to remove elements that are contained within, or add elements that are not.
- *
+ * <p>
  * Failing to do so results in an error, with optional error message.
  */
 public final class StrictList<E> extends StrictCollection implements Iterable<E> {
@@ -247,7 +247,7 @@ public final class StrictList<E> extends StrictCollection implements Iterable<E>
 
 	/**
 	 * Return true if the list contains the key
-	 *
+	 * <p>
 	 * If the key is a string we return true if it equals your key, case ignored,
 	 * otherwise we just call equals() method normally
 	 *
@@ -320,18 +320,26 @@ public final class StrictList<E> extends StrictCollection implements Iterable<E>
 	}
 
 	/**
+	 * Serializes every value in the list so you can store it in your settings
+	 */
+	@Override
+	public Object serialize() {
+		return SerializeUtil.serializeList(list);
+	}
+
+	/**
 	 * Return all list values together split by the given separator
 	 *
 	 * @param separator
 	 * @return
 	 */
 	public String join(String separator) {
-		return Common.joinToString(list, separator);
+		return list.toString();
 	}
 
 	/**
 	 * Returns string representation of this list
-	 *
+	 * <p>
 	 * NB: For saving in files call {@link #serialize()}
 	 */
 	@Override
