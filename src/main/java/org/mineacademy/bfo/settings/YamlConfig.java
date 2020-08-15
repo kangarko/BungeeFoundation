@@ -1,6 +1,7 @@
 package org.mineacademy.bfo.settings;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -18,7 +19,6 @@ import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.PlayerUtil;
 import org.mineacademy.bfo.ReflectionUtil;
-import org.mineacademy.bfo.ReflectionUtil.MissingEnumException;
 import org.mineacademy.bfo.SerializeUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.SerializedMap;
@@ -38,6 +38,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 
 /**
  * The core configuration class. Manages all settings files.
@@ -46,6 +48,11 @@ import net.md_5.bungee.config.Configuration;
  * @version 5.0 (of the previous ConfHelper)
  */
 public class YamlConfig implements ConfigSerializable {
+
+	/**
+	 * BungeeCord configuration class
+	 */
+	static final ConfigurationProvider PROVIDER = ConfigurationProvider.getProvider(YamlConfiguration.class);
 
 	// ------------------------------------------------------------------------------------------------------------
 	// Only allow one instance of file to be loaded for safety.
@@ -191,8 +198,8 @@ public class YamlConfig implements ConfigSerializable {
 				if (!file.exists())
 					FileUtil.extract(localePath, line -> replaceVariables(line, FileUtil.getFileName(localePath)));
 
-				final NextConfiguration config = NextConfiguration.fromFile(file);
-				final NextConfiguration defaultsConfig = NextConfiguration.fromInputStream(is);
+				final Configuration config = PROVIDER.load(file);
+				final Configuration defaultsConfig = PROVIDER.load(is);
 
 				Valid.checkBoolean(file != null && file.exists(), "Failed to load " + localePath + " from " + file);
 
@@ -253,15 +260,15 @@ public class YamlConfig implements ConfigSerializable {
 
 			if (instance == null) {
 				final File file;
-				final NextConfiguration config;
-				NextConfiguration defaultsConfig = null;
+				final Configuration config;
+				Configuration defaultsConfig = null;
 
 				// We will have the default file to return to
 				if (from != null) {
 					final InputStream fromStream = FileUtil.getInternalResource(from);
 					Valid.checkNotNull(fromStream, "Inbuilt resource not found: " + from);
 
-					defaultsConfig = NextConfiguration.fromInputStream(fromStream);
+					defaultsConfig = PROVIDER.load(fromStream);
 					file = FileUtil.extract(false, fromStream, to, line -> replaceVariables(line, FileUtil.getFileName(to)));
 
 				} else
@@ -269,7 +276,7 @@ public class YamlConfig implements ConfigSerializable {
 
 				Valid.checkNotNull(file, "Failed to " + (from != null ? "copy settings from " + from + " to " : "read settings from ") + to);
 
-				config = NextConfiguration.fromFile(file);
+				config = PROVIDER.load(file);
 				instance = new ConfigInstance(file, config, defaultsConfig);
 
 				addConfig(instance, this);
@@ -283,6 +290,9 @@ public class YamlConfig implements ConfigSerializable {
 			} catch (final Exception ex) {
 				Common.throwError(ex, "Error loading configuration in " + getFileName() + "!", "Problematic section: " + Common.getOrDefault(getPathPrefix(), "''"), "Problem: " + ex + " (see below for more)");
 			}
+
+		} catch (final IOException ex) {
+			Common.error(ex, "Error loading configuration!");
 
 		} finally {
 			loading = false;
@@ -351,7 +361,7 @@ public class YamlConfig implements ConfigSerializable {
 	 * @return
 	 */
 	protected final Configuration getConfig() {
-		return instance.getConfig().getRootConfig();
+		return instance.getConfig();
 	}
 
 	/**
@@ -361,7 +371,7 @@ public class YamlConfig implements ConfigSerializable {
 	 */
 	@Nullable
 	protected final Configuration getDefaults() {
-		return instance.getDefaultConfig().getRootConfig();
+		return instance.getDefaultConfig();
 	}
 
 	/**
@@ -918,38 +928,6 @@ public class YamlConfig implements ConfigSerializable {
 				list.add(object != null ? SerializeUtil.deserialize(type, object, deserializeParameters) : null);
 
 		return list;
-	}
-
-	/**
-	 * Return a list of enumerations that are checked for some special values
-	 * we use in our plugins that will break on older Minecraft versions, so we
-	 * just ignore them and do not throw any error.
-	 *
-	 * @param <T>
-	 * @param path
-	 * @param type
-	 * @return
-	 */
-	protected final <T extends Enum<T>> List<T> getCompatibleEnumList(final String path, final Class<T> type) {
-		final StrictList<T> list = new StrictList<>();
-		final List<String> enumNames = getStringList(path);
-
-		if (enumNames != null)
-			for (final String enumName : enumNames) {
-				T parsedEnum = null;
-
-				try {
-					parsedEnum = ReflectionUtil.lookupEnumSilent(type, enumName);
-
-				} catch (final MissingEnumException ex) {
-					throw ex;
-				}
-
-				if (parsedEnum != null)
-					list.add(parsedEnum);
-			}
-
-		return list.getSource();
 	}
 
 	/**
@@ -1569,12 +1547,12 @@ class ConfigInstance {
 	/**
 	 * Our config we are manipulating.
 	 */
-	private final NextConfiguration config;
+	private final Configuration config;
 
 	/**
 	 * The default config we reach out to fill values from.
 	 */
-	private final NextConfiguration defaultConfig;
+	private final Configuration defaultConfig;
 
 	/**
 	 * Saves the config instance with the given header, can be null
@@ -1582,7 +1560,7 @@ class ConfigInstance {
 	protected void save() {
 
 		try {
-			config.save(file);
+			YamlConfig.PROVIDER.save(config, file);
 
 		} catch (final Throwable throwable) {
 			Common.error(throwable, "Failed to save " + file.getName());
@@ -1595,7 +1573,7 @@ class ConfigInstance {
 	 * @throws Exception
 	 */
 	protected void reload() throws Exception {
-		config.load(file);
+		YamlConfig.PROVIDER.load(file, config);
 	}
 
 	/**

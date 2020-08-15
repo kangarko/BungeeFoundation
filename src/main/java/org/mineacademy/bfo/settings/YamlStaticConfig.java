@@ -283,10 +283,6 @@ public abstract class YamlStaticConfig {
 		return TEMPORARY_INSTANCE.getList(path, listType);
 	}
 
-	protected static final <E extends Enum<E>> List<E> getCompatibleEnumList(final String path, final Class<E> listType) {
-		return TEMPORARY_INSTANCE.getCompatibleEnumList(path, listType);
-	}
-
 	protected static final boolean getBoolean(final String path) {
 		return TEMPORARY_INSTANCE.getBoolean(path);
 	}
