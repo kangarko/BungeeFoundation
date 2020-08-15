@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.debug.Debugger;
@@ -40,6 +41,18 @@ public final class Common {
 	 * The console command sender
 	 */
 	private final static CommandSender consoleSender = ProxyServer.getInstance().getConsole();
+
+	/**
+	 * Send a colorized message to the player.
+	 * <p>
+	 * Variables from {@link Variables} are replaced.
+	 *
+	 * @param sender
+	 * @param messages
+	 */
+	public static void tell(CommandSender sender, Collection<String> messages) {
+		tell(sender, messages.toArray(new String[messages.size()]));
+	}
 
 	/**
 	 * Send a colorized message to the player.
@@ -719,6 +732,20 @@ public final class Common {
 		}
 
 		return json;
+	}
+
+	// ------------------------------------------------------------------------------------------------------------
+	// Scheduling
+	// ------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Schedule a task to be run at a later time
+	 *
+	 * @param delayTicks
+	 * @param runnable
+	 */
+	public static void runLater(int delayTicks, Runnable runnable) {
+		ProxyServer.getInstance().getScheduler().schedule(SimplePlugin.getInstance(), runnable, delayTicks * 50, TimeUnit.MILLISECONDS);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
