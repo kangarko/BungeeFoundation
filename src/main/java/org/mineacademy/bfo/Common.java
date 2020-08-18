@@ -305,10 +305,12 @@ public final class Common {
 	 * @return
 	 */
 	public static String[] replace(String what, String byWhat, String... messages) {
-		for (int i = 0; i < messages.length; i++)
-			messages[i] = messages[i].replace(what, byWhat);
+		final String[] copy = new String[messages.length];
 
-		return messages;
+		for (int i = 0; i < messages.length; i++)
+			copy[i] = messages[i].replace(what, byWhat);
+
+		return copy;
 	}
 
 	/**
@@ -320,6 +322,8 @@ public final class Common {
 	 * @return
 	 */
 	public static List<String> replace(String what, String byWhat, List<String> messages) {
+		messages = new ArrayList<>(messages);
+
 		for (int i = 0; i < messages.size(); i++)
 			messages.set(i, messages.get(i).replace(what, byWhat));
 
