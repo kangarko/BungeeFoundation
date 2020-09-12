@@ -103,13 +103,6 @@ public enum FoBungeeAction implements BungeeAction {
 	 */
 	PM_PLAYER_FOUND(String.class, String.class, String.class),
 
-	/**
-	 * Full file data is compressed then forwarded to another server.
-	 *
-	 * Parameters: file name, file data
-	 */
-	FILE_SYNCHRONIZE(String.class, byte[].class),
-
 	;
 
 	/**
