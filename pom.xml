@@ -85,7 +85,6 @@
 					</artifactSet>
 					<relocations>
 						<relocation>
-							<pattern>de.leonhard.storage</pattern>
 							<shadedPattern>org.mineacademy.lib.storage</shadedPattern>
 						</relocation>
 					</relocations>
