@@ -27,6 +27,7 @@ import org.mineacademy.bfo.settings.SimpleSettings;
 import org.mineacademy.bfo.settings.YamlStaticConfig;
 
 import lombok.Getter;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -264,18 +265,18 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 		public ShadingException() {
 			if (!SimplePlugin.getNamed().equals(getDescription().getName())) {
-				System.out.println(Common.consoleLine());
-				System.out.println("We have a class path problem in the BungeeFoundation library");
-				System.out.println("preventing " + getDescription().getName() + " from loading correctly!");
-				System.out.println("");
-				System.out.println("This is likely caused by two plugins having the");
-				System.out.println("same Foundation library paths - make sure you");
-				System.out.println("relocale the package! If you are testing using");
-				System.out.println("Ant, only test one plugin at the time.");
-				System.out.println("");
-				System.out.println("Possible cause: " + SimplePlugin.getNamed());
-				System.out.println("Foundation package: " + SimplePlugin.class.getPackage().getName());
-				System.out.println(Common.consoleLine());
+				ProxyServer.getInstance().getLogger().severe(Common.consoleLine());
+				ProxyServer.getInstance().getLogger().severe("We have a class path problem in the BungeeFoundation library");
+				ProxyServer.getInstance().getLogger().severe("preventing " + getDescription().getName() + " from loading correctly!");
+				ProxyServer.getInstance().getLogger().severe("");
+				ProxyServer.getInstance().getLogger().severe("This is likely caused by two plugins having the");
+				ProxyServer.getInstance().getLogger().severe("same Foundation library paths - make sure you");
+				ProxyServer.getInstance().getLogger().severe("relocale the package! If you are testing using");
+				ProxyServer.getInstance().getLogger().severe("Ant, only test one plugin at the time.");
+				ProxyServer.getInstance().getLogger().severe("");
+				ProxyServer.getInstance().getLogger().severe("Possible cause: " + SimplePlugin.getNamed());
+				ProxyServer.getInstance().getLogger().severe("Foundation package: " + SimplePlugin.class.getPackage().getName());
+				ProxyServer.getInstance().getLogger().severe(Common.consoleLine());
 
 				isEnabled = false;
 			}

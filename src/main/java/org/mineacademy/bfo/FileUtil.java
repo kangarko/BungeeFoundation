@@ -35,6 +35,7 @@ import jline.internal.Nullable;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
@@ -134,7 +135,7 @@ public final class FileUtil {
 			destination.createNewFile();
 
 		} catch (final IOException ex) {
-			System.out.println("Failed to create a new file " + path);
+			ProxyServer.getInstance().getLogger().severe("Failed to create a new file " + path);
 
 			ex.printStackTrace();
 		}
@@ -353,7 +354,7 @@ public final class FileUtil {
 			}
 
 		} catch (final Exception ex) {
-			System.out.println("Failed to write to " + to);
+			ProxyServer.getInstance().getLogger().severe("Failed to write to " + to);
 
 			ex.printStackTrace(); // do not throw our exception since it would cause an infinite loop if there is a problem due to error writing
 		}

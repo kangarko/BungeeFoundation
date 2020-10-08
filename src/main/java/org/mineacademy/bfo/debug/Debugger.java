@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.TimeUtil;
@@ -18,8 +16,10 @@ import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 import net.md_5.bungee.api.ProxyServer;
 
 /**
@@ -56,7 +56,7 @@ public final class Debugger {
 	public static void debug(String section, String... messages) {
 		if (isDebugged(section))
 			for (final String message : messages)
-				System.out.println("[" + section + "] " + message);
+				ProxyServer.getInstance().getLogger().info(message);
 	}
 
 	/**
@@ -300,6 +300,6 @@ public final class Debugger {
 
 	// Print a simple console message
 	private static void print(String message) {
-		System.out.println(message);
+		ProxyServer.getInstance().getLogger().info(message);
 	}
 }

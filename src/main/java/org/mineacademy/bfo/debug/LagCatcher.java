@@ -8,6 +8,8 @@ import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.MathUtil;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
+import net.md_5.bungee.api.ProxyServer;
+
 /**
  * A simple yet effective way to calculate duration
  * between two points in code
@@ -136,7 +138,7 @@ public final class LagCatcher {
 			lagMap.add(finishAndCalculate(name));
 		}
 
-		System.out.println("Test '" + name + "' took " + MathUtil.formatTwoDigits(finishAndCalculate(name + "-whole")) + " ms. Average " + MathUtil.average(lagMap) + " ms");
+		ProxyServer.getInstance().getLogger().info("Test '" + name + "' took " + MathUtil.formatTwoDigits(finishAndCalculate(name + "-whole")) + " ms. Average " + MathUtil.average(lagMap) + " ms");
 	}
 
 	/**
