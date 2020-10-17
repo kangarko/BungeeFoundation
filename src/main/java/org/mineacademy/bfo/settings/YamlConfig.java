@@ -288,7 +288,10 @@ public class YamlConfig implements ConfigSerializable {
 				onLoadFinish();
 
 			} catch (final Exception ex) {
-				Common.throwError(ex, "Error loading configuration in " + getFileName() + "!", "Problematic section: " + Common.getOrDefault(getPathPrefix(), "''"), "Problem: " + ex + " (see below for more)");
+				Common.throwError(ex,
+						"Error loading configuration in " + getFileName() + "!",
+						"Problematic section: " + Common.getOrDefault(getPathPrefix(), "''"),
+						"Problem: " + ex + " (see below for more)");
 			}
 
 		} catch (final IOException ex) {
