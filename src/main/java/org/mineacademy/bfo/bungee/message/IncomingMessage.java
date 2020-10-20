@@ -51,6 +51,9 @@ public final class IncomingMessage extends Message {
 		// first is the senders server name and the second is the action
 		// -----------------------------------------------------------------
 
+		// Read sender UUID if any
+		setSenderUid(input.readUTF());
+
 		// Read server name
 		setServerName(input.readUTF());
 

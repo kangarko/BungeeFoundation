@@ -2,6 +2,7 @@ package org.mineacademy.bfo.bungee;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.message.IncomingMessage;
@@ -75,11 +76,12 @@ public abstract class BungeeListener implements Listener {
 	 * Creates a new outgoing message for the given action using the sender connection
 	 * and this listeners channel
 	 *
+	 * @param senderUid
 	 * @param action
 	 * @return
 	 */
-	protected final OutgoingMessage createOutgoingMessage(BungeeAction action) {
-		return new OutgoingMessage(sender.getInfo().getName(), action);
+	protected final OutgoingMessage createOutgoingMessage(UUID senderUid, BungeeAction action) {
+		return new OutgoingMessage(senderUid, sender.getInfo().getName(), action);
 	}
 
 	/**

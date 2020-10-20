@@ -1,10 +1,13 @@
 package org.mineacademy.bfo.bungee.message;
 
+import java.util.UUID;
+
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeAction;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
+import jline.internal.Nullable;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +19,13 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 abstract class Message {
+
+	/**
+	 * The UUID of the sender who initiated the packet, can be null
+	 */
+	@Nullable
+	@Getter
+	private UUID senderUid;
 
 	/**
 	 * The server name
@@ -34,6 +44,16 @@ abstract class Message {
 	 * {@link BungeeAction#getContent()}
 	 */
 	private int actionHead = 0;
+
+	/**
+	 * Set the sender UUID
+	 *
+	 * @param raw
+	 */
+	protected final void setSenderUid(String raw) {
+		if (raw != null)
+			this.senderUid = UUID.fromString(raw);
+	}
 
 	/**
 	 * Set the server name for this message, reason it is here:

@@ -2,6 +2,7 @@ package org.mineacademy.bfo.bungee.message;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeAction;
@@ -29,7 +30,8 @@ public final class OutgoingMessage extends Message {
 	 */
 	private final List<Object> queue = new ArrayList<>();
 
-	public OutgoingMessage(String fromServerName, BungeeAction action) {
+	public OutgoingMessage(UUID fromSenderUid, String fromServerName, BungeeAction action) {
+		setSenderUid(fromSenderUid.toString());
 		setServerName(fromServerName);
 		setAction(action);
 
@@ -38,6 +40,7 @@ public final class OutgoingMessage extends Message {
 		// first is the senders server name and the second is the action
 		// -----------------------------------------------------------------
 
+		queue.add(fromSenderUid);
 		queue.add(fromServerName);
 		queue.add(action.name());
 	}
