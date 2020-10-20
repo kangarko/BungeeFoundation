@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.TreeMap;
@@ -51,6 +52,11 @@ public abstract class YamlStaticConfig {
 			protected void onLoadFinish() {
 				loadViaReflection();
 			}
+
+			@Override
+			protected List<String> getUncommentedSections() {
+				return YamlStaticConfig.this.getUncommentedSections();
+			}
 		};
 	}
 
@@ -75,6 +81,15 @@ public abstract class YamlStaticConfig {
 
 			TEMPORARY_INSTANCE = null;
 		}
+	}
+
+	/**
+	 * @see YamlConfig#getUncommentedSections()
+	 *
+	 * @return
+	 */
+	protected List<String> getUncommentedSections() {
+		return new ArrayList<>();
 	}
 
 	/**

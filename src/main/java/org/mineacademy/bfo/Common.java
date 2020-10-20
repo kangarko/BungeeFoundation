@@ -519,6 +519,58 @@ public final class Common {
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
+	// Checks
+	// ------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Calculates the similarity (a double within 0 and 1) between two strings.
+	 */
+	public static double similarityPercentage(String first, String second) {
+		if (first.isEmpty() && second.isEmpty())
+			return 1D;
+
+		String longer = first, shorter = second;
+
+		// Longer should always have greater length
+		if (first.length() < second.length()) {
+			longer = second;
+
+			shorter = first;
+		}
+
+		final int longerLength = longer.length();
+
+		// Return 0 if both strings are zero length
+		return longerLength == 0 ? 0 : (longerLength - editDistance(longer, shorter)) / (double) longerLength;
+
+	}
+
+	// Example implementation of the Levenshtein Edit Distance
+	// See http://rosettacode.org/wiki/Levenshtein_distance#Java
+	private static int editDistance(String s1, String s2) {
+		s1 = s1.toLowerCase();
+		s2 = s2.toLowerCase();
+
+		final int[] costs = new int[s2.length() + 1];
+		for (int i = 0; i <= s1.length(); i++) {
+			int lastValue = i;
+			for (int j = 0; j <= s2.length(); j++)
+				if (i == 0)
+					costs[j] = j;
+				else if (j > 0) {
+					int newValue = costs[j - 1];
+					if (s1.charAt(i - 1) != s2.charAt(j - 1))
+						newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+					costs[j - 1] = lastValue;
+					lastValue = newValue;
+				}
+			if (i > 0)
+				costs[s2.length()] = lastValue;
+		}
+		return costs[s2.length()];
+	}
+
+	// ------------------------------------------------------------------------------------------------------------
 	// Joining strings and lists
 	// ------------------------------------------------------------------------------------------------------------
 

@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -25,16 +24,15 @@ import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.collection.StrictMap;
 import org.mineacademy.bfo.exception.FoException;
-import org.mineacademy.bfo.model.ConfigSerializable;
 import org.mineacademy.bfo.model.Replacer;
 import org.mineacademy.bfo.model.SimpleTime;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import jline.internal.Nullable;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.config.Configuration;
@@ -47,7 +45,7 @@ import net.md_5.bungee.config.YamlConfiguration;
  * @author kangarko
  * @version 5.0 (of the previous ConfHelper)
  */
-public class YamlConfig implements ConfigSerializable {
+public class YamlConfig {
 
 	/**
 	 * BungeeCord configuration class
@@ -203,7 +201,7 @@ public class YamlConfig implements ConfigSerializable {
 
 				Valid.checkBoolean(file != null && file.exists(), "Failed to load " + localePath + " from " + file);
 
-				instance = new ConfigInstance(file, config, defaultsConfig);
+				instance = new ConfigInstance(localePath, file, config, defaultsConfig, getUncommentedSections());
 				addConfig(instance, this);
 			}
 
@@ -277,7 +275,7 @@ public class YamlConfig implements ConfigSerializable {
 				Valid.checkNotNull(file, "Failed to " + (from != null ? "copy settings from " + from + " to " : "read settings from ") + to);
 
 				config = PROVIDER.load(file);
-				instance = new ConfigInstance(file, config, defaultsConfig);
+				instance = new ConfigInstance(from == null ? to : from, file, config, defaultsConfig, getUncommentedSections());
 
 				addConfig(instance, this);
 			}
@@ -285,6 +283,10 @@ public class YamlConfig implements ConfigSerializable {
 			this.instance = instance;
 
 			try {
+
+				instance.writeComments();
+				instance.reload();
+
 				onLoadFinish();
 
 			} catch (final Exception ex) {
@@ -359,6 +361,16 @@ public class YamlConfig implements ConfigSerializable {
 	}
 
 	/**
+	 * Return config sections the user can edit and thus we cannot
+	 * pull comments on them from the default config.
+	 *
+	 * @return
+	 */
+	protected List<String> getUncommentedSections() {
+		return new ArrayList<>();
+	}
+
+	/**
 	 * Return the Bukkit YAML instance of the config file
 	 *
 	 * @return
@@ -414,10 +426,6 @@ public class YamlConfig implements ConfigSerializable {
 
 		onSave();
 
-		// Automatically serialize on save
-		for (final Entry<String, Object> entry : serialize().entrySet())
-			setNoSave(entry.getKey(), entry.getValue());
-
 		instance.save();
 		rewriteVariablesIn(instance.getFile());
 	}
@@ -449,17 +457,6 @@ public class YamlConfig implements ConfigSerializable {
 		} catch (final Exception e) {
 			Common.error(e, "Failed to reload " + getFileName());
 		}
-	}
-
-	/**
-	 * Return the serialized map with all values you want to save to your config By
-	 * default we return an empty map
-	 *
-	 * @see org.mineacademy.fo.model.ConfigSerializable#serialize()
-	 */
-	@Override
-	public SerializedMap serialize() {
-		return new SerializedMap();
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -1539,8 +1536,13 @@ public class YamlConfig implements ConfigSerializable {
  * This represents the access to that file.
  */
 @Getter(value = AccessLevel.PROTECTED)
-@RequiredArgsConstructor
+@AllArgsConstructor
 class ConfigInstance {
+
+	/**
+	 * The path where the default config lays
+	 */
+	private final String defaultsPath;
 
 	/**
 	 * The file this configuration belongs to.
@@ -1550,12 +1552,17 @@ class ConfigInstance {
 	/**
 	 * Our config we are manipulating.
 	 */
-	private final Configuration config;
+	private Configuration config;
 
 	/**
 	 * The default config we reach out to fill values from.
 	 */
 	private final Configuration defaultConfig;
+
+	/**
+	 * The user-customizable config sections
+	 */
+	private final List<String> uncommentedSections;
 
 	/**
 	 * Saves the config instance with the given header, can be null
@@ -1565,9 +1572,21 @@ class ConfigInstance {
 		try {
 			YamlConfig.PROVIDER.save(config, file);
 
+			reload();
+			writeComments();
+
 		} catch (final Throwable throwable) {
 			Common.error(throwable, "Failed to save " + file.getName());
 		}
+	}
+
+	/**
+	 * Attempts to save configuration comments using default file
+	 *
+	 * @throws IOException
+	 */
+	protected void writeComments() throws IOException {
+		ConfigUpdater.update(defaultsPath, file, uncommentedSections);
 	}
 
 	/**
@@ -1576,7 +1595,7 @@ class ConfigInstance {
 	 * @throws Exception
 	 */
 	protected void reload() throws Exception {
-		YamlConfig.PROVIDER.load(file, config);
+		config = YamlConfig.PROVIDER.load(file, config);
 	}
 
 	/**
