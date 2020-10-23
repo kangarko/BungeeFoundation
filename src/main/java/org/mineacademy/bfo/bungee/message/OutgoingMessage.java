@@ -165,7 +165,7 @@ public final class OutgoingMessage extends Message {
 	 *
 	 * @return
 	 */
-	private byte[] compileData() {
+	public byte[] compileData() {
 		final ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 		for (final Object object : queue)
@@ -192,6 +192,9 @@ public final class OutgoingMessage extends Message {
 
 			else if (object instanceof Short)
 				out.writeShort((Short) object);
+
+			else if (object instanceof UUID)
+				out.writeUTF(object.toString());
 
 			else if (object instanceof byte[])
 				out.write((byte[]) object);
