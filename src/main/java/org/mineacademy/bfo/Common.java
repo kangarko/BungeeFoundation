@@ -607,6 +607,22 @@ public final class Common {
 	}
 
 	/**
+	 * Join a strict list array into one big list
+	 *
+	 * @param <T>
+	 * @param lists
+	 * @return
+	 */
+	public static <T extends Enum<T>> StrictList<String> join(Enum<T>[] enumeration) {
+		final StrictList<String> joined = new StrictList<>();
+
+		for (final Enum<T> constant : enumeration)
+			joined.add(constant.toString());
+
+		return joined;
+	}
+
+	/**
 	 * Joins an array together using spaces from the given start index
 	 *
 	 * @param startIndex
