@@ -11,7 +11,6 @@ import java.util.Set;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.TimeUtil;
-import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
@@ -99,7 +98,9 @@ public final class Debugger {
 			return;
 
 		final List<String> parts = pendingMessages.remove(section);
-		Valid.checkNotNull(parts, "No messages to debug at section: " + section);
+
+		if (parts == null)
+			return;
 
 		final String whole = Common.joinToString(parts, "");
 
