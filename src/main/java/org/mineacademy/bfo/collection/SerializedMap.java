@@ -138,6 +138,15 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * Override all keys/values from the given map into this map
+	 * 
+	 * @param map
+	 */
+	public void overrideAll(SerializedMap map) {
+		map.forEach((key, value) -> override(key, value));
+	}
+
+	/**
 	 * Remove a given key
 	 *
 	 * @param key
@@ -542,6 +551,13 @@ public final class SerializedMap extends StrictCollection {
 	 */
 	public boolean isEmpty() {
 		return map.isEmpty();
+	}
+
+	/**
+	 * @see Map#clear()
+	 */
+	public void clear() {
+		map.clear();
 	}
 
 	/**
