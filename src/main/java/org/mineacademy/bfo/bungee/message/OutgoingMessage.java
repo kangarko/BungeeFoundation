@@ -26,10 +26,31 @@ import net.md_5.bungee.api.connection.Connection;
 public final class OutgoingMessage extends Message {
 
 	/**
+	 * Represents a UUID consisting of 0's only
+	 */
+	private static final UUID NULL_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
+	/**
 	 * The pending queue to write the message
 	 */
 	private final List<Object> queue = new ArrayList<>();
 
+	/**
+	 * Construct a new outgoing packet with null UUID and empty server name
+	 * 
+	 * @param action
+	 */
+	public OutgoingMessage(BungeeAction action) {
+		this(NULL_UUID, "", action);
+	}
+
+	/**
+	 * Construct a new outgoing packet 
+	 * 
+	 * @param fromSenderUid
+	 * @param fromServerName
+	 * @param action
+	 */
 	public OutgoingMessage(UUID fromSenderUid, String fromServerName, BungeeAction action) {
 		setSenderUid(fromSenderUid.toString());
 		setServerName(fromServerName);
