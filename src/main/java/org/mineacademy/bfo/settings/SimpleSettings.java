@@ -130,17 +130,6 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	public static String LOCALE_PREFIX = "en";
 
 	/**
-	 * The server name used in {server_name} variable or BungeeCord, if your plugin supports either of those.
-	 * <p>
-	 * Typically for ChatControl:
-	 * <p>
-	 * Server_Name: "My ChatControl Server"
-	 * <p>
-	 * // NOT MANDATORY //
-	 */
-	public static String SERVER_NAME = "Server";
-
-	/**
 	 * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
 	 */
 	private static void init() {
@@ -164,9 +153,6 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 
 		if (isSetDefault("Regex_Timeout_Milis"))
 			REGEX_TIMEOUT = getInteger("Regex_Timeout_Milis");
-
-		if (isSetDefault("Server_Name"))
-			SERVER_NAME = Common.colorize(getString("Server_Name"));
 
 		// -------------------------------------------------------------------
 		// Load maybe-mandatory values
