@@ -26,11 +26,6 @@ import net.md_5.bungee.api.connection.Connection;
 public final class OutgoingMessage extends Message {
 
 	/**
-	 * Represents a UUID consisting of 0's only
-	 */
-	private static final UUID NULL_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-
-	/**
 	 * The pending queue to write the message
 	 */
 	private final List<Object> queue = new ArrayList<>();
@@ -41,7 +36,7 @@ public final class OutgoingMessage extends Message {
 	 * @param action
 	 */
 	public OutgoingMessage(BungeeAction action) {
-		this(NULL_UUID, "", action);
+		this(UUID.fromString("00000000-0000-0000-0000-000000000000"), "", action);
 	}
 
 	/**
