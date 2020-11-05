@@ -127,7 +127,7 @@ class ConfigUpdater {
 
 			YamlConfig.PROVIDER.save(backupConfig, backupFile);
 
-			Common.log("&6Warning: The following entries in " + outerPath.getName() + " are unused and were moved into " + backupFile.getName() + ": " + removedKeys.keySet());
+			Common.log("&cWarning: The following entries in " + outerPath.getName() + " are unused and were moved into " + backupFile.getName() + ": " + removedKeys.keySet());
 		}
 
 		final Yaml yaml = new Yaml();
@@ -321,10 +321,10 @@ class ConfigUpdater {
 				/*for (final String ignoredSection : ignoredSections) {
 					if (keyBuilder.toString().equals(ignoredSection)) {
 						final Object value = oldConfig.get(keyBuilder.toString());
-				
+
 						if (value instanceof ConfigurationSection)
 							appendSection(builder, (ConfigurationSection) value, new StringBuilder(getPrefixSpaces(lastLineIndentCount)), yaml);
-				
+
 						continue outer;
 					}
 				}*/
