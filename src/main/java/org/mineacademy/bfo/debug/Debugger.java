@@ -55,7 +55,7 @@ public final class Debugger {
 	public static void debug(String section, String... messages) {
 		if (isDebugged(section))
 			for (final String message : messages)
-				ProxyServer.getInstance().getLogger().info(message);
+				ProxyServer.getInstance().getLogger().info("[" + SimplePlugin.getNamed() + "] " + message);
 	}
 
 	/**
