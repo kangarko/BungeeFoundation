@@ -15,6 +15,7 @@ import com.google.common.io.ByteStreams;
 import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.Connection;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 /**
  *
@@ -158,6 +159,10 @@ public final class OutgoingMessage extends Message {
 	 * @param connection
 	 */
 	public void send(Connection connection) {
+
+		if (connection instanceof ProxiedPlayer)
+			connection = ((ProxiedPlayer) connection).getServer();
+
 		Valid.checkBoolean(connection instanceof ServerConnection, "Connection must be ServerConnection");
 
 		((ServerConnection) connection).sendData(getChannel(), compileData());
