@@ -136,6 +136,15 @@ public final class OutgoingMessage extends Message {
 	}
 
 	/**
+	 * Write an uuid into the message
+	 *
+	 * @param uuid
+	 */
+	public void writeUUID(UUID uuid) {
+		write(uuid, UUID.class);
+	}
+
+	/**
 	 * Write an object of the given type into the message
 	 *
 	 * We move the head and ensure writing safety in accordance
