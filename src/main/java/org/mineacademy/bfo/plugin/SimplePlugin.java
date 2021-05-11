@@ -22,6 +22,7 @@ import org.mineacademy.bfo.bungee.SimpleBungee;
 import org.mineacademy.bfo.command.SimpleCommand;
 import org.mineacademy.bfo.conversation.ConversationManager;
 import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.model.JavaScriptExecutor;
 import org.mineacademy.bfo.settings.SimpleLocalization;
 import org.mineacademy.bfo.settings.SimpleSettings;
 import org.mineacademy.bfo.settings.YamlStaticConfig;
@@ -184,6 +185,9 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 		// Check if Foundation is correctly moved
 		checkShading();
+
+		// Boot up JavaScript
+		JavaScriptExecutor.run("");
 
 		if (!isEnabled)
 			return;

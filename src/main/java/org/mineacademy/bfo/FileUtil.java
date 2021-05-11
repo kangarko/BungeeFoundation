@@ -416,7 +416,7 @@ public final class FileUtil {
 	}
 
 	public static File extract(boolean override, String from, String to, @Nullable Function<String, String> replacer) {
-		final InputStream is = getInternalResource("/" + from);
+		final InputStream is = getInternalResource((from.contains("/") ? "" : "/") + from);
 		Valid.checkNotNull(is, "Inbuilt file not found: " + from);
 
 		return extract(override, is, to, replacer);
@@ -443,7 +443,6 @@ public final class FileUtil {
 		file = createFile(to);
 
 		try {
-
 			final List<String> lines = new ArrayList<>();
 
 			// Load lines from internal file and replace them

@@ -4,19 +4,29 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.mineacademy.bfo.collection.StrictList;
+import org.mineacademy.bfo.collection.StrictMap;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
+import org.mineacademy.bfo.exception.RegexTimeoutException;
 import org.mineacademy.bfo.model.Variables;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.settings.SimpleSettings;
 
 import com.google.gson.Gson;
 
+import jline.internal.Nullable;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +35,7 @@ import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Cancellable;
 import net.md_5.bungee.api.plugin.Event;
 import net.md_5.bungee.api.plugin.Listener;
@@ -71,11 +82,6 @@ public final class Common {
 
 				sender.sendMessage(toComponent(message));
 			}
-	}
-
-	public static boolean callEvent(Event event) {
-		ProxyServer.getInstance().getPluginManager().callEvent(event);
-		return !(event instanceof Cancellable) || !((Cancellable) event).isCancelled();
 	}
 
 	/**
@@ -172,6 +178,65 @@ public final class Common {
 		ProxyServer.getInstance().getPluginManager().registerListener(SimplePlugin.getInstance(), listener);
 	}
 
+	/**
+	 * Dispatches the event and returns if it was not canceled 
+	 * 
+	 * @param event
+	 * @return
+	 */
+	public static boolean callEvent(Event event) {
+		ProxyServer.getInstance().getPluginManager().callEvent(event);
+
+		return !(event instanceof Cancellable) || !((Cancellable) event).isCancelled();
+	}
+
+	// ------------------------------------------------------------------------------------------------------------
+	// Running commands
+	// ------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Runs the given command (without /) as the console, replacing {player} with sender
+	 * 
+	 * You can prefix the command with @(announce|warn|error|info|question|success) to send a formatted
+	 * message to playerReplacement directly.
+	 *
+	 * @param playerReplacement
+	 * @param command
+	 */
+	public static void dispatchCommand(@Nullable final CommandSender playerReplacement, @NonNull String command) {
+		if (command.isEmpty() || command.equalsIgnoreCase("none"))
+			return;
+
+		command = command.startsWith("/") ? command.substring(1) : command;
+		command = command.replace("{player}", playerReplacement == null ? "" : playerReplacement.getName());
+
+		// Workaround for JSON in tellraw getting HEX colors replaced
+		if (!command.startsWith("tellraw"))
+			command = colorize(command);
+
+		ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), command);
+	}
+
+	/**
+	 * Runs the given command (without /) as if the sender would type it, replacing {player} with his name
+	 *
+	 * @param playerSender
+	 * @param command
+	 */
+	public static void dispatchCommandAsPlayer(@NonNull final ProxiedPlayer playerSender, @NonNull String command) {
+		if (command.isEmpty() || command.equalsIgnoreCase("none"))
+			return;
+
+		command = command.startsWith("/") ? command.substring(1) : command;
+		command = command.replace("{player}", playerSender == null ? "" : playerSender.getName());
+
+		// Workaround for JSON in tellraw getting HEX colors replaced
+		if (!command.startsWith("tellraw"))
+			command = colorize(command);
+
+		ProxyServer.getInstance().getPluginManager().dispatchCommand(playerSender, command);
+	}
+
 	// ------------------------------------------------------------------------------------------------------------
 	// Colors
 	// ------------------------------------------------------------------------------------------------------------
@@ -225,6 +290,16 @@ public final class Common {
 	 */
 	public static String stripColors(String message) {
 		return message == null ? "" : message.replaceAll("(" + ChatColor.COLOR_CHAR + "|&)([0-9a-fk-or])", "");
+	}
+
+	/**
+	 * Replaces the {@link ChatColor#COLOR_CHAR} colors with & letters
+	 *
+	 * @param message
+	 * @return
+	 */
+	public static String revertColorizing(final String message) {
+		return message.replaceAll("(?i)" + ChatColor.COLOR_CHAR + "([0-9a-fk-or])", "&$1");
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -415,7 +490,7 @@ public final class Common {
 	 * @return the value, or default it the value is null
 	 */
 	public static <T> T getOrDefault(T value, T def) {
-		Valid.checkNotNull(def, "The default value must not be null!");
+		//Valid.checkNotNull(def, "The default value must not be null!");
 
 		return value != null ? value : def;
 	}
@@ -490,6 +565,33 @@ public final class Common {
 	}
 
 	/**
+	 * Create a new hashset
+	 *
+	 * @param <T>
+	 * @param keys
+	 * @return
+	 */
+	public static <T> Set<T> newSet(final T... keys) {
+		return new HashSet<>(Arrays.asList(keys));
+	}
+
+	/**
+	 * Create a new array list that is mutable
+	 * 
+	 * @param <T>
+	 * @param keys
+	 * @return
+	 */
+	public static <T> List<T> newList(final T... keys) {
+		final List<T> list = new ArrayList<>();
+
+		for (final T key : keys)
+			list.add(key);
+
+		return list;
+	}
+
+	/**
 	 * Lowercases all items in the array
 	 *
 	 * @param list
@@ -516,6 +618,151 @@ public final class Common {
 		map.put(firstKey, firstValue);
 
 		return map;
+	}
+
+	// ------------------------------------------------------------------------------------------------------------
+	// Regular expressions
+	// ------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Returns true if the given regex matches the given message
+	 *
+	 * @param regex
+	 * @param message
+	 * @return
+	 */
+	public static boolean regExMatch(final String regex, final String message) {
+		return regExMatch(compilePattern(regex), message);
+	}
+
+	/**
+	 * Returns true if the given pattern matches the given message
+	 *
+	 * @param regex
+	 * @param message
+	 * @return
+	 */
+	public static boolean regExMatch(final Pattern regex, final String message) {
+		return regExMatch(compileMatcher(regex, message));
+	}
+
+	/**
+	 * Returns true if the given matcher matches. We also evaluate
+	 * how long the evaluation took and stop it in case it takes too long,
+	 * see {@link SimplePlugin#getRegexTimeout()}
+	 *
+	 * @param matcher
+	 * @return
+	 */
+	public static boolean regExMatch(final Matcher matcher) {
+		Valid.checkNotNull(matcher, "Cannot call regExMatch on null matcher");
+
+		try {
+			return matcher.find();
+
+		} catch (final RegexTimeoutException ex) {
+			handleRegexTimeoutException(ex, matcher.pattern());
+
+			return false;
+		}
+	}
+
+	/**
+	 * Compiles a matches for the given pattern and message. Colors are stripped.
+	 * <p>
+	 * We also evaluate how long the evaluation took and stop it in case it takes too long,
+	 * see {@link SimplePlugin#getRegexTimeout()}
+	 *
+	 * @param pattern
+	 * @param message
+	 * @return
+	 */
+	public static Matcher compileMatcher(@NonNull final Pattern pattern, final String message) {
+
+		try {
+			String strippedMessage = stripColors(message);
+			strippedMessage = ChatUtil.replaceDiacritic(strippedMessage);
+
+			return pattern.matcher(strippedMessage);
+
+		} catch (final RegexTimeoutException ex) {
+			handleRegexTimeoutException(ex, pattern);
+
+			return null;
+		}
+	}
+
+	/**
+	 * Compiles a matcher for the given regex and message
+	 *
+	 * @param regex
+	 * @param message
+	 * @return
+	 */
+	public static Matcher compileMatcher(final String regex, final String message) {
+		return compileMatcher(compilePattern(regex), message);
+	}
+
+	/**
+	 * Compiles a pattern from the given regex, stripping colors and making
+	 * it case insensitive
+	 *
+	 * @param regex
+	 * @return
+	 */
+	public static Pattern compilePattern(String regex) {
+		Pattern pattern = null;
+
+		regex = stripColors(regex);
+		regex = ChatUtil.replaceDiacritic(regex);
+
+		try {
+
+			pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+		} catch (final PatternSyntaxException ex) {
+			throwError(ex,
+					"Your regular expression is malformed!",
+					"Expression: '" + regex + "'",
+					"",
+					"IF YOU CREATED IT YOURSELF, we unfortunately",
+					"can't provide support for custom expressions.",
+					"Use online services like regex101.com to put your",
+					"expression there (without '') and discover where",
+					"the syntax error lays and how to fix it.");
+
+			return null;
+		}
+
+		return pattern;
+	}
+
+	/**
+	 * A special call handling regex timeout exception, do not use
+	 *
+	 * @param ex
+	 * @param pattern
+	 */
+	public static void handleRegexTimeoutException(RegexTimeoutException ex, Pattern pattern) {
+
+		Common.error(ex,
+				"A regular expression took too long to process, and was",
+				"stopped to prevent freezing your server.",
+				" ",
+				"Limit " + SimpleSettings.REGEX_TIMEOUT + "ms ",
+				"Expression: '" + (pattern == null ? "unknown" : pattern.pattern()) + "'",
+				"Evaluated message: '" + ex.getCheckedMessage() + "'",
+				" ",
+				"IF YOU CREATED THAT RULE YOURSELF, we unfortunately",
+				"can't provide support for custom expressions.",
+				" ",
+				"Sometimes, all you need doing is increasing timeout",
+				"limit in your settings.yml",
+				" ",
+				"Use services like regex101.com to test and fix it.",
+				"Put the expression without '' and the message there.",
+				"Ensure to turn flags 'insensitive' and 'unicode' on",
+				"on there when testing: https://i.imgur.com/PRR5Rfn.png");
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -806,6 +1053,196 @@ public final class Common {
 		return json;
 	}
 
+	/**
+	 * Converts a list having one type object into another
+	 *
+	 * @param list      the old list
+	 * @param converter the converter;
+	 * @return the new list
+	 */
+	public static <OLD, NEW> List<NEW> convert(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
+		final List<NEW> copy = new ArrayList<>();
+
+		for (final OLD old : list) {
+			final NEW result = converter.convert(old);
+			if (result != null)
+				copy.add(converter.convert(old));
+		}
+
+		return copy;
+	}
+
+	/**
+	 * Converts a set having one type object into another
+	 *
+	 * @param list      the old list
+	 * @param converter the converter;
+	 * @return the new list
+	 */
+	public static <OLD, NEW> Set<NEW> convertSet(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
+		final Set<NEW> copy = new HashSet<>();
+
+		for (final OLD old : list) {
+			final NEW result = converter.convert(old);
+			if (result != null)
+				copy.add(converter.convert(old));
+		}
+
+		return copy;
+	}
+
+	/**
+	 * Converts a list having one type object into another
+	 *
+	 * @param list      the old list
+	 * @param converter the converter
+	 * @return the new list
+	 */
+	public static <OLD, NEW> StrictList<NEW> convertStrict(final Iterable<OLD> list, final TypeConverter<OLD, NEW> converter) {
+		final StrictList<NEW> copy = new StrictList<>();
+
+		for (final OLD old : list)
+			copy.add(converter.convert(old));
+
+		return copy;
+	}
+
+	/**
+	 * Attempts to convert the given map into another map
+	 *
+	 * @param <OLD_KEY>
+	 * @param <OLD_VALUE>
+	 * @param <NEW_KEY>
+	 * @param <NEW_VALUE>
+	 * @param oldMap
+	 * @param converter
+	 * @return
+	 */
+	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> Map<NEW_KEY, NEW_VALUE> convert(final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
+		final Map<NEW_KEY, NEW_VALUE> newMap = new HashMap<>();
+		oldMap.entrySet().forEach(e -> newMap.put(converter.convertKey(e.getKey()), converter.convertValue(e.getValue())));
+
+		return newMap;
+	}
+
+	/**
+	 * Attempts to convert the given map into another map
+	 *
+	 * @param <OLD_KEY>
+	 * @param <OLD_VALUE>
+	 * @param <NEW_KEY>
+	 * @param <NEW_VALUE>
+	 * @param oldMap
+	 * @param converter
+	 * @return
+	 */
+	public static <OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> StrictMap<NEW_KEY, NEW_VALUE> convertStrict(final Map<OLD_KEY, OLD_VALUE> oldMap, final MapToMapConverter<OLD_KEY, OLD_VALUE, NEW_KEY, NEW_VALUE> converter) {
+		final StrictMap<NEW_KEY, NEW_VALUE> newMap = new StrictMap<>();
+		oldMap.entrySet().forEach(e -> newMap.put(converter.convertKey(e.getKey()), converter.convertValue(e.getValue())));
+
+		return newMap;
+	}
+
+	/**
+	 * Attempts to convert the gfiven map into a list
+	 *
+	 * @param <LIST_KEY>
+	 * @param <OLD_KEY>
+	 * @param <OLD_VALUE>
+	 * @param map
+	 * @param converter
+	 * @return
+	 */
+	public static <LIST_KEY, OLD_KEY, OLD_VALUE> StrictList<LIST_KEY> convertToList(final Map<OLD_KEY, OLD_VALUE> map, final MapToListConverter<LIST_KEY, OLD_KEY, OLD_VALUE> converter) {
+		final StrictList<LIST_KEY> list = new StrictList<>();
+
+		for (final Entry<OLD_KEY, OLD_VALUE> e : map.entrySet())
+			list.add(converter.convert(e.getKey(), e.getValue()));
+
+		return list;
+	}
+
+	/**
+	 * Attempts to convert an array into a different type
+	 *
+	 * @param <OLD_TYPE>
+	 * @param <NEW_TYPE>
+	 * @param oldArray
+	 * @param converter
+	 * @return
+	 */
+	public static <OLD_TYPE, NEW_TYPE> List<NEW_TYPE> convert(final OLD_TYPE[] oldArray, final TypeConverter<OLD_TYPE, NEW_TYPE> converter) {
+		final List<NEW_TYPE> newList = new ArrayList<>();
+
+		for (final OLD_TYPE old : oldArray)
+			newList.add(converter.convert(old));
+
+		return newList;
+	}
+
+	/**
+	 * A simple interface to convert between types
+	 *
+	 * @param <Old> the initial type to convert from
+	 * @param <New> the final type to convert to
+	 */
+	public interface TypeConverter<Old, New> {
+
+		/**
+		 * Convert a type given from A to B
+		 *
+		 * @param value the old value type
+		 * @return the new value type
+		 */
+		New convert(Old value);
+	}
+
+	/**
+	 * Convenience class for converting map to a list
+	 *
+	 * @param <O>
+	 * @param <K>
+	 * @param <V>
+	 */
+	public interface MapToListConverter<O, K, V> {
+
+		/**
+		 * Converts the given map key-value pair into a new type stored in a list
+		 *
+		 * @param key
+		 * @param value
+		 * @return
+		 */
+		O convert(K key, V value);
+	}
+
+	/**
+	 * Convenience class for converting between maps
+	 *
+	 * @param <A>
+	 * @param <B>
+	 * @param <C>
+	 * @param <D>
+	 */
+	public interface MapToMapConverter<A, B, C, D> {
+
+		/**
+		 * Converts the old key type to a new type
+		 *
+		 * @param key
+		 * @return
+		 */
+		C convertKey(A key);
+
+		/**
+		 * Converts the old value into a new value type
+		 *
+		 * @param value
+		 * @return
+		 */
+		D convertValue(B value);
+	}
+
 	// ------------------------------------------------------------------------------------------------------------
 	// Scheduling
 	// ------------------------------------------------------------------------------------------------------------
@@ -989,5 +1426,26 @@ public final class Common {
 		Valid.checkNotNull(map, "Unexpected " + mapOrSection.getClass().getSimpleName() + " '" + mapOrSection + "'. Must be Map or MemorySection! (Do not just send config name here, but the actual section with get('section'))");
 
 		return map;
+	}
+
+	/**
+	 * Return the corresponding major Java version such as 8 for Java 1.8, or 11 for Java 11.
+	 * 
+	 * @return
+	 */
+	public static int getJavaVersion() {
+		String version = System.getProperty("java.version");
+
+		if (version.startsWith("1."))
+			version = version.substring(2, 3);
+
+		else {
+			final int dot = version.indexOf(".");
+
+			if (dot != -1)
+				version = version.substring(0, dot);
+		}
+
+		return Integer.parseInt(version);
 	}
 }

@@ -3,6 +3,7 @@ package org.mineacademy.bfo.collection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,12 +14,14 @@ import java.util.function.Function;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.SerializeUtil;
 import org.mineacademy.bfo.Valid;
+import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.model.Tuple;
-import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import com.google.gson.Gson;
 
 import jline.internal.Nullable;
+import lombok.NonNull;
+import lombok.Setter;
 import net.md_5.bungee.config.Configuration;
 
 /**
@@ -37,6 +40,12 @@ public final class SerializedMap extends StrictCollection {
 	 * The internal map with values
 	 */
 	private final StrictMap<String, Object> map = new StrictMap<>();
+
+	/**
+	 * Should we remove entries on get for this map instance,
+	 */
+	@Setter
+	private boolean removeOnGet = false;
 
 	/**
 	 * Creates a new serialized map with the given first key-value pair
@@ -83,7 +92,7 @@ public final class SerializedMap extends StrictCollection {
 	 *
 	 * @param associativeArray
 	 */
-	public void putArray(final Object... associativeArray) {
+	public SerializedMap putArray(final Object... associativeArray) {
 		boolean string = true;
 		String lastKey = null;
 
@@ -98,6 +107,30 @@ public final class SerializedMap extends StrictCollection {
 
 			string = !string;
 		}
+
+		return this;
+	}
+
+	/**
+	 * Add another map to this map
+	 *
+	 * @param anotherMap
+	 */
+	public SerializedMap put(@NonNull SerializedMap anotherMap) {
+		map.putAll(anotherMap.asMap());
+
+		return this;
+	}
+
+	/**
+	 * Puts the key-value pair into the map if the value is true
+	 *
+	 * @param key
+	 * @param value
+	 */
+	public void putIfTrue(final String key, @Nullable final boolean value) {
+		if (value)
+			put(key, value);
 	}
 
 	/**
@@ -109,6 +142,78 @@ public final class SerializedMap extends StrictCollection {
 	public void putIfExist(final String key, @Nullable final Object value) {
 		if (value != null)
 			put(key, value);
+	}
+
+	/**
+	 * Puts the map into this map if not null and not empty
+	 *
+	 * This will put a NULL value into the map if the value is null
+	 *
+	 * @param key
+	 * @param value
+	 */
+	public void putIf(final String key, @Nullable final Map<?, ?> value) {
+		if (value != null && !value.isEmpty())
+			put(key, value);
+
+		// This value is undesirable to save if null, so if YamlConfig is used
+		// it will remove it from the config
+		else
+			map.getSource().put(key, null);
+	}
+
+	/**
+	 * Puts the collection into map if not null and not empty
+	 *
+	 * This will put a NULL value into the map if the value is null
+	 *
+	 * @param key
+	 * @param value
+	 */
+	public void putIf(final String key, @Nullable final Collection<?> value) {
+		if (value != null && !value.isEmpty())
+			put(key, value);
+
+		// This value is undesirable to save if null, so if YamlConfig is used
+		// it will remove it from the config
+		else
+			map.getSource().put(key, null);
+	}
+
+	/**
+	 * Puts the boolean into map if true
+	 *
+	 * This will put a NULL value into the map if the value is null
+	 *
+	 * @param key
+	 * @param value
+	 */
+	public void putIf(final String key, final boolean value) {
+		if (value)
+			put(key, value);
+
+		// This value is undesirable to save if null, so if YamlConfig is used
+		// it will remove it from the config
+		else
+			map.getSource().put(key, null);
+	}
+
+	/**
+	 * Puts the value into map if not null
+	 *
+	 * This will put a NULL value into the map if the value is null
+	 *
+	 * @param key
+	 * @param value
+	 */
+	public void putIf(final String key, @Nullable final Object value) {
+		if (value != null)
+			put(key, value);
+
+		// This value is undesirable to save if null, so if YamlConfig is used
+		// it will remove it from the config
+		else
+			map.getSource().put(key, null);
 	}
 
 	/**
@@ -138,16 +243,26 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
-	 * Override all keys/values from the given map into this map
+	 * Overrides all map values
 	 * 
 	 * @param map
 	 */
 	public void overrideAll(SerializedMap map) {
-		map.forEach((key, value) -> override(key, value));
+		map.forEach(this::override);
 	}
 
 	/**
-	 * Remove a given key
+	 * Remove the given key, returning null if not set
+	 *
+	 * @param key
+	 * @return
+	 */
+	public Object removeWeak(final String key) {
+		return map.removeWeak(key);
+	}
+
+	/**
+	 * Remove the given key, throwing error if not set
 	 *
 	 * @param key
 	 * @return
@@ -312,7 +427,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @param def
 	 * @return
 	 */
-	public <K, V> Tuple<K, V> getTuple(String key, final Tuple<K, V> def) {
+	public <K, V> Tuple<K, V> getTuple(final String key, final Tuple<K, V> def) {
 		return get(key, Tuple.class, def);
 	}
 
@@ -409,11 +524,18 @@ public final class SerializedMap extends StrictCollection {
 		if (!map.contains(key))
 			return list;
 
-		final Object rawList = map.get(key);
-		Valid.checkBoolean(rawList instanceof List, "Key '" + key + "' expected to have a list, got " + rawList.getClass().getSimpleName() + " instead!");
+		final Object rawList = this.removeOnGet ? map.removeWeak(key) : map.get(key);
 
-		for (final Object object : (List<Object>) rawList)
-			list.add(object == null ? null : SerializeUtil.deserialize(type, object));
+		// Forgive if string used instead of string list
+		if (type == String.class && rawList instanceof String) {
+			list.add((T) rawList);
+
+		} else {
+			Valid.checkBoolean(rawList instanceof List, "Key '" + key + "' expected to have a list, got " + rawList.getClass().getSimpleName() + " instead! Try putting '' quotes around the message!");
+
+			for (final Object object : (List<Object>) rawList)
+				list.add(object == null ? null : SerializeUtil.deserialize(type, object));
+		}
 
 		return list;
 	}
@@ -428,6 +550,91 @@ public final class SerializedMap extends StrictCollection {
 		final Object raw = get(key, Object.class);
 
 		return raw != null ? SerializedMap.of(Common.getMapFromSection(raw)) : new SerializedMap();
+	}
+
+	/**
+	 * Load a map with preserved order from the given path. Each key in the map
+	 * must match the given key/value type and will be deserialized
+	 * <p>
+	 * We will add defaults if applicable
+	 *
+	 * @param <Key>
+	 * @param <Value>
+	 * @param path
+	 * @param keyType
+	 * @param valueType
+	 * @param valueParameter
+	 * @return
+	 */
+	public <Key, Value> LinkedHashMap<Key, Value> getMap(@NonNull String path, final Class<Key> keyType, final Class<Value> valueType) {
+		// The map we are creating, preserve order
+		final LinkedHashMap<Key, Value> map = new LinkedHashMap<>();
+		final Object raw = this.map.get(path);
+
+		if (raw != null) {
+			Valid.checkBoolean(raw instanceof Map || raw instanceof Configuration, "Expected Map<" + keyType.getSimpleName() + ", " + valueType.getSimpleName() + "> at " + path + ", got " + raw.getClass());
+
+			for (final Entry<?, ?> entry : Common.getMapFromSection(raw).entrySet()) {
+				final Key key = SerializeUtil.deserialize(keyType, entry.getKey());
+				final Value value = SerializeUtil.deserialize(valueType, entry.getValue());
+
+				// Ensure the pair values are valid for the given paramenters
+				checkAssignable(path, key, keyType);
+				checkAssignable(path, value, valueType);
+
+				map.put(key, value);
+			}
+		}
+
+		return map;
+	}
+
+	/**
+	 * Load a map having a Set as value with the given parameters
+	 *
+	 * @param <Key>
+	 * @param <Value>
+	 * @param path
+	 * @param keyType
+	 * @param setType
+	 * @return
+	 */
+	public <Key, Value> LinkedHashMap<Key, Set<Value>> getMapSet(@NonNull String path, final Class<Key> keyType, final Class<Value> setType) {
+		// The map we are creating, preserve order
+		final LinkedHashMap<Key, Set<Value>> map = new LinkedHashMap<>();
+		Object raw = this.map.get(path);
+
+		if (raw != null) {
+
+			if (raw instanceof Configuration)
+				raw = Common.getMapFromSection(raw);
+
+			Valid.checkBoolean(raw instanceof Map, "Expected Map<" + keyType.getSimpleName() + ", Set<" + setType.getSimpleName() + ">> at " + path + ", got " + raw.getClass());
+
+			for (final Entry<?, ?> entry : ((Map<?, ?>) raw).entrySet()) {
+				final Key key = SerializeUtil.deserialize(keyType, entry.getKey());
+				final List<Value> value = SerializeUtil.deserialize(List.class, entry.getValue());
+
+				// Ensure the pair values are valid for the given paramenters
+				checkAssignable(path, key, keyType);
+
+				if (!value.isEmpty())
+					for (final Value item : value)
+						checkAssignable(path, item, setType);
+
+				map.put(key, new HashSet<>(value));
+			}
+		}
+
+		return map;
+	}
+
+	/*
+	 * Checks if the clazz parameter can be assigned to the given value
+	 */
+	private void checkAssignable(final String path, final Object value, final Class<?> clazz) {
+		if (!clazz.isAssignableFrom(value.getClass()) && !clazz.getSimpleName().equals(value.getClass().getSimpleName()))
+			throw new FoException("Malformed map! Key '" + path + "' in the map must be " + clazz.getSimpleName() + " but got " + value.getClass().getSimpleName() + ": '" + value + "'");
 	}
 
 	/**
@@ -472,8 +679,8 @@ public final class SerializedMap extends StrictCollection {
 	 * @param def
 	 * @return
 	 */
-	private <T> T get(final String key, final Class<T> type, final T def) {
-		Object raw = map.get(key);
+	public <T> T get(final String key, final Class<T> type, final T def) {
+		Object raw = removeOnGet ? map.removeWeak(key) : map.get(key);
 
 		// Try to get the value by key with ignoring case
 		if (raw == null)
@@ -509,6 +716,15 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * Return the first entry or null if map is empty
+	 *
+	 * @return
+	 */
+	public Map.Entry<String, Object> firstEntry() {
+		return isEmpty() ? null : map.getSource().entrySet().iterator().next();
+	}
+
+	/**
 	 * @see Map#keySet()
 	 */
 	public Set<String> keySet() {
@@ -530,6 +746,13 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * @see Map#size()
+	 */
+	public int size() {
+		return map.size();
+	}
+
+	/**
 	 * Get the Java map representation
 	 *
 	 * @return
@@ -547,17 +770,28 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * Converts this map into a JSON string
+	 *
+	 * @return
+	 */
+	public String toJson() {
+		final Object map = serialize();
+
+		try {
+			return gson.toJson(map);
+
+		} catch (final Throwable t) {
+			Common.error(t, "Failed to serialize to json, data: " + map);
+
+			return "{}";
+		}
+	}
+
+	/**
 	 * @see Map#isEmpty()
 	 */
 	public boolean isEmpty() {
 		return map.isEmpty();
-	}
-
-	/**
-	 * @see Map#clear()
-	 */
-	public void clear() {
-		map.clear();
 	}
 
 	/**
@@ -588,22 +822,36 @@ public final class SerializedMap extends StrictCollection {
 
 				override(path, newCollection);
 
-				Common.log("[" + SimplePlugin.getNamed() + "] Converted '" + path + "' from " + from.getSimpleName() + "[] to " + to.getSimpleName() + "[]");
-
 			} else if (from.isAssignableFrom(old.getClass())) {
 				override(path, converter.apply((O) old));
-
-				Common.log("[" + SimplePlugin.getNamed() + "] Converted '" + path + "' from '" + from.getSimpleName() + "' to '" + to.getSimpleName() + "'");
 			}
 	}
 
 	/**
-	 * Converts this map into a JSON string
+	 * Convert the key pairs into formatted string such as {
+	 * 	"key" = "value"
+	 *  "another" = "value2"
+	 *  ...
+	 * }
 	 *
 	 * @return
 	 */
-	public String toJson() {
-		return gson.toJson(serialize());
+	public String toStringFormatted() {
+		final Map<?, ?> map = (Map<?, ?>) serialize();
+		final List<String> lines = new ArrayList<>();
+
+		lines.add("{");
+
+		for (final Map.Entry<?, ?> entry : map.entrySet()) {
+			final Object value = entry.getValue();
+
+			if (value != null && !value.toString().equals("[]") && !value.toString().equals("{}") && !value.toString().isEmpty() && !value.toString().equals("0.0") && !value.toString().equals("false"))
+				lines.add("\t'" + entry.getKey() + "' = '" + entry.getValue() + "'");
+		}
+
+		lines.add("}");
+
+		return String.join("\n", lines);
 	}
 
 	@Override
@@ -686,7 +934,9 @@ public final class SerializedMap extends StrictCollection {
 	public static SerializedMap of(final Map<String, Object> map) {
 		final SerializedMap serialized = new SerializedMap();
 
-		serialized.map.setAll(map);
+		serialized.map.clear();
+		serialized.map.putAll(map);
+
 		return serialized;
 	}
 
@@ -701,9 +951,15 @@ public final class SerializedMap extends StrictCollection {
 	 */
 	public static SerializedMap fromJson(final String json) {
 		final SerializedMap serializedMap = new SerializedMap();
-		final Map<String, Object> map = gson.fromJson(json, Map.class);
 
-		serializedMap.map.putAll(map);
+		try {
+			final Map<String, Object> map = gson.fromJson(json, Map.class);
+
+			serializedMap.map.putAll(map);
+
+		} catch (final Throwable t) {
+			Common.throwError(t, "Failed to parse JSON from " + json);
+		}
 
 		return serializedMap;
 	}
