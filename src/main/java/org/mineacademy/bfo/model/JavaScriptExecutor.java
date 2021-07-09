@@ -139,7 +139,7 @@ public final class JavaScriptExecutor {
 		}
 
 		if (engine == null) {
-			Common.log("Warning: Not running script for " + sender.getName() + " because JavaScript library is missing (install Oracle Java 8 or 11): " + javascript);
+			Common.log("Warning: Not running script" + (sender != null ? " for " + sender.getName() : "") + " because JavaScript library is missing (install Oracle Java 8, 11 or use mineacademy.org/nashorn): " + javascript);
 
 			return null;
 		}
@@ -172,10 +172,10 @@ public final class JavaScriptExecutor {
 			if (message.contains("ReferenceError:") && message.contains("is not defined"))
 				error = "Found invalid or unparsed variable in";
 
-			// Special support for throwing exceptions in the JS code so that users 
+			// Special support for throwing exceptions in the JS code so that users
 			// can send messages to player directly if upstream supports that
 			if (ex.getCause() != null && ex.getCause().toString().contains("event handled: ")) {
-				String[] errorMessage = ex.getCause().toString().split("event handled\\: ");
+				final String[] errorMessage = ex.getCause().toString().split("event handled\\: ");
 
 				throw new EventHandledException(true, errorMessage.length == 2 ? errorMessage[1] : null);
 			}
