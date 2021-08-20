@@ -85,6 +85,16 @@ public final class Common {
 	}
 
 	/**
+	 * A dummy helper method adding "&cWarning: &f" to the given message
+	 * and logging it.
+	 *
+	 * @param message
+	 */
+	public static void warning(String message) {
+		log("&cWarning: &f" + message);
+	}
+
+	/**
 	 * Logs a bunch of messages to the console, & colors are supported
 	 * <p>
 	 * Variables from {@link Variables} are replaced.
@@ -179,8 +189,8 @@ public final class Common {
 	}
 
 	/**
-	 * Dispatches the event and returns if it was not canceled 
-	 * 
+	 * Dispatches the event and returns if it was not canceled
+	 *
 	 * @param event
 	 * @return
 	 */
@@ -196,7 +206,7 @@ public final class Common {
 
 	/**
 	 * Runs the given command (without /) as the console, replacing {player} with sender
-	 * 
+	 *
 	 * You can prefix the command with @(announce|warn|error|info|question|success) to send a formatted
 	 * message to playerReplacement directly.
 	 *
@@ -592,7 +602,7 @@ public final class Common {
 
 	/**
 	 * Create a new array list that is mutable
-	 * 
+	 *
 	 * @param <T>
 	 * @param keys
 	 * @return
@@ -1445,7 +1455,7 @@ public final class Common {
 
 	/**
 	 * Return the corresponding major Java version such as 8 for Java 1.8, or 11 for Java 11.
-	 * 
+	 *
 	 * @return
 	 */
 	public static int getJavaVersion() {
