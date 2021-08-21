@@ -1,5 +1,7 @@
 package org.mineacademy.bfo.constants;
 
+import java.util.UUID;
+
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.UtilityClass;
 
@@ -9,6 +11,11 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @FieldDefaults(makeFinal = true)
 public class FoConstants {
+
+	/**
+	 * Represents a UUID consisting of 0's only
+	 */
+	public static final UUID NULL_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
 	@UtilityClass
 	@FieldDefaults(makeFinal = true)
