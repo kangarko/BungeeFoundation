@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -16,12 +17,11 @@ import org.mineacademy.bfo.SerializeUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.model.Tuple;
+import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import com.google.gson.Gson;
 
-import jline.internal.Nullable;
 import lombok.NonNull;
-import lombok.Setter;
 import net.md_5.bungee.config.Configuration;
 
 /**
@@ -44,7 +44,6 @@ public final class SerializedMap extends StrictCollection {
 	/**
 	 * Should we remove entries on get for this map instance,
 	 */
-	@Setter
 	private boolean removeOnGet = false;
 
 	/**
@@ -68,15 +67,15 @@ public final class SerializedMap extends StrictCollection {
 	 * <p>
 	 * If the key already exist, it is ignored
 	 *
-	 * @param map
+	 * @param anotherMap
 	 */
-	public void merge(final SerializedMap map) {
-		for (final Map.Entry<String, Object> entry : map.entrySet()) {
+	public void mergeFrom(final SerializedMap anotherMap) {
+		for (final Map.Entry<String, Object> entry : anotherMap.entrySet()) {
 			final String key = entry.getKey();
 			final Object value = entry.getValue();
 
-			if (key != null && value != null && !map.containsKey(key))
-				map.put(key, value);
+			if (key != null && value != null && !this.map.contains(key))
+				this.map.put(key, value);
 		}
 	}
 
@@ -128,7 +127,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @param key
 	 * @param value
 	 */
-	public void putIfTrue(final String key, @Nullable final boolean value) {
+	public void putIfTrue(final String key, final boolean value) {
 		if (value)
 			put(key, value);
 	}
@@ -139,7 +138,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @param key
 	 * @param value
 	 */
-	public void putIfExist(final String key, @Nullable final Object value) {
+	public void putIfExist(final String key, final Object value) {
 		if (value != null)
 			put(key, value);
 	}
@@ -152,7 +151,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @param key
 	 * @param value
 	 */
-	public void putIf(final String key, @Nullable final Map<?, ?> value) {
+	public void putIf(final String key, final Map<?, ?> value) {
 		if (value != null && !value.isEmpty())
 			put(key, value);
 
@@ -170,7 +169,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @param key
 	 * @param value
 	 */
-	public void putIf(final String key, @Nullable final Collection<?> value) {
+	public void putIf(final String key, final Collection<?> value) {
 		if (value != null && !value.isEmpty())
 			put(key, value);
 
@@ -206,7 +205,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @param key
 	 * @param value
 	 */
-	public void putIf(final String key, @Nullable final Object value) {
+	public void putIf(final String key, final Object value) {
 		if (value != null)
 			put(key, value);
 
@@ -244,11 +243,11 @@ public final class SerializedMap extends StrictCollection {
 
 	/**
 	 * Overrides all map values
-	 * 
+	 *
 	 * @param map
 	 */
 	public void overrideAll(SerializedMap map) {
-		map.forEach(this::override);
+		map.forEach((key, value) -> override(key, value));
 	}
 
 	/**
@@ -299,6 +298,27 @@ public final class SerializedMap extends StrictCollection {
 	 */
 	public String getString(final String key, final String def) {
 		return get(key, String.class, def);
+	}
+
+	/**
+	 * Returns a UUID from the map, or null if does not exist
+	 *
+	 * @param key
+	 * @return
+	 */
+	public UUID getUUID(final String key) {
+		return getUUID(key, null);
+	}
+
+	/**
+	 * Returns a UUID from the map, with an optional default
+	 *
+	 * @param key
+	 * @param def
+	 * @return
+	 */
+	public UUID getUUID(final String key, final UUID def) {
+		return get(key, UUID.class, def);
 	}
 
 	/**
@@ -822,8 +842,12 @@ public final class SerializedMap extends StrictCollection {
 
 				override(path, newCollection);
 
+				Common.log("[" + SimplePlugin.getNamed() + "] Converted '" + path + "' from " + from.getSimpleName() + "[] to " + to.getSimpleName() + "[]");
+
 			} else if (from.isAssignableFrom(old.getClass())) {
 				override(path, converter.apply((O) old));
+
+				Common.log("[" + SimplePlugin.getNamed() + "] Converted '" + path + "' from '" + from.getSimpleName() + "' to '" + to.getSimpleName() + "'");
 			}
 	}
 
@@ -852,6 +876,13 @@ public final class SerializedMap extends StrictCollection {
 		lines.add("}");
 
 		return String.join("\n", lines);
+	}
+
+	/**
+	 * @param removeOnGet the removeOnGet to set
+	 */
+	public void setRemoveOnGet(boolean removeOnGet) {
+		this.removeOnGet = removeOnGet;
 	}
 
 	@Override
