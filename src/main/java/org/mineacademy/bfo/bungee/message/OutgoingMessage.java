@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.mineacademy.bfo.CompressUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeAction;
+import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
 
@@ -33,7 +35,7 @@ public final class OutgoingMessage extends Message {
 
 	/**
 	 * Construct a new outgoing packet with null UUID and empty server name
-	 * 
+	 *
 	 * @param action
 	 */
 	public OutgoingMessage(BungeeAction action) {
@@ -41,8 +43,8 @@ public final class OutgoingMessage extends Message {
 	}
 
 	/**
-	 * Construct a new outgoing packet 
-	 * 
+	 * Construct a new outgoing packet
+	 *
 	 * @param fromSenderUid
 	 * @param fromServerName
 	 * @param action
@@ -69,7 +71,16 @@ public final class OutgoingMessage extends Message {
 	 */
 	public void writeString(String... messages) {
 		for (final String message : messages)
-			write(message, String.class);
+			write(CompressUtil.compressB64(message), String.class);
+	}
+
+	/**
+	 * Write the map into the message
+	 *
+	 * @param map
+	 */
+	public void writeMap(SerializedMap map) {
+		write(CompressUtil.compressB64(map.toJson()), String.class);
 	}
 
 	/**

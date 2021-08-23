@@ -1,7 +1,11 @@
 package org.mineacademy.bfo.bungee.message;
 
+import java.util.UUID;
+
+import org.mineacademy.bfo.CompressUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeAction;
+import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.debug.Debugger;
 
 import com.google.common.io.ByteArrayDataInput;
@@ -62,6 +66,26 @@ public final class IncomingMessage extends Message {
 	}
 
 	/**
+	 * Read UUID from the data
+	 *
+	 * @return
+	 */
+	public UUID readUUID() {
+		moveHead(String.class);
+
+		return UUID.fromString(input.readUTF());
+	}
+
+	/**
+	 * Read map from the data
+	 *
+	 * @return
+	 */
+	public SerializedMap readMap() {
+		return SerializedMap.fromJson(this.readString());
+	}
+
+	/**
 	 * Read a string from the data
 	 *
 	 * @return
@@ -69,7 +93,7 @@ public final class IncomingMessage extends Message {
 	public String readString() {
 		moveHead(String.class);
 
-		return input.readUTF();
+		return CompressUtil.decompressB64(input.readUTF());
 	}
 
 	/**
