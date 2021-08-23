@@ -1586,7 +1586,7 @@ class ConfigInstance {
 	 * @throws IOException
 	 */
 	protected void writeComments() throws IOException {
-		ConfigUpdater.update(defaultsPath, file, uncommentedSections);
+		YamlComments.writeComments(defaultsPath, file, uncommentedSections);
 	}
 
 	/**
