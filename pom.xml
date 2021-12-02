@@ -31,14 +31,18 @@
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
+		<repository>
+            <id>bungeecord-repo</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
 	</repositories>
 
 	<dependencies>
 		<dependency>
-			<groupId>org.mineacademy.server</groupId>
-			<artifactId>BungeeCord</artifactId>
-			<version>SNAPSHOT-1604</version>
-		</dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-api</artifactId>
+            <version>1.17-R0.1-SNAPSHOT</version>
+        </dependency>
 		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>

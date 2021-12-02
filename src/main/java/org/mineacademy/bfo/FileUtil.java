@@ -31,7 +31,6 @@ import java.util.zip.ZipOutputStream;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
-import jline.internal.Nullable;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -415,7 +414,7 @@ public final class FileUtil {
 		return extract(override, from, to, null);
 	}
 
-	public static File extract(boolean override, String from, String to, @Nullable Function<String, String> replacer) {
+	public static File extract(boolean override, String from, String to, Function<String, String> replacer) {
 		final InputStream is = getInternalResource((from.contains("/") ? "" : "/") + from);
 		Valid.checkNotNull(is, "Inbuilt file not found: " + from);
 
@@ -434,7 +433,7 @@ public final class FileUtil {
 	 *
 	 * @return the extracted file
 	 */
-	public static File extract(boolean override, @NonNull InputStream is, String to, @Nullable Function<String, String> replacer) {
+	public static File extract(boolean override, @NonNull InputStream is, String to, Function<String, String> replacer) {
 		File file = new File(SimplePlugin.getInstance().getDataFolder(), to);
 
 		if (!override && file.exists())

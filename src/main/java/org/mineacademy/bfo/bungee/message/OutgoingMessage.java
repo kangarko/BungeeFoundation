@@ -14,10 +14,10 @@ import org.mineacademy.bfo.exception.FoException;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
-import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.connection.Server;
 
 /**
  *
@@ -183,10 +183,10 @@ public final class OutgoingMessage extends Message {
 		if (connection instanceof ProxiedPlayer)
 			connection = ((ProxiedPlayer) connection).getServer();
 
-		Valid.checkBoolean(connection instanceof ServerConnection, "Connection must be ServerConnection");
+		Valid.checkBoolean(connection instanceof Server, "Connection must be ServerConnection");
 
-		((ServerConnection) connection).sendData(getChannel(), compileData());
-		Debugger.debug("bungee", "Sending data on " + getChannel() + " channel from " + getAction() + " to " + ((ServerConnection) connection).getInfo().getName() + " server.");
+		((Server) connection).sendData(getChannel(), compileData());
+		Debugger.debug("bungee", "Sending data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
 	/**

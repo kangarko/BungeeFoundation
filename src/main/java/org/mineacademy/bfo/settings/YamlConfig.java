@@ -28,7 +28,6 @@ import org.mineacademy.bfo.model.Replacer;
 import org.mineacademy.bfo.model.SimpleTime;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
-import jline.internal.Nullable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -384,7 +383,7 @@ public class YamlConfig {
 	 *
 	 * @return
 	 */
-	@Nullable
+
 	protected final Configuration getDefaults() {
 		return instance.getDefaultConfig();
 	}

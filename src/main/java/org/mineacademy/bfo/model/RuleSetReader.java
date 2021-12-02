@@ -9,8 +9,6 @@ import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.Valid;
 
-import jline.internal.Nullable;
-
 /**
  * An engine that reads rule set from a file such as in ChatControl.
  */
@@ -212,6 +210,6 @@ public abstract class RuleSetReader<T extends Rule> {
 	 *
 	 * @return the rule created, or null if the value is not valid
 	 */
-	@Nullable
+
 	protected abstract T createRule(File file, String value);
 }

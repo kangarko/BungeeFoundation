@@ -3,6 +3,7 @@ package org.mineacademy.bfo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,7 +27,6 @@ import org.mineacademy.bfo.settings.SimpleSettings;
 
 import com.google.gson.Gson;
 
-import jline.internal.Nullable;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -213,7 +213,7 @@ public final class Common {
 	 * @param playerReplacement
 	 * @param command
 	 */
-	public static void dispatchCommand(@Nullable final CommandSender playerReplacement, @NonNull String command) {
+	public static void dispatchCommand(final CommandSender playerReplacement, @NonNull String command) {
 		if (command.isEmpty() || command.equalsIgnoreCase("none"))
 			return;
 
@@ -610,8 +610,7 @@ public final class Common {
 	public static <T> List<T> newList(final T... keys) {
 		final List<T> list = new ArrayList<>();
 
-		for (final T key : keys)
-			list.add(key);
+		Collections.addAll(list, keys);
 
 		return list;
 	}

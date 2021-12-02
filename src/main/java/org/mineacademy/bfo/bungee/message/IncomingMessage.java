@@ -12,10 +12,10 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 
 import lombok.Getter;
-import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.Connection;
+import net.md_5.bungee.api.connection.Server;
 
 /**
  * Represents an incoming plugin message.
@@ -179,10 +179,10 @@ public final class IncomingMessage extends Message {
 	 * @param connection
 	 */
 	public void forward(Connection connection) {
-		Valid.checkBoolean(connection instanceof ServerConnection, "Connection must be ServerConnection");
+		Valid.checkBoolean(connection instanceof Server, "Connection must be ProxiedPlayer");
 
-		((ServerConnection) connection).sendData(getChannel(), data);
-		Debugger.debug("bungee", "Forwarding data on " + getChannel() + " channel from " + getAction() + " to " + ((ServerConnection) connection).getInfo().getName() + " server.");
+		((Server) connection).sendData(getChannel(), data);
+		Debugger.debug("bungee", "Forwarding data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
 	/**

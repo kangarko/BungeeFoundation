@@ -11,7 +11,6 @@ import org.mineacademy.bfo.SerializeUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.SerializedMap;
 
-import jline.internal.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.md_5.bungee.api.CommandSender;
@@ -250,7 +249,7 @@ public final class Replacer {
 	 * @param variables
 	 * @return
 	 */
-	public static String replaceVariables(@Nullable String message, SerializedMap variables) {
+	public static String replaceVariables(String message, SerializedMap variables) {
 		if (message == null)
 			return null;
 

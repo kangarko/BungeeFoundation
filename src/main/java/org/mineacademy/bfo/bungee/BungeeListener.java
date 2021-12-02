@@ -12,9 +12,9 @@ import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.Connection;
+import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
@@ -36,7 +36,7 @@ public abstract class BungeeListener implements Listener {
 	 * Temporary variable storing the senders connection
 	 */
 	@Getter(value = AccessLevel.PROTECTED)
-	private ServerConnection sender;
+	private Server sender;
 
 	/**
 	 * Temporary variable storing the receiver
@@ -70,7 +70,7 @@ public abstract class BungeeListener implements Listener {
 	 * @param action
 	 * @param message
 	 */
-	public abstract void onMessageReceived(ServerConnection sender, IncomingMessage message);
+	public abstract void onMessageReceived(Connection sender, IncomingMessage message);
 
 	/**
 	 * Creates a new outgoing message for the given action using the sender connection
@@ -134,12 +134,12 @@ public abstract class BungeeListener implements Listener {
 			final Connection sender = event.getSender();
 			final Connection receiver = event.getReceiver();
 
-			if (!(sender instanceof ServerConnection))
+			if (!(sender instanceof Server))
 				return;
 
 			for (final BungeeListener listener : registeredListeners)
 				if (tag.equals(listener.getChannel())) {
-					listener.sender = (ServerConnection) sender;
+					listener.sender = (Server) sender;
 					listener.receiver = receiver;
 					listener.data = event.getData();
 

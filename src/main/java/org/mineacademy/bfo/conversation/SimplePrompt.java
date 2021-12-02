@@ -2,7 +2,6 @@ package org.mineacademy.bfo.conversation;
 
 import org.mineacademy.bfo.Common;
 
-import jline.internal.Nullable;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.val;
@@ -35,6 +34,5 @@ public abstract class SimplePrompt {
 	@NonNull
 	public abstract String getPrompt();
 
-	@Nullable
 	protected abstract SimplePrompt acceptValidatedInput(final String input);
 }

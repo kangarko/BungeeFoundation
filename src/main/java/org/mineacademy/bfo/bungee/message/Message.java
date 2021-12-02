@@ -7,7 +7,6 @@ import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeAction;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
-import jline.internal.Nullable;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,7 @@ abstract class Message {
 	/**
 	 * The UUID of the sender who initiated the packet, can be null
 	 */
-	@Nullable
+
 	@Getter
 	private UUID senderUid;
 
