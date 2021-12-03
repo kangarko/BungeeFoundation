@@ -24,10 +24,6 @@
 
 	<repositories>
 		<repository>
-			<id>mineacademy-repo</id>
-			<url>https://bitbucket.org/kangarko/libraries/raw/master</url>
-		</repository>
-		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
@@ -41,13 +37,13 @@
 		<dependency>
             <groupId>net.md-5</groupId>
             <artifactId>bungeecord-api</artifactId>
-            <version>1.17-R0.1-SNAPSHOT</version>
+            <version>1.18-R0.1-SNAPSHOT</version>
         </dependency>
 		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.20</version>
+			<version>1.18.22</version>
 		</dependency>
 	</dependencies>
 
