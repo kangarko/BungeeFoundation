@@ -231,6 +231,8 @@ public abstract class YamlStaticConfig {
 	 * @param value
 	 */
 	protected static final void set(final String path, final Object value) {
+		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
+
 		TEMPORARY_INSTANCE.setNoSave(path, value);
 	}
 
