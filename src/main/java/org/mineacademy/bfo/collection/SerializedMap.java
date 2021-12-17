@@ -69,7 +69,7 @@ public final class SerializedMap extends StrictCollection {
 	 *
 	 * @param anotherMap
 	 */
-	public void mergeFrom(final SerializedMap anotherMap) {
+	public SerializedMap mergeFrom(final SerializedMap anotherMap) {
 		for (final Map.Entry<String, Object> entry : anotherMap.entrySet()) {
 			final String key = entry.getKey();
 			final Object value = entry.getValue();
@@ -77,6 +77,8 @@ public final class SerializedMap extends StrictCollection {
 			if (key != null && value != null && !this.map.contains(key))
 				this.map.put(key, value);
 		}
+
+		return this;
 	}
 
 	/**
@@ -247,7 +249,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @param map
 	 */
 	public void overrideAll(SerializedMap map) {
-		map.forEach((key, value) -> override(key, value));
+		map.forEach(this::override);
 	}
 
 	/**
