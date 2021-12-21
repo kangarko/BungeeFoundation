@@ -237,22 +237,32 @@ public abstract class YamlStaticConfig {
 	}
 
 	protected static final boolean isSetAbsolute(final String path) {
+		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
+
 		return TEMPORARY_INSTANCE.isSetAbsolute(path);
 	}
 
 	protected static final boolean isSet(final String path) {
+		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
+
 		return TEMPORARY_INSTANCE.isSet(path);
 	}
 
 	protected static final boolean isSetDefault(final String path) {
+		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
+
 		return TEMPORARY_INSTANCE.isSetDefault(path);
 	}
 
 	protected static final boolean isSetDefaultAbsolute(final String path) {
+		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
+
 		return TEMPORARY_INSTANCE.isSetDefaultAbsolute(path);
 	}
 
 	protected static final void move(final String fromRelative, final String toAbsolute) {
+		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
+
 		TEMPORARY_INSTANCE.move(fromRelative, toAbsolute);
 	}
 
