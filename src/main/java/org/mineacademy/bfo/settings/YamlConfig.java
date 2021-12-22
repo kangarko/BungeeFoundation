@@ -1571,7 +1571,7 @@ class ConfigInstance {
 		try {
 			YamlConfig.PROVIDER.save(config, file);
 
-			reload();
+			//reload();
 			writeComments();
 
 		} catch (final Throwable throwable) {
