@@ -80,7 +80,7 @@ abstract class Message {
 	protected final void setAction(String actionName) {
 		final BungeeAction action = BungeeAction.getByName(actionName);
 
-		Valid.checkNotNull(action, "Unknown action named: " + actionName + ". Available: " + Common.joinToString(SimplePlugin.getBungee().getActions()));
+		Valid.checkNotNull(action, "Unknown action named: " + actionName + ". Available: " + Common.join(SimplePlugin.getBungee().getActions()));
 		setAction(action);
 	}
 

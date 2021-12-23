@@ -1,7 +1,14 @@
 package org.mineacademy.bfo;
 
+import org.mineacademy.bfo.model.Replacer;
+import org.mineacademy.bfo.settings.SimpleSettings;
+
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 /**
  * Streamlines the process of sending themed messages to players
@@ -10,84 +17,230 @@ import net.md_5.bungee.api.CommandSender;
 public class Messenger {
 
 	/**
+	 * Should we use messenger globally such as in commands & listeners?
+	 */
+	public static boolean ENABLED = true;
+
+	/**
 	 * The prefix send while sending info message
 	 */
-	public String INFO_PREFIX = "&8&l[&9&li&8&l] &7";
+	@Setter
+	@Getter
+	private String infoPrefix = "&8&l[&9&li&8&l]&7 ";
 
 	/**
 	 * The prefix send while sending success message
 	 */
-	public String SUCCESS_PREFIX = "&8&l[&2&l\u2714&8&l] &7";
+	@Setter
+	@Getter
+	private String successPrefix = "&8&l[&2&l\u2714&8&l]&7 ";
 
 	/**
 	 * The prefix send while sending warning message
 	 */
-	public String WARN_PREFIX = "&8&l[&6&l!&8&l] &6";
+	@Setter
+	@Getter
+	private String warnPrefix = "&8&l[&6&l!&8&l]&6 ";
 
 	/**
 	 * The prefix send while sending error message
 	 */
-	public String ERROR_PREFIX = "&8&l[&4&l\u2715&8&l] &c";
+	@Setter
+	@Getter
+	private String errorPrefix = "&8&l[&4&l\u2715&8&l]&c ";
 
 	/**
 	 * The prefix send while sending questions
 	 */
-	public String QUESTION_PREFIX = "&8&l[&a&l?&l&8] &7";
+	@Setter
+	@Getter
+	private String questionPrefix = "&8&l[&a&l?&l&8]&7 ";
 
 	/**
-	 * Send a message prepended with the {@link #INFO_PREFIX}
+	 * The prefix send while sending announcements
+	 */
+	@Setter
+	@Getter
+	private String announcePrefix = "&8&l[&5&l!&l&8]&d ";
+
+	/**
+	 * Send a message prepended with the {@link #getInfoPrefix()}
 	 *
-	 * @param player
 	 * @param message
 	 */
-	public void info(CommandSender player, String message) {
-		tell(player, INFO_PREFIX, message);
+	public void broadcastInfo(final String message) {
+		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+			tell(online, infoPrefix, message);
 	}
 
 	/**
-	 * Send a message prepended with the {@link #SUCCESS_PREFIX}
+	 * Send a message prepended with the {@link #getSuccessPrefix()}
 	 *
-	 * @param player
 	 * @param message
 	 */
-	public void success(CommandSender player, String message) {
-		tell(player, SUCCESS_PREFIX, message);
+	public void broadcastSuccess(final String message) {
+		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+			tell(online, successPrefix, message);
 	}
 
 	/**
-	 * Send a message prepended with the {@link #WARN_PREFIX}
+	 * Send a message prepended with the {@link #getWarnPrefix()}
 	 *
-	 * @param player
 	 * @param message
 	 */
-	public void warn(CommandSender player, String message) {
-		tell(player, WARN_PREFIX, message);
+	public void broadcastWarn(final String message) {
+		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+			tell(online, warnPrefix, message);
 	}
 
 	/**
-	 * Send a message prepended with the {@link #ERROR_PREFIX}
+	 * Send a message prepended with the {@link #getErrorPrefix()}
 	 *
-	 * @param player
 	 * @param message
 	 */
-	public void error(CommandSender player, String message) {
-		tell(player, ERROR_PREFIX, message);
+	public void broadcastError(final String message) {
+		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+			tell(online, errorPrefix, message);
 	}
 
 	/**
-	 * Send a message prepended with the {@link #QUESTION_PREFIX}
+	 * Send a message prepended with the {@link #getQuestionPrefix()}
+	 *
+	 * @param message
+	 */
+	public void broadcastQuestion(final String message) {
+		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+			tell(online, questionPrefix, message);
+	}
+
+	/**
+	 * Send a message prepended with the {@link #getAnnouncePrefix()}
+	 *
+	 * @param message
+	 */
+	public void broadcastAnnounce(final String message) {
+		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+			tell(online, announcePrefix, message);
+	}
+
+	/**
+	 * Send a message prepended with the {@link #getInfoPrefix()}
 	 *
 	 * @param player
 	 * @param message
 	 */
-	public void question(CommandSender player, String message) {
-		tell(player, QUESTION_PREFIX, message);
+	public void info(final CommandSender player, final String message) {
+		tell(player, infoPrefix, message);
+	}
+
+	/**
+	 * Send a message prepended with the {@link #getSuccessPrefix()}
+	 *
+	 * @param player
+	 * @param message
+	 */
+	public void success(final CommandSender player, final String message) {
+		tell(player, successPrefix, message);
+	}
+
+	/**
+	 * Send a message prepended with the {@link #getWarnPrefix()}
+	 *
+	 * @param player
+	 * @param message
+	 */
+	public void warn(final CommandSender player, final String message) {
+		tell(player, warnPrefix, message);
+	}
+
+	/**
+	 * Send messages prepended with the {@link #getErrorPrefix()}
+	 *
+	 * @param player
+	 * @param messages
+	 */
+	public void error(final CommandSender player, final String... messages) {
+		for (final String message : messages)
+			error(player, message);
+	}
+
+	/**
+	 * Send a message prepended with the {@link #getErrorPrefix()}
+	 *
+	 * @param player
+	 * @param message
+	 */
+	public void error(final CommandSender player, final String message) {
+		tell(player, errorPrefix, message);
+	}
+
+	/**
+	 * Send a message prepended with the {@link #getQuestionPrefix()}
+	 *
+	 * @param player
+	 * @param message
+	 */
+	public void question(final CommandSender player, final String message) {
+		tell(player, questionPrefix, message);
+	}
+
+	/**
+	 * Send a message prepended with the {@link #getAnnouncePrefix()}
+	 *
+	 * @param player
+	 * @param message
+	 */
+	public void announce(final CommandSender player, final String message) {
+		tell(player, announcePrefix, message);
 	}
 
 	/*
 	 * Internal method to perform the sending
 	 */
-	private void tell(CommandSender player, String prefix, String message) {
-		Common.tell(player, prefix + message);
+	private void tell(final CommandSender player, final String prefix, String message) {
+
+		// Support localization being none or empty
+		if (message.isEmpty() || "none".equals(message))
+			return;
+
+		final String colorless = Common.stripColors(message);
+		boolean noPrefix = ChatUtil.isInteractive(colorless);
+
+		// Special case: Send the prefix for actionbar
+		if (colorless.startsWith("<actionbar>"))
+			message = message.replace("<actionbar>", "<actionbar>" + prefix);
+
+		if (colorless.startsWith("@noprefix")) {
+			message = message.replace("@noprefix", "");
+
+			noPrefix = true;
+		}
+
+		// Only insert prefix if the message is sent through the normal chat
+		Common.tellNoPrefix(player, (noPrefix ? "" : prefix) + message);
+	}
+
+	/**
+	 * Replace {plugin_prefix} and {X_prefix} and {prefix_X} with respective messenger variables
+	 * such as {warn_prefix} with {@link #getWarnPrefix()} etc.
+	 *
+	 * @param message
+	 * @return
+	 */
+	public static String replacePrefixes(String message) {
+		return Replacer.replaceArray(message,
+				"plugin_prefix", SimpleSettings.PLUGIN_PREFIX,
+				"info_prefix", infoPrefix,
+				"prefix_info", infoPrefix,
+				"success_prefix", successPrefix,
+				"prefix_success", successPrefix,
+				"warn_prefix", warnPrefix,
+				"prefix_warn", warnPrefix,
+				"error_prefix", errorPrefix,
+				"prefix_error", errorPrefix,
+				"question_prefix", questionPrefix,
+				"prefix_question", questionPrefix,
+				"announce_prefix", announcePrefix,
+				"prefix_announce", announcePrefix);
 	}
 }

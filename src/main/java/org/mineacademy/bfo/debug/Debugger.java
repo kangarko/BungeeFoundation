@@ -102,7 +102,7 @@ public final class Debugger {
 		if (parts == null)
 			return;
 
-		final String whole = Common.joinToString(parts, "");
+		final String whole = String.join("", parts);
 
 		for (final String message : whole.split("\n"))
 			debug(section, message);

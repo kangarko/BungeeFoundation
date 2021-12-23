@@ -1,13 +1,11 @@
 package org.mineacademy.bfo;
 
 import org.mineacademy.bfo.model.Variables;
+import org.mineacademy.bfo.remain.Remain;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.protocol.packet.Title;
-import net.md_5.bungee.protocol.packet.Title.Action;
 
 /**
  * Utility class related to players
@@ -26,10 +24,7 @@ public final class PlayerUtil {
 	 * @param footer
 	 */
 	public static void sendTablist(ProxiedPlayer player, String header, String footer) {
-		header = Variables.replace(header, player);
-		footer = Variables.replace(footer, player);
-
-		player.setTabHeader(Common.toComponent(header), Common.toComponent(footer));
+		Remain.sendTablist(player, header, footer);
 	}
 
 	/**
@@ -60,18 +55,7 @@ public final class PlayerUtil {
 	 * @param fadeOut
 	 */
 	public static void sendTitle(ProxiedPlayer player, String title, String subtitle, int fadeIn, int stay, int fadeOut) {
-		title = Variables.replace(title, player);
-		subtitle = Variables.replace(subtitle, player);
-
-		ProxyServer.getInstance()
-				.createTitle()
-				.reset()
-				.title(Common.toComponent(title))
-				.subTitle(Common.toComponent(subtitle))
-				.fadeIn(fadeIn)
-				.fadeOut(fadeOut)
-				.stay(stay)
-				.send(player);
+		Remain.sendTitle(player, fadeIn, stay, fadeOut, title, subtitle);
 	}
 
 	/**
@@ -83,11 +67,6 @@ public final class PlayerUtil {
 	 * @param title
 	 */
 	public static void sendActionBar(ProxiedPlayer player, String title) {
-		final Title packet = new Title();
-
-		packet.setAction(Action.ACTIONBAR);
-		packet.setText(Common.toJson(Variables.replace(title, player)));
-
-		player.unsafe().sendPacket(packet);
+		Remain.sendActionBar(player, title);
 	}
 }

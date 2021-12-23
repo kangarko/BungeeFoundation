@@ -18,6 +18,7 @@ import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.bfo.exception.EventHandledException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.Remain;
 import org.mineacademy.bfo.settings.SimpleLocalization.Player;
 
 import lombok.NonNull;
@@ -80,7 +81,7 @@ public final class JavaScriptExecutor {
 					"Your Java version/distribution lacks the",
 					"Nashorn library for JavaScript placeholders.");
 
-			if (Common.getJavaVersion() >= 15)
+			if (Remain.getJavaVersion() >= 15)
 				warningMessage.addAll(Arrays.asList(
 						"",
 						"To fix this, install the NashornPlus",

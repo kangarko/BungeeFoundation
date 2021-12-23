@@ -41,7 +41,7 @@ public final class ReloadCommand extends SimpleCommand {
 	@Override
 	protected void onCommand() {
 		try {
-			tell(Messenger.INFO_PREFIX + "Reloading " + SimplePlugin.getNamed() + " " + SimplePlugin.getVersion() + "..");
+			tell(Messenger.getInfoPrefix() + "Reloading " + SimplePlugin.getNamed() + " " + SimplePlugin.getVersion() + "..");
 
 			// Syntax check YML files before loading
 			boolean syntaxParsed = true;
@@ -70,7 +70,7 @@ public final class ReloadCommand extends SimpleCommand {
 			}
 
 			SimplePlugin.getInstance().reload();
-			tell(Messenger.SUCCESS_PREFIX + SimpleLocalization.Commands.RELOAD_SUCCESS);
+			tell(Messenger.getSuccessPrefix() + SimpleLocalization.Commands.RELOAD_SUCCESS);
 
 		} catch (final Throwable t) {
 			tell(SimpleLocalization.Commands.RELOAD_FAIL.replace("{error}", t.getMessage() != null ? t.getMessage() : "unknown"));
