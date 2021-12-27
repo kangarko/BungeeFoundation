@@ -215,11 +215,11 @@ public abstract class YamlStaticConfig {
 	// -----------------------------------------------------------------------------------------------------
 
 	protected final void createLocalizationFile(final String localePrefix) throws Exception {
-		TEMPORARY_INSTANCE.loadLocalization(localePrefix);
+		getStaticInstance().loadLocalization(localePrefix);
 	}
 
 	protected final void createFileAndLoad(final String path) throws Exception {
-		TEMPORARY_INSTANCE.loadConfiguration(path, path);
+		getStaticInstance().loadConfiguration(path, path);
 	}
 
 	/**
@@ -231,67 +231,55 @@ public abstract class YamlStaticConfig {
 	 * @param value
 	 */
 	protected static final void set(final String path, final Object value) {
-		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
-
-		TEMPORARY_INSTANCE.setNoSave(path, value);
+		getStaticInstance().setNoSave(path, value);
 	}
 
 	protected static final boolean isSetAbsolute(final String path) {
-		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
-
-		return TEMPORARY_INSTANCE.isSetAbsolute(path);
+		return getStaticInstance().isSetAbsolute(path);
 	}
 
 	protected static final boolean isSet(final String path) {
-		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
-
-		return TEMPORARY_INSTANCE.isSet(path);
+		return getStaticInstance().isSet(path);
 	}
 
 	protected static final boolean isSetDefault(final String path) {
-		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
-
-		return TEMPORARY_INSTANCE.isSetDefault(path);
+		return getStaticInstance().isSetDefault(path);
 	}
 
 	protected static final boolean isSetDefaultAbsolute(final String path) {
-		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
-
-		return TEMPORARY_INSTANCE.isSetDefaultAbsolute(path);
+		return getStaticInstance().isSetDefaultAbsolute(path);
 	}
 
 	protected static final void move(final String fromRelative, final String toAbsolute) {
-		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
-
-		TEMPORARY_INSTANCE.move(fromRelative, toAbsolute);
+		getStaticInstance().move(fromRelative, toAbsolute);
 	}
 
 	protected static final void move(final Object value, final String fromPath, final String toPath) {
-		TEMPORARY_INSTANCE.move(value, fromPath, toPath);
+		getStaticInstance().move(value, fromPath, toPath);
 	}
 
 	protected static final void pathPrefix(final String pathPrefix) {
-		TEMPORARY_INSTANCE.pathPrefix(pathPrefix);
+		getStaticInstance().pathPrefix(pathPrefix);
 	}
 
 	protected static final String getPathPrefix() {
-		return TEMPORARY_INSTANCE.getPathPrefix();
+		return getStaticInstance().getPathPrefix();
 	}
 
 	protected static final void addDefaultIfNotExist(final String path) {
-		TEMPORARY_INSTANCE.addDefaultIfNotExist(path);
+		getStaticInstance().addDefaultIfNotExist(path);
 	}
 
 	protected static final String getFileName() {
-		return TEMPORARY_INSTANCE.getFileName();
+		return getStaticInstance().getFileName();
 	}
 
 	protected static final Configuration getConfig() {
-		return TEMPORARY_INSTANCE.getConfig();
+		return getStaticInstance().getConfig();
 	}
 
 	protected static final Configuration getDefaults() {
-		return TEMPORARY_INSTANCE.getDefaults();
+		return getStaticInstance().getDefaults();
 	}
 
 	// -----------------------------------------------------------------------------------------------------
@@ -299,35 +287,35 @@ public abstract class YamlStaticConfig {
 	// -----------------------------------------------------------------------------------------------------
 
 	protected static final StrictList<String> getCommandList(final String path) {
-		return TEMPORARY_INSTANCE.getCommandList(path);
+		return getStaticInstance().getCommandList(path);
 	}
 
 	protected static final List<String> getStringList(final String path) {
-		return TEMPORARY_INSTANCE.getStringList(path);
+		return getStaticInstance().getStringList(path);
 	}
 
 	protected static final <E> List<E> getList(final String path, final Class<E> listType) {
-		return TEMPORARY_INSTANCE.getList(path, listType);
+		return getStaticInstance().getList(path, listType);
 	}
 
 	protected static final boolean getBoolean(final String path) {
-		return TEMPORARY_INSTANCE.getBoolean(path);
+		return getStaticInstance().getBoolean(path);
 	}
 
 	protected static final String[] getStringArray(final String path) {
-		return TEMPORARY_INSTANCE.getStringArray(path);
+		return getStaticInstance().getStringArray(path);
 	}
 
 	protected static final String getString(final String path) {
-		return TEMPORARY_INSTANCE.getString(path);
+		return getStaticInstance().getString(path);
 	}
 
 	protected static final Replacer getReplacer(final String path) {
-		return TEMPORARY_INSTANCE.getReplacer(path);
+		return getStaticInstance().getReplacer(path);
 	}
 
 	protected static final int getInteger(final String path) {
-		return TEMPORARY_INSTANCE.getInteger(path);
+		return getStaticInstance().getInteger(path);
 	}
 
 	/**
@@ -338,51 +326,53 @@ public abstract class YamlStaticConfig {
 	 */
 	@Deprecated
 	protected static final double getDoubleSafe(final String path) {
-		return TEMPORARY_INSTANCE.getDoubleSafe(path);
+		return getStaticInstance().getDoubleSafe(path);
 	}
 
 	protected static final double getDouble(final String path) {
-		return TEMPORARY_INSTANCE.getDouble(path);
+		return getStaticInstance().getDouble(path);
 	}
 
 	protected static final CasusHelper getCasus(final String path) {
-		return TEMPORARY_INSTANCE.getCasus(path);
+		return getStaticInstance().getCasus(path);
 	}
 
 	protected static final TitleHelper getTitle(final String path) {
-		return TEMPORARY_INSTANCE.getTitle(path);
+		return getStaticInstance().getTitle(path);
 	}
 
 	protected static final SimpleTime getTime(final String path) {
-		return TEMPORARY_INSTANCE.getTime(path);
+		return getStaticInstance().getTime(path);
 	}
 
 	protected static final <E> E get(final String path, final Class<E> typeOf) {
-		return TEMPORARY_INSTANCE.get(path, typeOf);
+		return getStaticInstance().get(path, typeOf);
 	}
 
 	protected static final <E> E getWithData(final String path, final Class<E> typeOf, Object... deserializeArguments) {
-		return TEMPORARY_INSTANCE.getWithData(path, typeOf, deserializeArguments);
+		return getStaticInstance().getWithData(path, typeOf, deserializeArguments);
 	}
 
 	protected static final Object getObject(final String path) {
-		return TEMPORARY_INSTANCE.getObject(path);
+		return getStaticInstance().getObject(path);
 	}
 
 	protected static final <T> T getOrSetDefault(final String path, final T defaultValue) {
-		return TEMPORARY_INSTANCE.getOrSetDefault(path, defaultValue);
+		return getStaticInstance().getOrSetDefault(path, defaultValue);
 	}
 
 	protected static final SerializedMap getMap(final String path) {
-		return TEMPORARY_INSTANCE.getMap(path);
+		return getStaticInstance().getMap(path);
 	}
 
 	protected static final <Key, Value> LinkedHashMap<Key, Value> getMap(final String path, final Class<Key> keyType, final Class<Value> valueType) {
-		return TEMPORARY_INSTANCE.getMap(path, keyType, valueType);
+		return getStaticInstance().getMap(path, keyType, valueType);
 	}
 
 	protected static LinkedHashMap<String, LinkedHashMap<String, Object>> getValuesAndKeys(final String path) {
 		Valid.checkNotNull(path, "Path cannot be null");
+
+		getStaticInstance();
 
 		// add default
 		if (getDefaults() != null && !getConfig().contains(path)) {
@@ -411,5 +401,11 @@ public abstract class YamlStaticConfig {
 		TEMPORARY_INSTANCE.pathPrefix(old);
 
 		return new LinkedHashMap<>(groups);
+	}
+
+	private static YamlConfig getStaticInstance() {
+		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
+
+		return TEMPORARY_INSTANCE;
 	}
 }
