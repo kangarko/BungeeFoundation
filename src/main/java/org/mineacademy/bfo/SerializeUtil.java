@@ -3,6 +3,7 @@ package org.mineacademy.bfo;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,11 +114,10 @@ public final class SerializeUtil {
 	}
 
 	/**
-	 * Runsthrough each item in the list and serializes it
+	 * Runs through each item in the list and serializes it
 	 * <p>
 	 * Returns a new list of serialized items
 	 *
-	 * @param <T>
 	 * @param array
 	 * @return
 	 */
@@ -155,7 +155,7 @@ public final class SerializeUtil {
 	 * @param <T>
 	 * @param classOf
 	 * @param object
-	 * @param deserializeParameters, use more variables in the deserialize method
+	 * @param deserializeParameters use more variables in the deserialize method
 	 * @return
 	 */
 	@SuppressWarnings("rawtypes")
@@ -186,8 +186,7 @@ public final class SerializeUtil {
 			{ // Build parameter instances
 				joinedParams.add(map);
 
-				for (final Object param : deserializeParameters)
-					joinedParams.add(param);
+				Collections.addAll(joinedParams, deserializeParameters);
 			}
 
 			if (deserializeMethod != null) {

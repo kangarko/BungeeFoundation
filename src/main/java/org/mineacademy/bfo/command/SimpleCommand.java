@@ -219,7 +219,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Registers this command into Bukkit.
 	 *
-	 * Throws an error if the command {@link #isRegistered()} already.
+	 * Throws an error if the command already.
 	 */
 	public final void register() {
 		Valid.checkBoolean(!registered, "The command /" + getLabel() + " has already been registered!");
@@ -248,7 +248,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Removes the command from Bukkit.
 	 *
-	 * Throws an error if the command is not {@link #isRegistered()}.
+	 * Throws an error if the command is not.
 	 */
 	public final void unregister() {
 		Valid.checkBoolean(registered, "The command /" + getLabel() + " is not registered!");
@@ -262,8 +262,8 @@ public abstract class SimpleCommand extends Command {
 	// ----------------------------------------------------------------------
 
 	/**
-	 * Execute this command, updates the {@link #sender}, {@link #label} and
-	 * {@link #args} variables, checks permission and returns if the sender
+	 * Execute this command, updates the sender, label and
+	 * args variables, checks permission and returns if the sender
 	 * lacks it, checks minimum arguments and finally passes the command to the
 	 * child class.
 	 *
@@ -858,6 +858,7 @@ public abstract class SimpleCommand extends Command {
 	 * Get the permission for this command, either the one you set or our from
 	 * Localization
 	 */
+	@Override
 	public final String getPermissionMessage() {
 		return Common.getOrDefault(permissionMessage, "&cInsufficient permission ({permission})");
 	}
@@ -869,6 +870,7 @@ public abstract class SimpleCommand extends Command {
 	 * @param permissionMessage
 	 *            the permissionMessage to set
 	 */
+	@Override
 	public final void setPermissionMessage(final String permissionMessage) {
 		this.permissionMessage = permissionMessage;
 	}
@@ -876,10 +878,6 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * By default we check if the player has the permission you set in
 	 * setPermission.
-	 *
-	 * If that is null, we check for the following:
-	 * {yourpluginname}.command.{label} for {@link SimpleCommand}
-	 * {yourpluginname}.command.{label}.{sublabel} for {@link SimpleSubCommand}
 	 *
 	 * We handle lacking permissions automatically and return with an
 	 * no-permission message when the player lacks it.
@@ -905,8 +903,7 @@ public abstract class SimpleCommand extends Command {
 	/**
 	 * Sets the permission required for this command to run. If you set the
 	 * permission to null we will not require any permission (unsafe).
-	 *
-	 * @param
+	 * @param permission
 	 */
 	public final void setPermission(final String permission) {
 		this.permission = permission;
@@ -933,6 +930,7 @@ public abstract class SimpleCommand extends Command {
 
 	/**
 	 * Get description for this command
+	 * @return
 	 */
 	public final String getDescription() {
 		return description;
@@ -948,6 +946,7 @@ public abstract class SimpleCommand extends Command {
 
 	/**
 	 * Get the usage message of this command
+	 * @return
 	 */
 	public final String getUsage() {
 		return usage;
@@ -955,6 +954,7 @@ public abstract class SimpleCommand extends Command {
 
 	/**
 	 * Get the most recent label for this command
+	 * @return
 	 */
 	public final String getLabel() {
 		return label;
@@ -962,6 +962,7 @@ public abstract class SimpleCommand extends Command {
 
 	/**
 	 * Updates the label of this command
+	 * @param name
 	 */
 	public final void setLabel(final String name) {
 		label = name;

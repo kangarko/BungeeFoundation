@@ -59,7 +59,6 @@ public final class ChatUtil {
 	 *
 	 * @param message
 	 * @param space
-	 * @param spaceColor
 	 * @return
 	 */
 	public static String center(final String message, final char space) {
@@ -149,8 +148,7 @@ public final class ChatUtil {
 		for (int i = 0; i < padding; i++)
 			lines.add(RandomUtil.nextColorOrDecoration());
 
-		for (final String message : messages)
-			lines.add(message);
+		lines.addAll(messages);
 
 		for (int i = 0; i < padding; i++)
 			lines.add(RandomUtil.nextColorOrDecoration());
@@ -322,7 +320,7 @@ public final class ChatUtil {
 	 * How many big letters the message has.
 	 *
 	 * @param message the message to check
-	 * @param ignored the list of strings to ignore (whitelist)
+	 * @param list
 	 *
 	 * @return how many big letters are in message
 	 */
@@ -420,7 +418,7 @@ public final class ChatUtil {
 
 	/**
 	 * Automatically add gradient for the given string using the two colors as start/ending colors
-	 * 
+	 *
 	 * @param message
 	 * @param from
 	 * @param to

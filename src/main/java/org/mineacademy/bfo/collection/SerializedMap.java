@@ -68,6 +68,7 @@ public final class SerializedMap extends StrictCollection {
 	 * If the key already exist, it is ignored
 	 *
 	 * @param anotherMap
+	 * @return
 	 */
 	public SerializedMap mergeFrom(final SerializedMap anotherMap) {
 		for (final Map.Entry<String, Object> entry : anotherMap.entrySet()) {
@@ -82,6 +83,8 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * @param key
+	 * @return
 	 * @see Map#containsKey(Object)
 	 */
 	public boolean containsKey(final String key) {
@@ -92,6 +95,7 @@ public final class SerializedMap extends StrictCollection {
 	 * Puts a key:value pair into the map only if the values are not null
 	 *
 	 * @param associativeArray
+	 * @return
 	 */
 	public SerializedMap putArray(final Object... associativeArray) {
 		boolean string = true;
@@ -116,6 +120,7 @@ public final class SerializedMap extends StrictCollection {
 	 * Add another map to this map
 	 *
 	 * @param anotherMap
+	 * @return
 	 */
 	public SerializedMap put(@NonNull SerializedMap anotherMap) {
 		map.putAll(anotherMap.asMap());
@@ -487,13 +492,15 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * See getList(String, Class) except that this method
+	 * never returns null, instead, if the key is not present,
+	 * we return an empty list instead of null
+	 *
 	 * @param <T>
 	 * @param key
 	 * @param type
+	 *
 	 * @return
-	 * @see #getList(String, Class), except that this method
-	 * never returns null, instead, if the key is not present,
-	 * we return an empty list instead of null
 	 */
 	public <T> List<T> getListSafe(final String key, final Class<T> type) {
 		final List<T> list = getList(key, type);
@@ -502,13 +509,15 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * See getList(String, Class), except that this method
+	 * never returns null, instead, if the key is not present,
+	 * we return an empty set instead of null
+	 *
 	 * @param <T>
 	 * @param key
 	 * @param type
+	 *
 	 * @return
-	 * @see #getList(String, Class), except that this method
-	 * never returns null, instead, if the key is not present,
-	 * we return an empty set instead of null
 	 */
 	public <T> Set<T> getSetSafe(final String key, final Class<T> type) {
 		final Set<T> list = getSet(key, type);
@@ -585,7 +594,6 @@ public final class SerializedMap extends StrictCollection {
 	 * @param path
 	 * @param keyType
 	 * @param valueType
-	 * @param valueParameter
 	 * @return
 	 */
 	public <Key, Value> LinkedHashMap<Key, Value> getMap(@NonNull String path, final Class<Key> keyType, final Class<Value> valueType) {
@@ -730,6 +738,7 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * @param consumer
 	 * @see Map#forEach(BiConsumer)
 	 */
 	public void forEach(final BiConsumer<String, Object> consumer) {
@@ -747,6 +756,7 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * @return
 	 * @see Map#keySet()
 	 */
 	public Set<String> keySet() {
@@ -754,6 +764,7 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * @return
 	 * @see Map#values()
 	 */
 	public Collection<Object> values() {
@@ -761,6 +772,7 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * @return
 	 * @see Map#entrySet()
 	 */
 	public Set<Entry<String, Object>> entrySet() {
@@ -768,6 +780,7 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * @return
 	 * @see Map#size()
 	 */
 	public int size() {
@@ -810,6 +823,7 @@ public final class SerializedMap extends StrictCollection {
 	}
 
 	/**
+	 * @return
 	 * @see Map#isEmpty()
 	 */
 	public boolean isEmpty() {

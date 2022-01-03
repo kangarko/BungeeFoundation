@@ -46,6 +46,9 @@ public final class ReflectionUtil {
 
 	/**
 	 * Return a constructor for the given class
+	 * @param clazz
+	 * @param params
+	 * @return
 	 *
 	 */
 	public static Constructor<?> getConstructor(@NonNull final Class<?> clazz, final Class<?>... params) {
@@ -139,6 +142,9 @@ public final class ReflectionUtil {
 
 	/**
 	 * Gets the declared field in class by its name
+	 * @param clazz
+	 * @param fieldName
+	 * @return
 	 *
 	 */
 	public static Field getDeclaredField(final Class<?> clazz, final String fieldName) {
@@ -258,6 +264,10 @@ public final class ReflectionUtil {
 
 	/**
 	 * Get a declared class method
+	 * @param clazz
+	 * @param methodName
+	 * @param args
+	 * @return
 	 *
 	 */
 	public static Method getDeclaredMethod(final Class<?> clazz, final String methodName, Class<?>... args) {
@@ -277,6 +287,7 @@ public final class ReflectionUtil {
 	 * Invoke a static method
 	 *
 	 * @param <T>
+	 * @param cl
 	 * @param methodName
 	 * @param params
 	 * @return
@@ -440,6 +451,7 @@ public final class ReflectionUtil {
 	/**
 	 * Wrapper for Class.forName
 	 * @param <T>
+	 * @param path
 	 *
 	 * @return
 	 */

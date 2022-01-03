@@ -11,6 +11,7 @@ import org.mineacademy.bfo.Valid;
 
 /**
  * An engine that reads rule set from a file such as in ChatControl.
+ * @param <T>
  */
 public abstract class RuleSetReader<T extends Rule> {
 

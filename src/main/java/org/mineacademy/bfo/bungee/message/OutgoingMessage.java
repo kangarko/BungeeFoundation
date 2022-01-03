@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.mineacademy.bfo.CompressUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeAction;
 import org.mineacademy.bfo.collection.SerializedMap;
@@ -71,7 +70,7 @@ public final class OutgoingMessage extends Message {
 	 */
 	public void writeString(String... messages) {
 		for (final String message : messages)
-			write(CompressUtil.compressB64(message), String.class);
+			write(message, String.class);
 	}
 
 	/**
@@ -80,7 +79,7 @@ public final class OutgoingMessage extends Message {
 	 * @param map
 	 */
 	public void writeMap(SerializedMap map) {
-		write(CompressUtil.compressB64(map.toJson()), String.class);
+		write(map.toJson(), String.class);
 	}
 
 	/**
@@ -174,7 +173,7 @@ public final class OutgoingMessage extends Message {
 
 	/**
 	 * Send this message with the current data for the given connection
-	 * The connection must be a {@link ServerConnection}!
+	 * The connection must be a {@link Server} or {@link ProxiedPlayer}!
 	 *
 	 * @param connection
 	 */

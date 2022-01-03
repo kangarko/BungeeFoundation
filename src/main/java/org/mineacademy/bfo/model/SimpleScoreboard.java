@@ -69,6 +69,8 @@ public class SimpleScoreboard {
 
 	/**
 	 * Set or update the lines. Colors are replaced in {@link #send(ProxiedPlayer)} method.
+	 * @param lines
+	 * @return
 	 */
 	public final SimpleScoreboard setLines(String... lines) {
 		Preconditions.checkArgument(lines.length <= 15, "Scoreboard can only have 15 lines");
@@ -81,7 +83,8 @@ public class SimpleScoreboard {
 
 	/**
 	 * Send or update the scoreboard to the player. Colors are replaced automatically.
-	 * Should you want to replace variables, overwrite the {@link #replaceVariables(ProxiedPlayer, String)} method.
+	 * Should you want to replace variables, overwrite the replaceVariables method.
+	 * @param player
 	 */
 	public final void send(ProxiedPlayer player) {
 		final Unsafe unsafe = player.unsafe();

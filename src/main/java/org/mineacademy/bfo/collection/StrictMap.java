@@ -18,6 +18,8 @@ import org.mineacademy.bfo.Valid;
  * Strict map that only allows to remove elements that are contained within, or add elements that are not.
  * <p>
  * Failing to do so results in an error, with optional error message.
+ * @param <E>
+ * @param <T>
  */
 public final class StrictMap<E, T> extends StrictCollection {
 
@@ -105,6 +107,9 @@ public final class StrictMap<E, T> extends StrictCollection {
 
 	/**
 	 * Will return the key as normal or put it there and return it.
+	 * @param key
+	 * @param defaultToPut
+	 * @return
 	 */
 	public T getOrPut(E key, T defaultToPut) {
 		if (contains(key))
@@ -116,6 +121,8 @@ public final class StrictMap<E, T> extends StrictCollection {
 
 	/**
 	 * CAN BE NULL, NO EXCEPTION THROWING
+	 * @param key
+	 * @return
 	 */
 	public T get(E key) {
 		return map.get(key);

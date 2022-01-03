@@ -60,7 +60,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * It is recommended to override this in your own {@link SimplePlugin}
 	 * implementation so you will get the instance of that, directly.
 	 *
-	 * @param <T>
 	 * @return this instance
 	 */
 	public static SimplePlugin getInstance() {
@@ -156,7 +155,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	private final Reloadables reloadables = new Reloadables();
 
 	/**
-	 * Is this plugin enabled? Checked for after {@link #onPluginPreStart()}
+	 * Is this plugin enabled?
 	 */
 	public boolean isEnabled = true;
 
@@ -513,7 +512,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	}
 
 	/**
-	 * Get the year of foundation displayed in {@link #getMainCommand()}
+	 * Get the year of foundation displayed in the main command
 	 *
 	 * @return -1 by default, or the founded year
 	 */

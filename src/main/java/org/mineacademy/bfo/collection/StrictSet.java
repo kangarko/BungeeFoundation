@@ -14,6 +14,7 @@ import org.mineacademy.bfo.exception.FoException;
  * Strict set that only allows to remove elements that are contained within, or add elements that are not.
  * <p>
  * Failing to do so results in an error, with optional error message.
+ * @param <E>
  */
 public class StrictSet<E> extends StrictCollection implements Iterable<E> {
 

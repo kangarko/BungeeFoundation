@@ -2,7 +2,6 @@ package org.mineacademy.bfo.bungee.message;
 
 import java.util.UUID;
 
-import org.mineacademy.bfo.CompressUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeAction;
 import org.mineacademy.bfo.collection.SerializedMap;
@@ -93,7 +92,7 @@ public final class IncomingMessage extends Message {
 	public String readString() {
 		moveHead(String.class);
 
-		return CompressUtil.decompressB64(input.readUTF());
+		return input.readUTF();
 	}
 
 	/**
@@ -174,12 +173,12 @@ public final class IncomingMessage extends Message {
 	}
 
 	/**
-	 * Forwards this message to another server, must be {@link ServerConnection}
+	 * Forwards this message to another server, must be {@link Server}
 	 *
 	 * @param connection
 	 */
 	public void forward(Connection connection) {
-		Valid.checkBoolean(connection instanceof Server, "Connection must be ProxiedPlayer");
+		Valid.checkBoolean(connection instanceof Server, "Connection must be Server");
 
 		((Server) connection).sendData(getChannel(), data);
 		Debugger.debug("bungee", "Forwarding data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
@@ -188,7 +187,6 @@ public final class IncomingMessage extends Message {
 	/**
 	 * Forwards this message to all other servers except the senders one
 	 *
-	 * @param info
 	 */
 	public void forwardToOthers() {
 		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
@@ -199,7 +197,6 @@ public final class IncomingMessage extends Message {
 	/**
 	 * Forwards this message to all other servers including the senders one
 	 *
-	 * @param info
 	 */
 	public void forwardToAll() {
 		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())

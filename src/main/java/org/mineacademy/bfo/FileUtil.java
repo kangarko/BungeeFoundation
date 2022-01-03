@@ -51,7 +51,7 @@ public final class FileUtil {
 	 *
 	 * Example: classes/Archer.yml will only return Archer
 	 *
-	 * @param path
+	 * @param file
 	 * @return
 	 */
 	public static String getFileName(File file) {
@@ -426,7 +426,7 @@ public final class FileUtil {
 	 * name.
 	 *
 	 * @param override always extract file even if already exists?
-	 * @param from     the path to the file inside the plugin
+	 * @param is
 	 * @param to       the path where the file will be copyed inside the plugin
 	 *                 folder
 	 * @param replacer the variables replacer

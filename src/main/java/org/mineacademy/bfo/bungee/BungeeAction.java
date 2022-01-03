@@ -12,6 +12,7 @@ public interface BungeeAction {
 	/**
 	 * Stores all valid values in this action in the order of which they
 	 * are being sent. Only primitive types and String are supported.
+	 * @return
 	 */
 	Class<?>[] getContent();
 

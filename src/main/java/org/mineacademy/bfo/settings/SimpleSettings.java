@@ -93,8 +93,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	public static StrictList<String> DEBUG_SECTIONS = new StrictList<>();
 
 	/**
-	 * The plugin prefix in front of chat/console messages, added automatically unless
-	 * disabled in {@link Common#ADD_LOG_PREFIX} and {@link Common#ADD_TELL_PREFIX}.
+	 * The plugin prefix in front of chat/console messages, added automatically
 	 * <p>
 	 * Typically for ChatControl:
 	 * <p>

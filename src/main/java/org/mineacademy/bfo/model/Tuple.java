@@ -6,6 +6,8 @@ import lombok.Data;
 
 /**
  * Simple tuple for key-value pairs
+ * @param <K>
+ * @param <V>
  */
 @Data
 public final class Tuple<K, V> implements ConfigSerializable {
@@ -21,7 +23,7 @@ public final class Tuple<K, V> implements ConfigSerializable {
 	private final V value;
 
 	/**
-	 * @see org.mineacademy.fo.model.ConfigSerializable#serialize()
+	 * @see ConfigSerializable#serialize()
 	 */
 	@Override
 	public SerializedMap serialize() {

@@ -20,7 +20,7 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
 /**
- * Represents a BungeeCord listener using a {@link BungeeChannel} channel
+ * Represents a BungeeCord listener using a bungee channel
  * on which you can listen to receiving messages
  *
  * This class is also a Listener for Bukkit events for your convenience
@@ -67,7 +67,7 @@ public abstract class BungeeListener implements Listener {
 	 * Called automatically when you receive a plugin message from Bungeecord,
 	 * see https://spigotmc.org/wiki/bukkit-bungee-plugin-messaging-channel
 	 *
-	 * @param action
+	 * @param sender
 	 * @param message
 	 */
 	public abstract void onMessageReceived(Connection sender, IncomingMessage message);
@@ -94,7 +94,7 @@ public abstract class BungeeListener implements Listener {
 	}
 
 	/**
-	 * A proxy for {@link SimplePlugin#getBungeeCord()#getChannel()}
+	 * A proxy for SimplePlugin.getBungee().getChannel()
 	 *
 	 * @return
 	 */

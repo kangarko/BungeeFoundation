@@ -22,6 +22,7 @@ public final class EventHandledException extends CommandException {
 
 	/**
 	 * Create a new command exception with messages for the command sender
+	 * @param cancelled
 	 *
 	 * @param messages
 	 */

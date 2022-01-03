@@ -1,13 +1,14 @@
 package org.mineacademy.bfo;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterOutputStream;
 
 import lombok.SneakyThrows;
+import net.md_5.bungee.api.ChatColor;
 
 /**
  * A simple class to compress or decompress text
@@ -19,13 +20,10 @@ public final class CompressUtil {
 	 *
 	 * @param text
 	 * @return
-	 * @throws IOException
 	 */
 	@SneakyThrows
-	public static String compressB64(String text) {
-		return text;
-
-		//return new String(Base64.getEncoder().encode(compress(text.replace(String.valueOf(ChatColor.COLOR_CHAR), "%CLRCHAR%"))), StandardCharsets.UTF_8);
+	public static String _compressB64(String text) {
+		return new String(Base64.getEncoder().encode(_compress(text.replace(String.valueOf(ChatColor.COLOR_CHAR), "%CLRCHAR%"))), StandardCharsets.UTF_8);
 	}
 
 	/**
@@ -33,13 +31,10 @@ public final class CompressUtil {
 	 *
 	 * @param b64Compressed
 	 * @return
-	 * @throws IOException
 	 */
 	@SneakyThrows
-	public static String decompressB64(String b64Compressed) {
-		return b64Compressed;
-
-		//return decompress(Base64.getDecoder().decode(b64Compressed)).replace("%CLRCHAR%", String.valueOf(ChatColor.COLOR_CHAR));
+	public static String _decompressB64(String b64Compressed) {
+		return decompress(Base64.getDecoder().decode(b64Compressed)).replace("%CLRCHAR%", String.valueOf(ChatColor.COLOR_CHAR));
 	}
 
 	/**
@@ -47,11 +42,10 @@ public final class CompressUtil {
 	 *
 	 * @param text
 	 * @return
-	 * @throws IOException
 	 */
 	@SneakyThrows
-	public static byte[] compress(String text) {
-		return compress(text.getBytes());
+	public static byte[] _compress(String text) {
+		return _compress(text.getBytes());
 	}
 
 	/**
@@ -59,10 +53,9 @@ public final class CompressUtil {
 	 *
 	 * @param byteArray
 	 * @return
-	 * @throws IOException
 	 */
 	@SneakyThrows
-	public static byte[] compress(byte[] byteArray) {
+	public static byte[] _compress(byte[] byteArray) {
 		final ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
 		try (DeflaterOutputStream deflater = new DeflaterOutputStream(stream)) {
@@ -77,7 +70,6 @@ public final class CompressUtil {
 	 *
 	 * @param compressedText
 	 * @return
-	 * @throws IOException
 	 */
 	@SneakyThrows
 	public static String decompress(byte[] compressedText) {

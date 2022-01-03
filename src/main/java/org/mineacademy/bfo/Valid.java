@@ -71,6 +71,7 @@ public final class Valid {
 	 *
 	 * @param expression
 	 * @param falseMessage
+	 * @param replacements
 	 */
 	public void checkBoolean(final boolean expression, final String falseMessage, final Object... replacements) {
 		if (!expression)
@@ -82,6 +83,7 @@ public final class Valid {
 	 *
 	 * @param toCheck
 	 * @param falseMessage
+	 * @param replacements
 	 */
 	public void checkInteger(final String toCheck, final String falseMessage, final Object... replacements) {
 		if (!Valid.isInteger(toCheck))
@@ -103,7 +105,7 @@ public final class Valid {
 	 * Throw an error if the given message is empty or null
 	 *
 	 * @param message
-	 * @param message
+	 * @param emptyMessage
 	 */
 	public void checkNotEmpty(final String message, final String emptyMessage) {
 		if (message == null || message.length() == 0)
@@ -271,8 +273,8 @@ public final class Valid {
 	 * Compare two lists. Two lists are considered equal if they are same length and all values are the same.
 	 * Exception: Strings are stripped of colors before comparation.
 	 *
-	 * @param first,  first list to compare
-	 * @param second, second list to compare with
+	 * @param first  first list to compare
+	 * @param second second list to compare with
 	 * @return true if lists are equal
 	 */
 	public <T> boolean listEquals(final List<T> first, final List<T> second) {

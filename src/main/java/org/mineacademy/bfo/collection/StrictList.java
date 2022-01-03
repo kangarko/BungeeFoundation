@@ -12,6 +12,7 @@ import org.mineacademy.bfo.Valid;
  * Strict list that only allows to remove elements that are contained within, or add elements that are not.
  * <p>
  * Failing to do so results in an error, with optional error message.
+ * @param <E>
  */
 public final class StrictList<E> extends StrictCollection implements Iterable<E> {
 

@@ -40,7 +40,7 @@ public final class SimpleComponent {
 	// --------------------------------------------------------------------
 
 	/**
-	 * Add a show text hover event for the {@link #currentComponent}
+	 * Add a show text hover event for the current component
 	 *
 	 * @param text
 	 * @return
@@ -50,7 +50,7 @@ public final class SimpleComponent {
 	}
 
 	/**
-	 * Add a hover event for the {@link #currentComponent}
+	 * Add a hover event for the current component
 	 *
 	 * @param action
 	 * @param text
@@ -63,7 +63,7 @@ public final class SimpleComponent {
 	}
 
 	/**
-	 * Add a run command event for the {@link #currentComponent}
+	 * Add a run command event for the current component
 	 *
 	 * @param text
 	 * @return
@@ -73,7 +73,7 @@ public final class SimpleComponent {
 	}
 
 	/**
-	 * Add a suggest command event for the {@link #currentComponent}
+	 * Add a suggest command event for the current component
 	 *
 	 * @param text
 	 * @return
@@ -83,7 +83,7 @@ public final class SimpleComponent {
 	}
 
 	/**
-	 * Open the given URL for the {@link #currentComponent}
+	 * Open the given URL for the current component
 	 *
 	 * @param url
 	 * @return
@@ -93,7 +93,7 @@ public final class SimpleComponent {
 	}
 
 	/**
-	 * Add a command event for the {@link #currentComponent}
+	 * Add a command event for the current component
 	 *
 	 * @param action
 	 * @param text
