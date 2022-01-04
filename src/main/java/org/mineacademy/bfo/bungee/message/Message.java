@@ -117,7 +117,7 @@ abstract class Message {
 
 	/**
 	 * Return the bungee channel, always returns
-	 * {@link SimplePlugin#getBungeeCord()#getChannel()}
+	 * {@link SimplePlugin#getBungee()} - getChannel()
 	 *
 	 * @return
 	 */

@@ -75,7 +75,7 @@ public final class SerializedMap extends StrictCollection {
 			final String key = entry.getKey();
 			final Object value = entry.getValue();
 
-			if (key != null && value != null && !this.map.contains(key))
+			if (key != null && value != null && !this.map.containsKey(key))
 				this.map.put(key, value);
 		}
 
@@ -88,7 +88,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @see Map#containsKey(Object)
 	 */
 	public boolean containsKey(final String key) {
-		return map.contains(key);
+		return map.containsKey(key);
 	}
 
 	/**
@@ -552,7 +552,7 @@ public final class SerializedMap extends StrictCollection {
 	public <T> List<T> getList(final String key, final Class<T> type) {
 		final List<T> list = new ArrayList<>();
 
-		if (!map.contains(key))
+		if (!map.containsKey(key))
 			return list;
 
 		final Object rawList = this.removeOnGet ? map.removeWeak(key) : map.get(key);
@@ -963,6 +963,7 @@ public final class SerializedMap extends StrictCollection {
 	 * @return the serialized map, or an empty map if object could not be parsed
 	 */
 	public static SerializedMap of(final Object object) {
+
 		if (object instanceof SerializedMap)
 			return (SerializedMap) object;
 

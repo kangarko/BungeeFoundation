@@ -160,7 +160,7 @@ public final class Variables {
 		while (matcher.find()) {
 			final String variable = matcher.group(1);
 
-			final boolean isSenderCached = cache.contains(sender.getName());
+			final boolean isSenderCached = cache.containsKey(sender.getName());
 			boolean makeCache = true;
 
 			String value = null;

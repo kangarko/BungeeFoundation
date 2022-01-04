@@ -498,7 +498,7 @@ public final class Common {
 	}
 
 	/**
-	 * Replace the & letter with the {@link CompChatColor#COLOR_CHAR} in the message.
+	 * Replace the & letter with the {@link ChatColor#COLOR_CHAR} in the message.
 	 *
 	 * @param messages the messages to replace color codes with '&'
 	 * @return the colored message
@@ -508,7 +508,7 @@ public final class Common {
 	}
 
 	/**
-	 * Replace the & letter with the {@link CompChatColor#COLOR_CHAR} in the message.
+	 * Replace the & letter with the {@link ChatColor#COLOR_CHAR} in the message.
 	 *
 	 * @param messages the messages to replace color codes with '&'
 	 * @return the colored message
@@ -522,7 +522,7 @@ public final class Common {
 	}
 
 	/**
-	 * Replace the & letter with the {@link CompChatColor#COLOR_CHAR} in the message.
+	 * Replace the & letter with the {@link ChatColor#COLOR_CHAR} in the message.
 	 * <p>
 	 * Also replaces {prefix} with {@link #getTellPrefix()} and {server} with {@link SimpleLocalization#SERVER_PREFIX}
 	 *
@@ -1320,8 +1320,7 @@ public final class Common {
 
 	/**
 	 * Returns true if the given matcher matches. We also evaluate
-	 * how long the evaluation took and stop it in case it takes too long,
-	 * see {@link SimplePlugin#getRegexTimeout()}
+	 * how long the evaluation took and stop it in case it takes too long
 	 *
 	 * @param matcher
 	 * @return
@@ -1342,8 +1341,7 @@ public final class Common {
 	/**
 	 * Compiles a matches for the given pattern and message. Colors are stripped.
 	 * <p>
-	 * We also evaluate how long the evaluation took and stop it in case it takes too long,
-	 * see {@link SimplePlugin#getRegexTimeout()}
+	 * We also evaluate how long the evaluation took and stop it in case it takes too long
 	 *
 	 * @param pattern
 	 * @param message
@@ -1437,9 +1435,7 @@ public final class Common {
 
 	/**
 	 * <p>Capitalizes all the delimiter separated words in a String.
-	 * Only the first letter of each word is changed. To convert the 
-	 * rest of each word to lowercase at the same time, 
-	 * use {@link #capitalizeFully(String, char[])}.</p>
+	 * Only the first letter of each word is changed.</p>
 	 *
 	 * <p>The delimiters represent a set of characters understood to separate words.
 	 * The first string character and the first non-delimiter character after a
@@ -1456,9 +1452,9 @@ public final class Common {
 	 * WordUtils.capitalize("i am fine", null)  = "I Am Fine"
 	 * WordUtils.capitalize("i aM.fine", {'.'}) = "I aM.Fine"
 	 * </pre>
-	 * 
+	 *
 	 * @param message  the String to capitalize, may be null
-	 * 
+	 *
 	 * @return capitalized String, <code>null</code> if null String input
 	 */
 	public static String capitalize(String message) {
@@ -1602,7 +1598,7 @@ public final class Common {
 	/**
 	 * A convenience method for converting list of objects into array of strings
 	 * We invoke "toString" for each object given it is not null, or return "" if it is
-	 * 
+	 *
 	 * @param <T>
 	 * @param array
 	 * @param delimiter
@@ -2342,7 +2338,7 @@ public final class Common {
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Resolves the inner Map in a Bukkit's {@link MemorySection}
+	 * Resolves the inner Map in a Bukkit's MemorySection
 	 *
 	 * @param mapOrSection
 	 * @return

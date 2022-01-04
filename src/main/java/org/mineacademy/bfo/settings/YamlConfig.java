@@ -117,7 +117,7 @@ public class YamlConfig {
 	}
 
 	/**
-	 * Remove a loaded file from {@link #loadedFiles}
+	 * Remove a loaded file from the loaded files
 	 *
 	 * @param file
 	 */
@@ -239,9 +239,9 @@ public class YamlConfig {
 	 * <p>
 	 * Both paths must include file extension
 	 *
-	 * @param from, the origin path within the plugin jar, if null, no defaults are
+	 * @param from the origin path within the plugin jar, if null, no defaults are
 	 *              used
-	 * @param to,   the destination path in plugins/ThisPlugin/
+	 * @param to   the destination path in plugins/ThisPlugin/
 	 */
 	public final void loadConfiguration(final String from, final String to) {
 		Valid.checkNotNull(to, "File to path cannot be null!");
@@ -864,7 +864,7 @@ public class YamlConfig {
 	 * @param key
 	 * @param type
 	 * @return
-	 * @see #getList(String, Class), except that this method never returns null,
+	 * @see #getList(String, Class) except that this method never returns null,
 	 * instead, if the key is not present, we return an empty set instead of
 	 * null
 	 * @deprecated use {@link #getSet(String, Class)} for the same behavior
@@ -1004,7 +1004,6 @@ public class YamlConfig {
 	 * @param path
 	 * @param keyType
 	 * @param valueType
-	 * @param valueParameter
 	 * @return
 	 */
 	public final <Key, Value> LinkedHashMap<Key, Value> getMap(@NonNull String path, final Class<Key> keyType, final Class<Value> valueType) {
@@ -1231,7 +1230,7 @@ public class YamlConfig {
 	/**
 	 * Return whether a key exists or not at the given path
 	 *
-	 * @param path, the path to the key with path prefix added automatically
+	 * @param path the path to the key with path prefix added automatically
 	 * @return
 	 */
 	protected final boolean isSet(final String path) {
@@ -1241,7 +1240,7 @@ public class YamlConfig {
 	/**
 	 * Return whether a key exists or not at the given absolute path
 	 *
-	 * @param path, the path to the key without adding path prefix automatically
+	 * @param path the path to the key without adding path prefix automatically
 	 * @return
 	 */
 	protected final boolean isSetAbsolute(final String path) {
@@ -1510,6 +1509,8 @@ public class YamlConfig {
 
 		/**
 		 * Duration: 4 seconds + 2 second fade in
+		 * @param player
+		 * @param replacer
 		 */
 		public void playLong(final ProxiedPlayer player, final Function<String, String> replacer) {
 			play(player, 5, 4 * 20, 15, replacer);
@@ -1517,6 +1518,8 @@ public class YamlConfig {
 
 		/**
 		 * Duration: 2 seconds + 1 second fade in
+		 * @param player
+		 * @param replacer
 		 */
 		public void playShort(final ProxiedPlayer player, final Function<String, String> replacer) {
 			play(player, 3, 2 * 20, 5, replacer);
