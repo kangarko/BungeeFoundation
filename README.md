@@ -11,7 +11,7 @@ BungeeFoundation is a library for bootstrapping BungeeCord plugins.
 
 ### Important Licencing Information
 
-2013 - 2020 © MineAcademy.org
+© MineAcademy.org
 
 If you are a paying student of MineAcademy.org then you are granted full
 unlimited licence to use, modify and reproduce Foundation both commercially
