@@ -8,6 +8,8 @@ import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.MathUtil;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.md_5.bungee.api.ProxyServer;
 
 /**
@@ -21,6 +23,15 @@ public final class LagCatcher {
 	 * it was put there
 	 */
 	private static final HashMap<String, Long> timings = new HashMap<>();
+
+	/**
+	 * Used to completely disable "X took Y ms" messages from being printed in to your console.
+	 *
+	 * Defaults to true.
+	 */
+	@Setter
+	@Getter
+	private static boolean printingMessages = true;
 
 	private LagCatcher() {
 	}
@@ -84,7 +95,8 @@ public final class LagCatcher {
 			message = message.replace("{section}", section);
 			message = message.replace("{time}", MathUtil.formatTwoDigits(lag));
 
-			Common.log("[{plugin_name} {plugin_version}] " + message);
+			if (printingMessages)
+				Common.log("[{plugin_name} {plugin_version}] " + message);
 		}
 	}
 
@@ -100,7 +112,8 @@ public final class LagCatcher {
 		message = message.replace("{section}", section);
 		message = message.replace("{time}", MathUtil.formatTwoDigits(lag));
 
-		Common.log(message);
+		if (printingMessages)
+			Common.log(message);
 
 	}
 
