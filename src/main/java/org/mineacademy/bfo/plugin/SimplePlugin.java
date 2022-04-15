@@ -11,21 +11,32 @@
 package org.mineacademy.bfo.plugin;
 
 import java.io.File;
-import java.util.List;
+import java.lang.reflect.Constructor;
+import java.util.HashSet;
 import java.util.Objects;
-import java.util.logging.Logger;
+import java.util.Set;
+
+import javax.annotation.Nullable;
 
 import org.mineacademy.bfo.Common;
+import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.Valid;
+import org.mineacademy.bfo.annotation.AutoRegister;
 import org.mineacademy.bfo.bungee.BungeeListener;
-import org.mineacademy.bfo.bungee.SimpleBungee;
+import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.command.SimpleCommand;
-import org.mineacademy.bfo.conversation.ConversationManager;
+import org.mineacademy.bfo.command.SimpleCommandGroup;
+import org.mineacademy.bfo.command.SimpleSubCommand;
 import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.exception.FoException;
+import org.mineacademy.bfo.metrics.Metrics;
+import org.mineacademy.bfo.model.FolderWatcher;
 import org.mineacademy.bfo.model.JavaScriptExecutor;
+import org.mineacademy.bfo.remain.Remain;
+import org.mineacademy.bfo.settings.FileConfig;
+import org.mineacademy.bfo.settings.Lang;
 import org.mineacademy.bfo.settings.SimpleLocalization;
 import org.mineacademy.bfo.settings.SimpleSettings;
-import org.mineacademy.bfo.settings.YamlStaticConfig;
 
 import lombok.Getter;
 import net.md_5.bungee.api.ProxyServer;
@@ -34,9 +45,9 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 
 /**
- * Represents a basic Java plugin using enhanced library functionality
+ * Represents a basic Java plugin using enhanced library functionality,
+ * implementing a listener for easy use
  */
-@Getter
 public abstract class SimplePlugin extends Plugin implements Listener {
 
 	// ----------------------------------------------------------------------------------------
@@ -44,15 +55,39 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	// ----------------------------------------------------------------------------------------
 
 	/**
+	 * The instance of this plugin
+	 */
+	private static volatile SimplePlugin instance;
+
+	/**
+	 * Shortcut for getDescription().getVersion()
+	 */
+	@Getter
+	private static String version;
+
+	/**
+	 * Shortcut for getName()
+	 */
+	@Getter
+	private static String named;
+
+	/**
+	 * Shortcut for getFile()
+	 */
+	@Getter
+	private static File source;
+
+	/**
+	 * Shortcut for getDataFolder()
+	 */
+	@Getter
+	private static File data;
+
+	/**
 	 * An internal flag to indicate that the plugin is being reloaded.
 	 */
 	@Getter
 	private static volatile boolean reloading = false;
-
-	/**
-	 * The instance of this plugin
-	 */
-	private static volatile SimplePlugin instance;
 
 	/**
 	 * Returns the instance of {@link SimplePlugin}.
@@ -63,54 +98,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * @return this instance
 	 */
 	public static SimplePlugin getInstance() {
-		Objects.requireNonNull(instance, "Cannot get a new instance! Have you reloaded?");
-
 		return instance;
-	}
-
-	/**
-	 * Shortcut for getDescription().getVersion()
-	 *
-	 * @return plugin's version
-	 */
-	public static final String getVersion() {
-		return getInstance().getDescription().getVersion();
-	}
-
-	/**
-	 * Shortcut for getName()
-	 *
-	 * @return plugin's name
-	 */
-	public static final String getNamed() {
-		return hasInstance() ? getInstance().getDescription().getName() : "No instance yet";
-	}
-
-	/**
-	 * Shortcut for getFile()
-	 *
-	 * @return plugin's jar file
-	 */
-	public static final File getSource() {
-		return getInstance().getFile();
-	}
-
-	/**
-	 * Shortcut for getDataFolder()
-	 *
-	 * @return plugins' data folder in plugins/
-	 */
-	public static final File getData() {
-		return getInstance().getDataFolder();
-	}
-
-	/**
-	 * Return the bungee suite or null if not set
-	 *
-	 * @return
-	 */
-	public static final SimpleBungee getBungee() {
-		return getInstance().getBungeeCord();
 	}
 
 	/**
@@ -123,125 +111,134 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		return instance != null;
 	}
 
-	/**
-	 * Method to disable the plugin.
-	 */
-	public static void disablePlugin() {
-
-		// Unregister commands and listener
-		getInstance().getProxy().getPluginManager().unregisterCommands(getInstance());
-		getInstance().getProxy().getPluginManager().unregisterListeners(getInstance());
-
-		// Cancel scheduler
-		try {
-			getInstance().getProxy().getScheduler().cancel(getInstance());
-			getInstance().getExecutorService().shutdownNow();
-
-		} catch (final Throwable throwable) {
-			throwable.printStackTrace();
-		}
-
-		getInstance().onDisable();
-	}
-
 	// ----------------------------------------------------------------------------------------
 	// Instance specific
 	// ----------------------------------------------------------------------------------------
 
 	/**
-	 * For your convenience, event listeners and timed tasks may be set here to stop/unregister
-	 * them automatically on reload
+	 * A list of currently enabled event listeners
 	 */
-	private final Reloadables reloadables = new Reloadables();
+	private final StrictList<Listener> listeners = new StrictList<>();
 
 	/**
-	 * Is this plugin enabled?
+	 * A temporary bungee listener, see {@link #setBungeeCord(BungeeListener)}
+	 * set automatically by us.
 	 */
-	public boolean isEnabled = true;
+	private BungeeListener bungeeListener;
 
 	/**
-	 * An internal flag to indicate whether we are calling the {@link #onReloadablesStart()}
-	 * block. We register things using {@link #reloadables} during this block
+	 * A temporary main command to be set in {@link #setMainCommand(SimpleCommandGroup)}
+	 * automatically by us.
 	 */
-	private boolean startingReloadables = false;
+	private SimpleCommandGroup mainCommand;
+
+	/**
+	 * Shortcut to discover if the plugin was disabled (only used internally)
+	 */
+	private boolean enabled;
 
 	// ----------------------------------------------------------------------------------------
 	// Main methods
 	// ----------------------------------------------------------------------------------------
 
+	static {
+
+		// Add console filters early - no reload support
+		FoundationFilter.inject();
+	}
+
 	@Override
 	public final void onLoad() {
 
-		// Set the instance
 		instance = this;
 
+		// Cache results for best performance
+		version = instance.getDescription().getVersion();
+		named = instance.getDataFolder().getName();
+		source = instance.getFile();
+		data = instance.getDataFolder();
+
 		// Call parent
-		onPluginLoad();
+		this.onPluginLoad();
 	}
 
 	@Override
 	public final void onEnable() {
 
 		// Check if Foundation is correctly moved
-		checkShading();
+		this.checkShading();
 
-		// Boot up JavaScript
-		JavaScriptExecutor.run("");
-
-		if (!isEnabled)
+		// Before all, check if necessary libraries and the minimum required MC version
+		if (!this.enabled)
 			return;
 
-		// --------------------------------------------
-		// Call the main pre start method
-		// --------------------------------------------
-		onPluginPreStart();
-		// --------------------------------------------
+		// Load debug mode early
+		Debugger.detectDebugMode();
+
+		// Print startup logo early before onPluginPreStart
+		// Disable logging prefix if logo is set
+		if (this.getStartupLogo() != null) {
+			final String oldLogPrefix = Common.getLogPrefix();
+
+			Common.setLogPrefix("");
+			Common.log(this.getStartupLogo());
+			Common.setLogPrefix(oldLogPrefix);
+		}
 
 		// Return if plugin pre start indicated a fatal problem
-		if (!isEnabled)
+		if (!this.enabled)
 			return;
 
-		if (getStartupLogo() != null)
-			Common.log(getStartupLogo());
-
 		try {
-			// Load our main static settings classes
-			if (getSettings() != null) {
-				YamlStaticConfig.load(getSettings());
-
-				Valid.checkBoolean(SimpleSettings.isSettingsCalled() != null && SimpleLocalization.isLocalizationCalled() != null, "Developer forgot to call Settings or Localization");
-			}
-
-			// Load bungee suite
-			Common.registerEvents(new BungeeListener.BungeeListenerImpl());
-			final SimpleBungee bungee = getBungeeCord();
-
-			if (bungee != null) {
-				getProxy().registerChannel(bungee.getChannel());
-
-				Debugger.debug("bungee", "Registered BungeeCord listener for " + bungee.getChannel());
-			}
 
 			// --------------------------------------------
 			// Call the main start method
 			// --------------------------------------------
-			startingReloadables = true;
-			onReloadablesStart();
-			startingReloadables = false;
 
-			onPluginStart();
+			Common.registerEvents(new BungeeListener.BungeeListenerImpl());
+
+			if (!getProxy().getChannels().contains("BungeeCord"))
+				this.getProxy().registerChannel("BungeeCord");
+
+			// Hide plugin name before console messages
+			final String oldLogPrefix = Common.getLogPrefix();
+			Common.setLogPrefix("");
+
+			try {
+				AutoRegisterScanner.scanAndRegister();
+
+			} catch (final Throwable t) {
+				Remain.sneaky(t);
+
+				return;
+			}
+
+			this.onReloadablesStart();
+			this.onPluginStart();
 			// --------------------------------------------
 
 			// Return if plugin start indicated a fatal problem
-			if (!isEnabled)
+			if (!this.enabled)
 				return;
 
 			// Register our listeners
-			registerEvents(this); // For convenience
-			registerEvents(new ConversationManager());
+			this.registerEvents(this);
+
+			// Prepare Nashorn engine
+			JavaScriptExecutor.run("");
+
+			// Finish off by starting metrics (currently bStats)
+			if (this.getMetricsPluginId() != -1)
+				new Metrics(this, this.getMetricsPluginId());
+
+			// Set the logging and tell prefix
+			Common.setTellPrefix(SimpleSettings.PLUGIN_PREFIX);
+
+			// Finally, place plugin name before console messages after plugin has (re)loaded
+			Common.runAsync(() -> Common.setLogPrefix(oldLogPrefix));
 
 		} catch (final Throwable t) {
-			displayError0(t);
+			this.displayError0(t);
 		}
 	}
 
@@ -263,25 +260,25 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * <p>
 	 * Or, this is caused by a PlugMan, and we have no mercy for that.
 	 */
-	private final class ShadingException extends Throwable {
+	private class ShadingException extends Throwable {
 		private static final long serialVersionUID = 1L;
 
 		public ShadingException() {
-			if (!SimplePlugin.getNamed().equals(getDescription().getName())) {
-				ProxyServer.getInstance().getLogger().severe(Common.consoleLine());
-				ProxyServer.getInstance().getLogger().severe("We have a class path problem in the BungeeFoundation library");
-				ProxyServer.getInstance().getLogger().severe("preventing " + getDescription().getName() + " from loading correctly!");
-				ProxyServer.getInstance().getLogger().severe("");
-				ProxyServer.getInstance().getLogger().severe("This is likely caused by two plugins having the");
-				ProxyServer.getInstance().getLogger().severe("same Foundation library paths - make sure you");
-				ProxyServer.getInstance().getLogger().severe("relocale the package! If you are testing using");
-				ProxyServer.getInstance().getLogger().severe("Ant, only test one plugin at the time.");
-				ProxyServer.getInstance().getLogger().severe("");
-				ProxyServer.getInstance().getLogger().severe("Possible cause: " + SimplePlugin.getNamed());
-				ProxyServer.getInstance().getLogger().severe("Foundation package: " + SimplePlugin.class.getPackage().getName());
-				ProxyServer.getInstance().getLogger().severe(Common.consoleLine());
+			if (!SimplePlugin.getNamed().equals(SimplePlugin.this.getDescription().getName())) {
+				SimplePlugin.this.getLogger().severe(Common.consoleLine());
+				SimplePlugin.this.getLogger().severe("We have a class path problem in the Foundation library");
+				SimplePlugin.this.getLogger().severe("preventing " + SimplePlugin.this.getDescription().getName() + " from loading correctly!");
+				SimplePlugin.this.getLogger().severe("");
+				SimplePlugin.this.getLogger().severe("This is likely caused by two plugins having the");
+				SimplePlugin.this.getLogger().severe("same Foundation library paths - make sure you");
+				SimplePlugin.this.getLogger().severe("relocale the package! If you are testing using");
+				SimplePlugin.this.getLogger().severe("Ant, only test one plugin at the time.");
+				SimplePlugin.this.getLogger().severe("");
+				SimplePlugin.this.getLogger().severe("Possible cause: " + SimplePlugin.getNamed());
+				SimplePlugin.this.getLogger().severe("Foundation package: " + SimplePlugin.class.getPackage().getName());
+				SimplePlugin.this.getLogger().severe(Common.consoleLine());
 
-				isEnabled = false;
+				throw new FoException("Shading exception, see above for details.");
 			}
 		}
 	}
@@ -295,28 +292,30 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		Debugger.printStackTrace(throwable);
 
 		Common.log(
-				"&c  _   _                       _ ",
-				"&c  | | | | ___   ___  _ __  ___| |",
-				"&c  | |_| |/ _ \\ / _ \\| '_ \\/ __| |",
-				"&c  |  _  | (_) | (_) | |_) \\__ \\_|",
-				"&4  |_| |_|\\___/ \\___/| .__/|___(_)",
-				"&4                    |_|          ",
+				"&4    ___                  _ ",
+				"&4   / _ \\  ___  _ __  ___| |",
+				"&4  | | | |/ _ \\| '_ \\/ __| |",
+				"&4  | |_| | (_) | |_) \\__ \\_|",
+				"&4   \\___/ \\___/| .__/|___(_)",
+				"&4             |_|          ",
 				"&4!-----------------------------------------------------!",
-				" &cError loading " + getDescription().getName() + " v" + getDescription().getVersion() + ", plugin is disabled!",
-				" &cRunning on " + getProxy().getVersion() + " & Java " + System.getProperty("java.version"),
+				" &cError loading " + this.getDescription().getName() + " v" + this.getDescription().getVersion() + ", plugin is disabled!",
+				" &cRunning on " + ProxyServer.getInstance().getVersion() + " (" + ProxyServer.getInstance().getGameVersion() + ") & Java " + System.getProperty("java.version"),
 				"&4!-----------------------------------------------------!");
 
-		while (throwable.getCause() != null)
-			throwable = throwable.getCause();
+		{
+			while (throwable.getCause() != null)
+				throwable = throwable.getCause();
 
-		String error = "Unable to get the error message, search above.";
-		if (throwable.getMessage() != null && !throwable.getMessage().isEmpty() && !throwable.getMessage().equals("null"))
-			error = throwable.getMessage();
+			String error = "Unable to get the error message, search above.";
+			if (throwable.getMessage() != null && !throwable.getMessage().isEmpty() && !throwable.getMessage().equals("null"))
+				error = throwable.getMessage();
 
-		Common.log(" &cError: " + error);
+			Common.log(" &cError: " + error);
+		}
 		Common.log("&4!-----------------------------------------------------!");
 
-		isEnabled = false;
+		this.enabled = false;
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -326,17 +325,16 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	@Override
 	public final void onDisable() {
 
-		// If the early startup was interrupted, do not call shutdown methods
-		if (!isEnabled)
-			return;
-
 		try {
-			onPluginStop();
+			this.onPluginStop();
 		} catch (final Throwable t) {
 			Common.log("&cPlugin might not shut down property. Got " + t.getClass().getSimpleName() + ": " + t.getMessage());
 		}
 
-		unregisterReloadables();
+		this.unregisterReloadables();
+
+		Objects.requireNonNull(instance, "Instance of " + this.getDataFolder().getName() + " already nulled!");
+		instance = null;
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -347,12 +345,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * Called before the plugin is started, see {@link JavaPlugin#onLoad()}
 	 */
 	protected void onPluginLoad() {
-	}
-
-	/**
-	 * Called before we start loading the plugin, but after {@link #onPluginLoad()}
-	 */
-	protected void onPluginPreStart() {
 	}
 
 	/**
@@ -395,32 +387,54 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * Attempts to reload the plugin
 	 */
 	public final void reload() {
+		final String oldLogPrefix = Common.getLogPrefix();
+		Common.setLogPrefix("");
+
 		Common.log(Common.consoleLineSmooth());
 		Common.log(" ");
-		Common.log("Reloading plugin " + getDescription().getName() + " v" + getVersion());
+		Common.log("Reloading plugin " + this.getDataFolder().getName() + " v" + getVersion());
 		Common.log(" ");
 
 		reloading = true;
 
 		try {
-			unregisterReloadables();
 
-			onPluginPreReload();
+			for (final Listener listener : this.listeners)
+				ProxyServer.getInstance().getPluginManager().unregisterListener(listener);
 
-			if (getSettings() != null)
-				YamlStaticConfig.load(getSettings());
+			this.listeners.clear();
 
-			onPluginReload();
+			Debugger.detectDebugMode();
 
-			startingReloadables = true;
-			onReloadablesStart();
-			startingReloadables = false;
+			this.unregisterReloadables();
+
+			FileConfig.clearLoadedSections();
+
+			this.onPluginPreReload();
+
+			Common.setTellPrefix(SimpleSettings.PLUGIN_PREFIX);
+			this.onPluginReload();
+
+			// Something went wrong in the reload pipeline
+			if (!enabled)
+				return;
+
+			// Register classes
+			AutoRegisterScanner.scanAndRegister();
+
+			Lang.reloadLang();
+			Lang.loadPrefixes();
+
+			this.onReloadablesStart();
+
+			Common.log(Common.consoleLineSmooth());
 
 		} catch (final Throwable t) {
-			Common.throwError(t, "Error reloading " + getDescription().getName() + " " + getVersion());
+			Common.throwError(t, "Error reloading " + this.getDataFolder().getName() + " " + getVersion());
 
 		} finally {
-			Common.log(Common.consoleLineSmooth());
+			Common.setLogPrefix(oldLogPrefix);
+
 			reloading = false;
 		}
 	}
@@ -429,7 +443,10 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		SimpleSettings.resetSettingsCall();
 		SimpleLocalization.resetLocalizationCall();
 
-		getProxy().getScheduler().cancel(this);
+		FolderWatcher.stopThreads();
+
+		this.getProxy().getScheduler().cancel(this);
+		this.mainCommand = null;
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -437,17 +454,38 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	// ----------------------------------------------------------------------------------------
 
 	/**
-	 * Convenience method for quickly registering events if the condition is met
+	 * Convenience method for quickly registering events in all classes in your plugin that
+	 * extend the given class.
 	 *
-	 * @param listener
-	 * @param condition
+	 * NB: You must have a no arguments constructor otherwise it will not be registered
+	 *
+	 * TIP: Set your Debug key in your settings.yml to ["auto-register"] to see what is registered.
+	 *
+	 * @param extendingClass
 	 */
-	protected final void registerEventsIf(final Listener listener, final boolean condition) {
-		if (condition)
-			if (startingReloadables)
-				reloadables.registerEvents(listener);
-			else
-				registerEvents(listener);
+	protected final <T extends Listener> void registerAllEvents(final Class<T> extendingClass) {
+
+		Valid.checkBoolean(!extendingClass.equals(Listener.class), "registerAllEvents does not support Listener.class due to conflicts, create your own middle class instead");
+
+		classLookup:
+		for (final Class<? extends T> pluginClass : ReflectionUtil.getClasses(instance, extendingClass)) {
+
+			// AutoRegister means the class is already being registered
+			if (pluginClass.isAnnotationPresent(AutoRegister.class))
+				continue;
+
+			for (final Constructor<?> con : pluginClass.getConstructors())
+				if (con.getParameterCount() == 0) {
+					final T instance = (T) ReflectionUtil.instantiate(con);
+
+					Debugger.debug("auto-register", "Auto-registering events in " + pluginClass);
+					this.registerEvents(instance);
+
+					continue classLookup;
+				}
+
+			Debugger.debug("auto-register", "Skipping auto-registering events in " + pluginClass + " because it lacks at least one no arguments constructor");
+		}
 	}
 
 	/**
@@ -456,10 +494,59 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * @param listener
 	 */
 	protected final void registerEvents(final Listener listener) {
-		if (startingReloadables)
-			reloadables.registerEvents(listener);
-		else
-			getProxy().getPluginManager().registerListener(this, listener);
+		ProxyServer.getInstance().getPluginManager().registerListener(this, listener);
+	}
+
+	/**
+	 * Convenience method for quickly registering all command classes in your plugin that
+	 * extend the given class.
+	 *
+	 * NB: You must have a no arguments constructor otherwise it will not be registered
+	 *
+	 * TIP: Set your Debug key in your settings.yml to ["auto-register"] to see what is registered.
+	 *
+	 * @param extendingClass
+	 */
+	protected final <T extends Command> void registerAllCommands(final Class<T> extendingClass) {
+		Valid.checkBoolean(!extendingClass.equals(Command.class), "registerAllCommands does not support Command.class due to conflicts, create your own middle class instead");
+		Valid.checkBoolean(!extendingClass.equals(SimpleCommand.class), "registerAllCommands does not support SimpleCommand.class due to conflicts, create your own middle class instead");
+		Valid.checkBoolean(!extendingClass.equals(SimpleSubCommand.class), "registerAllCommands does not support SubCommand.class");
+
+		classLookup:
+		for (final Class<? extends T> pluginClass : ReflectionUtil.getClasses(instance, extendingClass)) {
+
+			// AutoRegister means the class is already being registered
+			if (pluginClass.isAnnotationPresent(AutoRegister.class))
+				continue;
+
+			if (SimpleSubCommand.class.isAssignableFrom(pluginClass)) {
+				Debugger.debug("auto-register", "Skipping auto-registering command " + pluginClass + " because sub-commands cannot be registered");
+
+				continue;
+			}
+
+			try {
+				for (final Constructor<?> con : pluginClass.getConstructors())
+					if (con.getParameterCount() == 0) {
+						final T instance = (T) ReflectionUtil.instantiate(con);
+
+						Debugger.debug("auto-register", "Auto-registering command " + pluginClass);
+
+						if (instance instanceof SimpleCommand)
+							this.registerCommand(instance);
+
+						else
+							this.registerCommand(instance);
+
+						continue classLookup;
+					}
+
+			} catch (final LinkageError ex) {
+				Common.log("Unable to register commands in '" + pluginClass.getSimpleName() + "' due to error: " + ex);
+			}
+
+			Debugger.debug("auto-register", "Skipping auto-registering command " + pluginClass + " because it lacks at least one no arguments constructor");
+		}
 	}
 
 	/**
@@ -468,16 +555,21 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * @param command
 	 */
 	protected final void registerCommand(final Command command) {
-		getProxy().getPluginManager().registerCommand(this, command);
+		if (command instanceof SimpleCommand)
+			((SimpleCommand) command).register();
+
+		else
+			getProxy().getPluginManager().registerCommand(this, command);
 	}
 
 	/**
-	 * Convenience shortcut for calling the register method in {@link SimpleCommand}
+	 * Shortcut for calling {@link SimpleCommandGroup#register()}
 	 *
-	 * @param command
+	 * @param labelAndAliases
+	 * @param group
 	 */
-	protected final void registerCommand(final SimpleCommand command) {
-		command.register();
+	protected final void registerCommands(final SimpleCommandGroup group) {
+		group.register();
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -485,11 +577,13 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	// ----------------------------------------------------------------------------------------
 
 	/**
-	 * Get the BungeeCord message channel, return null for none
+	 * Return false if plugin was disabled during startup/reload
 	 *
 	 * @return
 	 */
-	public abstract SimpleBungee getBungeeCord();
+	public final boolean isEnabled() {
+		return this.enabled;
+	}
 
 	/**
 	 * The start-up fancy logo
@@ -501,18 +595,30 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	}
 
 	/**
-	 * Return your main setting classes extending {@link YamlStaticConfig}.
-	 *
-	 * TIP: Extend {@link SimpleSettings} and {@link SimpleLocalization}
+	 * If you use \@AutoRegister on a command group that has a no args constructor,
+	 * we use the label and aliases from {@link SimpleSettings#MAIN_COMMAND_ALIASES}
+	 * and associate it here for the record.
 	 *
 	 * @return
 	 */
-	public List<Class<? extends YamlStaticConfig>> getSettings() {
-		return null;
+	@Nullable
+	public final SimpleCommandGroup getMainCommand() {
+		return this.mainCommand;
 	}
 
 	/**
-	 * Get the year of foundation displayed in the main command
+	 * @deprecated do not use, internal use only
+	 * @param group
+	 */
+	@Deprecated
+	public final void setMainCommand(SimpleCommandGroup group) {
+		Valid.checkBoolean(this.mainCommand == null, "Main command has already been set to " + this.mainCommand);
+
+		this.mainCommand = group;
+	}
+
+	/**
+	 * Get the year of foundation displayed in our {@link SimpleCommandGroup} on help
 	 *
 	 * @return -1 by default, or the founded year
 	 */
@@ -520,18 +626,113 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		return -1;
 	}
 
-	// ----------------------------------------------------------------------------------------
-	// Prevention
-	// ----------------------------------------------------------------------------------------
-
 	/**
-	 * @deprecated DO NOT USE
-	 * Use Common#log instead
+	 * If you want to use bStats.org metrics system,
+	 * simply return the plugin ID (https://bstats.org/what-is-my-plugin-id)
+	 * here and we will automatically start tracking it.
+	 * <p>
+	 * Defaults to -1 which means disabled
+	 *
+	 * @return
 	 */
-	@Deprecated
-	@Override
-	public Logger getLogger() {
-		return super.getLogger();
+	public int getMetricsPluginId() {
+		return -1;
 	}
 
+	/**
+	 * Foundation automatically can filter console commands for you, including
+	 * messages from other plugins or the server itself, preventing unnecessary console spam.
+	 *
+	 * You can return a list of messages that will be matched using "startsWith OR contains" method
+	 * and will be filtered.
+	 *
+	 * @return
+	 */
+	public Set<String> getConsoleFilter() {
+		return new HashSet<>();
+	}
+
+	/**
+	 * When processing regular expressions, limit executing to the specified time.
+	 * This prevents server freeze/crash on malformed regex (loops).
+	 *
+	 * @return time limit in milliseconds for processing regular expression
+	 */
+	public int getRegexTimeout() {
+		throw new FoException("Must override getRegexTimeout()");
+	}
+
+	/**
+	 * Strip colors from checked message while checking it against a regex?
+	 *
+	 * @return
+	 */
+	public boolean regexStripColors() {
+		return true;
+	}
+
+	/**
+	 * Should Pattern.CASE_INSENSITIVE be applied when compiling regular expressions in {@link Common#compilePattern(String)}?
+	 * <p>
+	 * May impose a slight performance penalty but increases catches.
+	 *
+	 * @return
+	 */
+	public boolean regexCaseInsensitive() {
+		return true;
+	}
+
+	/**
+	 * Should Pattern.UNICODE_CASE be applied when compiling regular expressions in {@link Common#compilePattern(String)}?
+	 * <p>
+	 * May impose a slight performance penalty but useful for non-English servers.
+	 *
+	 * @return
+	 */
+	public boolean regexUnicode() {
+		return true;
+	}
+
+	/**
+	 * Should we remove diacritical marks before matching regex?
+	 * Defaults to true
+	 *
+	 * @return
+	 */
+	public boolean regexStripAccents() {
+		return true;
+	}
+
+	/**
+	 * Should we replace accents with their non accented friends when
+	 * checking two strings for similarity in ChatUtil?
+	 *
+	 * @return defaults to true
+	 */
+	public boolean similarityStripAccents() {
+		return true;
+	}
+
+	/**
+	 * Returns the default or "main" bungee listener you use. This is checked so that you won't
+	 * have to pass in channel name each time and we use channel name from this listener instead.
+	 *
+	 * @deprecated only returns the first found bungee listener, if you have multiple, do not use, order not guaranteed
+	 * @return
+	 */
+	@Deprecated
+	public final BungeeListener getBungeeCord() {
+		return this.bungeeListener;
+	}
+
+	/**
+	 * Sets the first valid bungee listener
+	 *
+	 * @deprecated INTERNAL USE ONLY, DO NOT USE! can only set one bungee listener, if you have multiple, order not guaranteed
+	 * @param bungeeListener
+	 */
+	@Deprecated
+	public final void setBungeeCord(BungeeListener bungeeListener) {
+		this.bungeeListener = bungeeListener;
+	}
 }

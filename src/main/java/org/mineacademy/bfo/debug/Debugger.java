@@ -1,16 +1,17 @@
 package org.mineacademy.bfo.debug;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.TimeUtil;
+import org.mineacademy.bfo.constants.FoConstants;
+import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
@@ -18,7 +19,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Setter;
 import net.md_5.bungee.api.ProxyServer;
 
 /**
@@ -26,10 +26,6 @@ import net.md_5.bungee.api.ProxyServer;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Debugger {
-
-	@Getter
-	@Setter
-	private static boolean debugAll = false;
 
 	/**
 	 * Stores messages to be printed out at once at the end,
@@ -39,13 +35,27 @@ public final class Debugger {
 	private static final Map<String, ArrayList<String>> pendingMessages = new HashMap<>();
 
 	/**
-	 * The list of sections to debug
+	 * The debug mode is automatically detected when the debug.lock file is present in the plugin folder
 	 */
-	private static final Set<String> debuggedSections = new HashSet<>();
+	@Getter
+	private static boolean debugModeEnabled = false;
+
+	/**
+	 * Loads debug mode, called automatically in {@link SimplePlugin}
+	 */
+	public static void detectDebugMode() {
+		if (new File(SimplePlugin.getData(), "debug.lock").exists()) {
+			debugModeEnabled = true;
+
+			Common.warning("Detected debug.lock file, debug features enabled!");
+
+		} else
+			debugModeEnabled = false;
+	}
 
 	/**
 	 * Prints a debug messages to the console if the given section is being debugged
-	 *
+	 * <p>
 	 * You can set if the section is debugged by setting it in "Debug" key in your settings.yml,
 	 * by default your class extending {@link SimpleSettings}
 	 *
@@ -53,9 +63,13 @@ public final class Debugger {
 	 * @param messages
 	 */
 	public static void debug(String section, String... messages) {
-		if (isDebugged(section))
+		if (isDebugged(section)) {
 			for (final String message : messages)
-				ProxyServer.getInstance().getLogger().info("[" + SimplePlugin.getNamed() + "] " + message);
+				if (SimplePlugin.hasInstance())
+					Common.log("[" + section + "] " + message);
+				else
+					System.out.println("[" + section + "] " + message);
+		}
 	}
 
 	/**
@@ -110,26 +124,17 @@ public final class Debugger {
 
 	/**
 	 * Get if the given section is being debugged
-	 *
+	 * <p>
 	 * You can set if the section is debugged by setting it in "Debug" key in your settings.yml,
 	 * by default your class extending {@link SimpleSettings}
-	 *
+	 * <p>
 	 * If you set Debug to ["*"] this will always return true
 	 *
 	 * @param section
 	 * @return
 	 */
 	public static boolean isDebugged(String section) {
-		return SimpleSettings.DEBUG_SECTIONS.contains(section) || SimpleSettings.DEBUG_SECTIONS.contains("*") || debugAll;
-	}
-
-	/**
-	 * Add a new section to print messages about
-	 *
-	 * @param section
-	 */
-	public static void addDebuggedSection(String section) {
-		debuggedSections.add(section);
+		return SimpleSettings.DEBUG_SECTIONS.contains(section) || SimpleSettings.DEBUG_SECTIONS.contains("*");
 	}
 
 	// ----------------------------------------------------------------------------------------------------
@@ -143,6 +148,9 @@ public final class Debugger {
 	 * @param messages
 	 */
 	public static void saveError(Throwable t, String... messages) {
+		if (ProxyServer.getInstance() == null) // Instance not set, e.g. when not using Bukkit
+			return;
+
 		final List<String> lines = new ArrayList<>();
 		final String header = SimplePlugin.getNamed() + " " + SimplePlugin.getVersion() + " encountered " + Common.article(t.getClass().getSimpleName());
 
@@ -150,8 +158,8 @@ public final class Debugger {
 		fill(lines,
 				"------------------------------------[ " + TimeUtil.getFormattedDate() + " ]-----------------------------------",
 				header,
-				"Running " + ProxyServer.getInstance().getName() + " " + ProxyServer.getInstance().getVersion() + " and Java " + System.getProperty("java.version"),
-				"Plugins: " + Common.join(ProxyServer.getInstance().getPluginManager().getPlugins(), ", ", plugin -> plugin.getDescription().getName() + " " + plugin.getDescription().getVersion()),
+				"Running " + ProxyServer.getInstance().getVersion() + " and Java " + System.getProperty("java.version"),
+				"Plugins: " + Common.join(ProxyServer.getInstance().getPluginManager().getPlugins(), ", "),
 				"----------------------------------------------------------------------------------------------");
 
 		// Write additional data
@@ -173,6 +181,9 @@ public final class Debugger {
 
 					final String trace = el.toString();
 
+					if (trace.contains("sun.reflect"))
+						continue;
+
 					if (count > 6 && trace.startsWith("net.minecraft.server"))
 						break;
 
@@ -187,7 +198,7 @@ public final class Debugger {
 		Common.log(header + "! Please check your error.log and report this issue with the information in that file.");
 
 		// Finally, save the error file
-		FileUtil.write("error.log", lines);
+		FileUtil.write(FoConstants.File.ERRORS, lines);
 	}
 
 	private static void fill(List<String> list, String... messages) {
@@ -201,7 +212,7 @@ public final class Debugger {
 	/**
 	 * Print out where your method is being called from
 	 * Such as: YourClass > YourMainClass > MinecraftServer > Thread
-	 *
+	 * <p>
 	 * Also can print line numbers YourClass#LineNumber
 	 *
 	 * @param trackLineNumbers
@@ -214,11 +225,19 @@ public final class Debugger {
 		for (final StackTraceElement el : exception.getStackTrace()) {
 			final String[] classNames = el.getClassName().split("\\.");
 			final String className = classNames[classNames.length - 1];
+			final String line = el.toString();
+
+			if (line.contains("net.minecraft.server") || line.contains("org.bukkit.craftbukkit"))
+				break;
+
+			if (line.contains("org.bukkit.plugin.java.JavaPluginLoader") || line.contains("org.bukkit.plugin.SimplePluginManager") || line.contains("org.bukkit.plugin.JavaPlugin"))
+				continue;
 
 			if (!paths.contains(className))
-				paths.add(className + (trackLineNumbers ? "#" + el.getLineNumber() : ""));
+				paths.add(className + "#" + el.getMethodName() + (trackLineNumbers ? "(" + el.getLineNumber() + ")" : ""));
 		}
 
+		// Remove call to self
 		if (!paths.isEmpty())
 			paths.remove(0);
 
@@ -249,9 +268,9 @@ public final class Debugger {
 	public static void printStackTrace(String message) {
 		final StackTraceElement[] trace = new Exception().getStackTrace();
 
-		print("------------------------------------------------------------------------------------------------------------");
+		print("!----------------------------------------------------------------------------------------------------------!");
 		print(message);
-		print("");
+		print("!----------------------------------------------------------------------------------------------------------!");
 
 		for (int i = 1; i < trace.length; i++) {
 			final String line = trace[i].toString();
@@ -260,47 +279,80 @@ public final class Debugger {
 				print("\tat " + line);
 		}
 
-		print("------------------------------------------------------------------------------------------------------------");
+		print("--------------------------------------------------------------------------------------------------------end-");
 	}
 
 	/**
 	 * Prints a Throwable's first line and stack traces.
-	 *
+	 * <p>
 	 * Ignores the native Bukkit/Minecraft server.
 	 *
 	 * @param throwable the throwable to print
 	 */
 	public static void printStackTrace(@NonNull Throwable throwable) {
-		print(throwable.toString());
 
+		// Load all causes
+		final List<Throwable> causes = new ArrayList<>();
+
+		if (throwable.getCause() != null) {
+			Throwable cause = throwable.getCause();
+
+			do
+				causes.add(cause);
+			while ((cause = cause.getCause()) != null);
+		}
+
+		if (throwable instanceof FoException && !causes.isEmpty()) {
+			// Do not print parent exception if we are only wrapping it, saves console spam
+			print(throwable.getMessage());
+
+		} else {
+			print(throwable.toString());
+
+			printStackTraceElements(throwable);
+		}
+
+		if (!causes.isEmpty()) {
+			final Throwable lastCause = causes.get(causes.size() - 1);
+
+			print(lastCause.toString());
+			printStackTraceElements(lastCause);
+		}
+	}
+
+	private static void printStackTraceElements(Throwable throwable) {
 		for (final StackTraceElement element : throwable.getStackTrace()) {
 			final String line = element.toString();
 
 			if (canPrint(line))
 				print("\tat " + line);
 		}
-
-		Throwable cause = throwable.getCause();
-
-		if (cause != null)
-			do
-				if (cause != null)
-					printStackTrace(cause);
-			while ((cause = cause.getCause()) != null);
 	}
 
 	/**
-	 * Returns whether a line is suitable for printing as an error line - we ignore stuff from NMS and OBF as this is not needed
+	 * Returns whether a line is suitable for printing as an error line - we ignore stuff from NMS and other spam as this is not needed
 	 *
 	 * @param message
 	 * @return
 	 */
 	private static boolean canPrint(String message) {
-		return !message.contains("net.minecraft") && !message.contains("org.bukkit.craftbukkit") && !message.contains("nashorn") && !message.contains("javax.script");
+		return !message.contains("net.minecraft") &&
+				!message.contains("org.bukkit.craftbukkit") &&
+				!message.contains("org.github.paperspigot.ServerScheduler") &&
+				!message.contains("nashorn") &&
+				!message.contains("javax.script") &&
+				!message.contains("org.yaml.snakeyaml") &&
+				!message.contains("sun.reflect") &&
+				!message.contains("sun.misc") &&
+				!message.contains("java.lang.Thread.run") &&
+				!message.contains("java.util.concurrent.ThreadPoolExecutor");
 	}
 
 	// Print a simple console message
 	private static void print(String message) {
-		ProxyServer.getInstance().getLogger().info(message);
+		if (SimplePlugin.hasInstance())
+			Common.logNoPrefix(message);
+		else
+			System.out.println(message);
 	}
 }

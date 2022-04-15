@@ -3,6 +3,7 @@ package org.mineacademy.bfo.model;
 import org.mineacademy.bfo.TimeUtil;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 /**
  * A simple class holding time values in human readable form such as 1 second or 5 minutes
@@ -11,11 +12,17 @@ import lombok.Getter;
 public final class SimpleTime {
 
 	private final String raw;
-	private final int timeTicks;
+	private final long timeTicks;
 
-	private SimpleTime(final String time) {
-		raw = time;
-		timeTicks = (int) TimeUtil.toTicks(time);
+	protected SimpleTime(@NonNull final String time) {
+		if ("0".equals(time) || "none".equalsIgnoreCase(time)) {
+			this.raw = "0";
+			this.timeTicks = 0;
+
+		} else {
+			this.raw = time;
+			this.timeTicks = TimeUtil.toTicks(time);
+		}
 	}
 
 	/**
@@ -30,6 +37,7 @@ public final class SimpleTime {
 
 	/**
 	 * Generate new time. Valid examples: 15 ticks 1 second 25 minutes 3 hours etc.
+	 * or input "none" to create an instance with the time of 0
 	 *
 	 * @param time
 	 * @return
@@ -43,21 +51,39 @@ public final class SimpleTime {
 	 *
 	 * @return
 	 */
-	public int getTimeSeconds() {
-		return timeTicks / 20;
+	public long getTimeSeconds() {
+		return this.timeTicks / 20L;
 	}
 
 	/**
 	 * Get the time specified in ticks
+	 * *WARNING* if the time ticks is over {@value Integer#MAX_VALUE} it will overflow!
 	 *
 	 * @return
 	 */
 	public int getTimeTicks() {
-		return timeTicks;
+		return (int) this.timeTicks;
+	}
+
+	/**
+	 * Return the human readable representation of this time, such as 69 seconds (no pun intended)
+	 *
+	 * @return
+	 */
+	public String getRaw() {
+		return this.timeTicks == 0 ? "0" : this.raw;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof SimpleTime && ((SimpleTime) obj).timeTicks == this.timeTicks;
 	}
 
 	@Override
 	public String toString() {
-		return raw;
+		return this.getRaw();
 	}
 }

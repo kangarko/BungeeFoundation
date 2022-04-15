@@ -2,6 +2,7 @@ package org.mineacademy.bfo;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,11 +29,12 @@ import org.mineacademy.bfo.collection.StrictMap;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.exception.RegexTimeoutException;
+import org.mineacademy.bfo.model.BukkitRunnable;
 import org.mineacademy.bfo.model.Replacer;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.remain.Remain;
+import org.mineacademy.bfo.settings.ConfigSection;
 import org.mineacademy.bfo.settings.SimpleLocalization;
-import org.mineacademy.bfo.settings.SimpleLocalization.Player;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
 import lombok.AccessLevel;
@@ -101,27 +104,13 @@ public final class Common {
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Should we add a prefix to the messages we send to players using tell() methods?
-	 * <p>
-	 * False by default
-	 */
-	public static boolean ADD_TELL_PREFIX = false;
-
-	/**
-	 * Should we add a prefix to the messages we send to the console?
-	 * <p>
-	 * True by default
-	 */
-	public static boolean ADD_LOG_PREFIX = true;
-
-	/**
-	 * The tell prefix applied on tell() methods
+	 * The tell prefix applied on tell() methods, defaults to empty
 	 */
 	@Getter
-	private static String tellPrefix = "[" + SimplePlugin.getNamed() + "]";
+	private static String tellPrefix = "";
 
 	/**
-	 * The log prefix applied on log() methods
+	 * The log prefix applied on log() methods, defaults to [PluginName]
 	 */
 	@Getter
 	private static String logPrefix = "[" + SimplePlugin.getNamed() + "]";
@@ -134,7 +123,7 @@ public final class Common {
 	 * @param prefix
 	 */
 	public static void setTellPrefix(final String prefix) {
-		tellPrefix = colorize(prefix);
+		tellPrefix = prefix == null ? "" : colorize(prefix);
 	}
 
 	/**
@@ -145,7 +134,7 @@ public final class Common {
 	 * @param prefix
 	 */
 	public static void setLogPrefix(final String prefix) {
-		logPrefix = colorize(prefix);
+		logPrefix = prefix == null ? "" : colorize(prefix);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -191,7 +180,7 @@ public final class Common {
 	public static void broadcast(final String... messages) {
 		if (!Valid.isNullOrEmpty(messages))
 			for (final String message : messages) {
-				for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+				for (final ProxiedPlayer online : Remain.getOnlinePlayers())
 					tellJson(online, message);
 
 				log(message);
@@ -218,8 +207,8 @@ public final class Common {
 	 */
 	public static void broadcastWithPerm(final String showPermission, final String message, final boolean log) {
 		if (message != null && !message.equals("none")) {
-			for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
-				if (online.hasPermission(showPermission))
+			for (final ProxiedPlayer online : Remain.getOnlinePlayers())
+				if (PlayerUtil.hasPerm(online, showPermission))
 					tellJson(online, message);
 
 			if (log)
@@ -238,9 +227,9 @@ public final class Common {
 		final String legacy = message.toLegacyText();
 
 		if (!legacy.equals("none")) {
-			for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
-				if (online.hasPermission(permission))
-					online.sendMessage(message);
+			for (final ProxiedPlayer online : Remain.getOnlinePlayers())
+				if (PlayerUtil.hasPerm(online, permission))
+					Remain.sendComponent(online, message);
 
 			if (log)
 				log(legacy);
@@ -263,12 +252,11 @@ public final class Common {
 	 * @param message
 	 */
 	public static void tellTimedNoPrefix(final int delaySeconds, final CommandSender sender, final String message) {
-		final boolean hadPrefix = ADD_TELL_PREFIX;
-		ADD_TELL_PREFIX = false;
+		final String oldPrefix = getTellPrefix();
+		setTellPrefix("");
 
 		tellTimed(delaySeconds, sender, message);
-
-		ADD_TELL_PREFIX = hadPrefix;
+		setTellPrefix(oldPrefix);
 	}
 
 	/**
@@ -305,12 +293,18 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void tellLater(final int delayTicks, final CommandSender sender, final String... messages) {
-		runLater(delayTicks, () -> {
-			if (sender instanceof Player && !((ProxiedPlayer) sender).isConnected())
-				return;
+		runLaterAsync(delayTicks, () -> tell(sender, messages));
+	}
 
-			tell(sender, messages);
-		});
+	/**
+	 * Sends the sender a bunch of messages, colors & are supported
+	 * without {@link #getTellPrefix()} prefix
+	 *
+	 * @param sender
+	 * @param messages
+	 */
+	public static void tellNoPrefix(final CommandSender sender, final Collection<String> messages) {
+		tellNoPrefix(sender, Common.toArray(messages));
 	}
 
 	/**
@@ -321,11 +315,11 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void tellNoPrefix(final CommandSender sender, final String... messages) {
-		final boolean was = ADD_TELL_PREFIX;
+		final String oldPrefix = getTellPrefix();
 
-		ADD_TELL_PREFIX = false;
+		setTellPrefix("");
 		tell(sender, messages);
-		ADD_TELL_PREFIX = was;
+		setTellPrefix(oldPrefix);
 	}
 
 	/**
@@ -400,16 +394,9 @@ public final class Common {
 
 			if (!stripped.isEmpty())
 				if (sender instanceof ProxiedPlayer)
-					PlayerUtil.sendActionBar((ProxiedPlayer) sender, stripped);
-
+					Remain.sendActionBar((ProxiedPlayer) sender, stripped);
 				else
 					tellJson(sender, stripped);
-
-		} else if (colorlessMessage.startsWith("<toast>")) {
-			final String stripped = message.replace("<toast>", "");
-
-			if (!stripped.isEmpty())
-				tellJson(sender, stripped);
 
 		} else if (colorlessMessage.startsWith("<title>")) {
 			final String stripped = message.replace("<title>", "");
@@ -420,7 +407,7 @@ public final class Common {
 				final String subtitle = split.length > 1 ? Common.joinRange(1, split) : null;
 
 				if (sender instanceof ProxiedPlayer)
-					PlayerUtil.sendTitle((ProxiedPlayer) sender, title, subtitle);
+					Remain.sendTitle((ProxiedPlayer) sender, title, subtitle);
 
 				else {
 					tellJson(sender, title);
@@ -433,13 +420,18 @@ public final class Common {
 		} else if (colorlessMessage.startsWith("<bossbar>")) {
 			final String stripped = message.replace("<bossbar>", "");
 
-			if (!stripped.isEmpty())
-				tellJson(sender, stripped);
+			if (!stripped.isEmpty()) {
+				if (sender instanceof ProxiedPlayer) {
+					Remain.sendBossbarTimed((ProxiedPlayer) sender, stripped, 10);
+
+				} else
+					tellJson(sender, stripped);
+			}
 
 		} else
 			for (final String part : message.split("\n")) {
 				final String prefixStripped = removeSurroundingSpaces(tellPrefix);
-				final String prefix = ADD_TELL_PREFIX && !hasPrefix && !prefixStripped.isEmpty() ? prefixStripped + " " : "";
+				final String prefix = !hasPrefix && !prefixStripped.isEmpty() ? prefixStripped + " " : "";
 
 				String toSend;
 
@@ -448,7 +440,13 @@ public final class Common {
 				else
 					toSend = prefix + part;
 
-				sender.sendMessage(toSend);
+				// Make player engaged in a server conversation still receive the message
+				try {
+					sender.sendMessage(toSend);
+
+				} catch (final Throwable t) {
+					error(t, "Failed to send message to " + sender.getName() + ", message: " + toSend);
+				}
 			}
 	}
 
@@ -539,8 +537,7 @@ public final class Common {
 				.replace("{plugin_name}", SimplePlugin.getNamed())
 				.replace("{plugin_version}", SimplePlugin.getVersion()));
 
-		// RGB colors
-		// Preserve compatibility with former systems
+		// RGB colors - return the closest color for legacy MC versions
 		final Matcher match = HEX_COLOR_REGEX.matcher(result);
 
 		while (match.find()) {
@@ -669,6 +666,7 @@ public final class Common {
 			if (c == -1 || c < message.lastIndexOf(lastColor) + lastColor.length())
 				return lastColor;
 
+		// Legacy color codes
 		final String andLetter = lastColorLetter(message);
 		final String colorChat = lastColorChar(message);
 
@@ -977,21 +975,12 @@ public final class Common {
 	 * @return
 	 */
 	public static boolean doesPluginExist(final String pluginName) {
-		Plugin lookup = null;
-
 		for (final Plugin otherPlugin : ProxyServer.getInstance().getPluginManager().getPlugins())
-			if (otherPlugin.getDescription().getName().equals(pluginName)) {
-				lookup = otherPlugin;
+			if (otherPlugin.getDescription().getName().equalsIgnoreCase(pluginName))
+				return true;
 
-				break;
-			}
+		return false;
 
-		final Plugin found = lookup;
-
-		if (found == null)
-			return false;
-
-		return true;
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1039,7 +1028,7 @@ public final class Common {
 
 			final String finalCommand = command;
 
-			runLater(() -> ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), finalCommand));
+			runAsync(() -> ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), finalCommand));
 		}
 	}
 
@@ -1059,7 +1048,7 @@ public final class Common {
 
 		final String finalCommand = command;
 
-		runLater(() -> ProxyServer.getInstance().getPluginManager().dispatchCommand(playerSender, colorize(finalCommand.replace("{player}", resolveSenderName(playerSender)))));
+		runAsync(() -> playerSender.chat("/" + colorize(finalCommand.replace("{player}", resolveSenderName(playerSender)))));
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -1172,7 +1161,7 @@ public final class Common {
 			throw new FoException("Failed to initialize Console Sender, are you running Foundation under a Bukkit/Spigot server?");
 
 		for (String message : messages) {
-			if (message.equals("none"))
+			if (message == null || message.equals("none"))
 				continue;
 
 			if (stripColors(message).replace(" ", "").isEmpty()) {
@@ -1191,7 +1180,7 @@ public final class Common {
 
 			} else
 				for (final String part : message.split("\n")) {
-					final String log = ((addLogPrefix && ADD_LOG_PREFIX ? removeSurroundingSpaces(logPrefix) + " " : "") + getOrEmpty(part).replace("\n", colorize("\n&r"))).trim();
+					final String log = ((addLogPrefix && !logPrefix.isEmpty() ? removeSurroundingSpaces(logPrefix) + " " : "") + getOrEmpty(part).replace("\n", colorize("\n&r"))).trim();
 
 					CONSOLE_SENDER.sendMessage(log);
 				}
@@ -1204,27 +1193,11 @@ public final class Common {
 	 * @param messages
 	 */
 	public static void logFramed(final String... messages) {
-		logFramed(false, messages);
-	}
-
-	/**
-	 * Logs a bunch of messages to the console in a {@link #consoleLine()} frame.
-	 * <p>
-	 * Used when an error occurs, can also disable the plugin
-	 *
-	 * @param disablePlugin
-	 * @param messages
-	 * @deprecated BungeeCord cannot disable plugins
-	 */
-	@Deprecated
-	public static void logFramed(final boolean disablePlugin, final String... messages) {
 		if (messages != null && !Valid.isNullOrEmpty(messages)) {
 			log("&7" + consoleLine());
+
 			for (final String msg : messages)
 				log(" &c" + msg);
-
-			if (disablePlugin)
-				log(" &cPlugin is now disabled.");
 
 			log("&7" + consoleLine());
 		}
@@ -1234,15 +1207,19 @@ public final class Common {
 	 * Saves the error, prints the stack trace and logs it in frame.
 	 * Possible to use %error variable
 	 *
-	 * @param t
+	 * @param throwable
 	 * @param messages
 	 */
-	public static void error(final Throwable t, final String... messages) {
-		if (!(t instanceof FoException))
-			Debugger.saveError(t, messages);
+	public static void error(@NonNull Throwable throwable, String... messages) {
 
-		Debugger.printStackTrace(t);
-		logFramed(replaceErrorVariable(t, messages));
+		if (throwable instanceof InvocationTargetException && throwable.getCause() != null)
+			throwable = throwable.getCause();
+
+		if (!(throwable instanceof FoException))
+			Debugger.saveError(throwable, messages);
+
+		Debugger.printStackTrace(throwable);
+		logFramed(replaceErrorVariable(throwable, messages));
 	}
 
 	/**
@@ -1256,16 +1233,12 @@ public final class Common {
 	 */
 	public static void throwError(Throwable t, final String... messages) {
 
-		// Get to the root cause of this problem
-		while (t.getCause() != null)
-			t = t.getCause();
-
 		// Delegate to only print out the relevant stuff
 		if (t instanceof FoException)
 			throw (FoException) t;
 
 		if (messages != null)
-			logFramed(false, replaceErrorVariable(t, messages));
+			logFramed(replaceErrorVariable(t, messages));
 
 		Debugger.saveError(t, messages);
 		Remain.sneaky(t);
@@ -1320,7 +1293,8 @@ public final class Common {
 
 	/**
 	 * Returns true if the given matcher matches. We also evaluate
-	 * how long the evaluation took and stop it in case it takes too long
+	 * how long the evaluation took and stop it in case it takes too long,
+	 * see {@link SimplePlugin#getRegexTimeout()}
 	 *
 	 * @param matcher
 	 * @return
@@ -1341,7 +1315,8 @@ public final class Common {
 	/**
 	 * Compiles a matches for the given pattern and message. Colors are stripped.
 	 * <p>
-	 * We also evaluate how long the evaluation took and stop it in case it takes too long
+	 * We also evaluate how long the evaluation took and stop it in case it takes too long,
+	 * see {@link SimplePlugin#getRegexTimeout()}
 	 *
 	 * @param pattern
 	 * @param message
@@ -1350,8 +1325,8 @@ public final class Common {
 	public static Matcher compileMatcher(@NonNull final Pattern pattern, final String message) {
 
 		try {
-			String strippedMessage = stripColors(message);
-			strippedMessage = ChatUtil.replaceDiacritic(strippedMessage);
+			String strippedMessage = SimplePlugin.getInstance().regexStripColors() ? stripColors(message) : message;
+			strippedMessage = SimplePlugin.getInstance().regexStripAccents() ? ChatUtil.replaceDiacritic(strippedMessage) : strippedMessage;
 
 			return pattern.matcher(TimedCharSequence.withSettingsLimit(strippedMessage));
 
@@ -1381,13 +1356,19 @@ public final class Common {
 	 * @return
 	 */
 	public static Pattern compilePattern(String regex) {
+		final SimplePlugin instance = SimplePlugin.getInstance();
 		Pattern pattern = null;
 
-		regex = stripColors(regex);
-		regex = ChatUtil.replaceDiacritic(regex);
+		regex = SimplePlugin.getInstance().regexStripColors() ? stripColors(regex) : regex;
+		regex = SimplePlugin.getInstance().regexStripAccents() ? ChatUtil.replaceDiacritic(regex) : regex;
 
 		try {
-			pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+			if (instance.regexCaseInsensitive())
+				pattern = Pattern.compile(regex, instance.regexUnicode() ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE : Pattern.CASE_INSENSITIVE);
+
+			else
+				pattern = instance.regexUnicode() ? Pattern.compile(regex, Pattern.UNICODE_CASE) : Pattern.compile(regex);
 
 		} catch (final PatternSyntaxException ex) {
 			throwError(ex,
@@ -1413,6 +1394,8 @@ public final class Common {
 	 * @param pattern
 	 */
 	public static void handleRegexTimeoutException(RegexTimeoutException ex, Pattern pattern) {
+		final boolean caseInsensitive = SimplePlugin.getInstance().regexCaseInsensitive();
+
 		Common.error(ex,
 				"A regular expression took too long to process, and was",
 				"stopped to prevent freezing your server.",
@@ -1429,65 +1412,31 @@ public final class Common {
 				" ",
 				"Use services like regex101.com to test and fix it.",
 				"Put the expression without '' and the message there.",
-				"Ensure to turn flags 'insensitive' and 'unicode' on",
+				"Ensure to turn flags 'insensitive' and 'unicode' " + (caseInsensitive ? "on" : "off"),
 				"on there when testing: https://i.imgur.com/PRR5Rfn.png");
-	}
-
-	/**
-	 * <p>Capitalizes all the delimiter separated words in a String.
-	 * Only the first letter of each word is changed.</p>
-	 *
-	 * <p>The delimiters represent a set of characters understood to separate words.
-	 * The first string character and the first non-delimiter character after a
-	 * delimiter will be capitalized. </p>
-	 *
-	 * <p>A <code>null</code> input String returns <code>null</code>.
-	 * Capitalization uses the unicode title case, normally equivalent to
-	 * upper case.</p>
-	 *
-	 * <pre>
-	 * WordUtils.capitalize(null, *)            = null
-	 * WordUtils.capitalize("", *)              = ""
-	 * WordUtils.capitalize(*, new char[0])     = *
-	 * WordUtils.capitalize("i am fine", null)  = "I Am Fine"
-	 * WordUtils.capitalize("i aM.fine", {'.'}) = "I aM.Fine"
-	 * </pre>
-	 *
-	 * @param message  the String to capitalize, may be null
-	 *
-	 * @return capitalized String, <code>null</code> if null String input
-	 */
-	public static String capitalize(String message) {
-
-		if (message == null || message.isEmpty())
-			return message;
-
-		final int strLen = message.length();
-		final StringBuffer buffer = new StringBuffer(strLen);
-		boolean capitalizeNext = true;
-
-		for (int i = 0; i < strLen; i++) {
-			final char ch = message.charAt(i);
-
-			if (Character.isWhitespace(ch)) {
-				buffer.append(ch);
-				capitalizeNext = true;
-
-			} else if (capitalizeNext) {
-				buffer.append(Character.toTitleCase(ch));
-				capitalizeNext = false;
-
-			} else {
-				buffer.append(ch);
-			}
-		}
-
-		return buffer.toString();
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
 	// Joining strings and lists
 	// ------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Joins an array of lists together into one big array
+	 *
+	 * @param <T>
+	 * @param arrays
+	 * @return
+	 */
+	@SafeVarargs
+	public static <T> Object[] joinArrays(final T[]... arrays) {
+		final List<T> all = new ArrayList<>();
+
+		for (final T[] array : arrays)
+			for (final T element : array)
+				all.add(element);
+
+		return all.toArray();
+	}
 
 	/**
 	 * Joins an array of lists together into one big list
@@ -1497,7 +1446,7 @@ public final class Common {
 	 * @return
 	 */
 	@SafeVarargs
-	public static <T> List<T> joinArrays(final Iterable<T>... arrays) {
+	public static <T> List<T> joinLists(final Iterable<T>... arrays) {
 		final List<T> all = new ArrayList<>();
 
 		for (final Iterable<T> array : arrays)
@@ -1622,6 +1571,19 @@ public final class Common {
 	}
 
 	/**
+	 * Joins an array of a given type using the ", " delimiter and a helper interface
+	 * to convert each element in the array into string
+	 *
+	 * @param <T>
+	 * @param array
+	 * @param stringer
+	 * @return
+	 */
+	public static <T> String join(final T[] array, final Stringer<T> stringer) {
+		return join(array, ", ", stringer);
+	}
+
+	/**
 	 * Joins an array of a given type using the given delimiter and a helper interface
 	 * to convert each element in the array into string
 	 *
@@ -1682,6 +1644,13 @@ public final class Common {
 
 		else if (arg instanceof Enum)
 			return ((Enum<?>) arg).toString().toLowerCase();
+
+		try {
+			if (arg instanceof net.md_5.bungee.api.ChatColor)
+				return ((net.md_5.bungee.api.ChatColor) arg).getName();
+		} catch (final Exception e) {
+			// No MC compatible
+		}
 
 		return arg.toString();
 	}
@@ -1748,7 +1717,6 @@ public final class Common {
 
 	/**
 	 * Convenience method for getting a list of player names
-	 * that optionally, the other player can see
 	 *
 	 * @return
 	 */
@@ -2203,8 +2171,8 @@ public final class Common {
 	 * @param task the task
 	 * @return the task or null
 	 */
-	public static <T extends Runnable> ScheduledTask runLater(final T task) {
-		return runLater(1, task);
+	public static <T extends Runnable> ScheduledTask runAsync(final T task) {
+		return runLaterAsync(1, task);
 	}
 
 	/**
@@ -2214,77 +2182,19 @@ public final class Common {
 	 * @param task
 	 * @return the task or null
 	 */
-	public static ScheduledTask runLater(final int delayTicks, Runnable task) {
+	public static ScheduledTask runLaterAsync(final int delayTicks, Runnable task) {
 		final TaskScheduler scheduler = ProxyServer.getInstance().getScheduler();
+		final Plugin instance = SimplePlugin.getInstance();
 
-		return scheduler.schedule(SimplePlugin.getInstance(), task, delayTicks * 50, TimeUnit.MILLISECONDS);
-	}
-
-	/**
-	 * Runs the task async even if the plugin is disabled for some reason.
-	 * <p>
-	 * Schedules the run on the next tick.
-	 *
-	 * @param task
-	 * @return
-	 */
-	public static ScheduledTask runAsync(final Runnable task) {
-		return runLaterAsync(0, task);
-	}
-
-	/**
-	 * Runs the task async even if the plugin is disabled for some reason.
-	 * <p>
-	 * Schedules the run on the next tick.
-	 *
-	 * @param task
-	 * @return
-	 */
-	public static ScheduledTask runLaterAsync(final Runnable task) {
-		return runLaterAsync(0, task);
+		return delayTicks == 0 ? task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTask(instance)
+				: scheduler.runAsync(instance, task)
+				: task instanceof BukkitRunnable ? ((BukkitRunnable) task).runTaskLater(instance, delayTicks)
+						: scheduler.schedule(instance, task, delayTicks * 50, TimeUnit.MILLISECONDS);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
 	// Bukkit scheduling
 	// ------------------------------------------------------------------------------------------------------------
-
-	/**
-	 * Runs the task async even if the plugin is disabled for some reason.
-	 *
-	 * @param delayTicks
-	 * @param task
-	 * @return the task or null
-	 */
-	public static ScheduledTask runLaterAsync(final int delayTicks, Runnable task) {
-		final TaskScheduler scheduler = ProxyServer.getInstance().getScheduler();
-
-		return scheduler.schedule(SimplePlugin.getInstance(), () -> scheduler.runAsync(SimplePlugin.getInstance(), task), delayTicks * 50, TimeUnit.MILLISECONDS);
-	}
-
-	/**
-	 * Runs the task timer even if the plugin is disabled.
-	 *
-	 * @param repeatTicks the delay between each execution
-	 * @param task        the task
-	 * @return the bukkit task or null
-	 */
-	public static ScheduledTask runTimer(final int repeatTicks, final Runnable task) {
-		return runTimer(0, repeatTicks, task);
-	}
-
-	/**
-	 * Runs the task timer even if the plugin is disabled.
-	 *
-	 * @param delayTicks  the delay before first run
-	 * @param repeatTicks the delay between each run
-	 * @param task        the task
-	 * @return the bukkit task or null if error
-	 */
-	public static ScheduledTask runTimer(final int delayTicks, final int repeatTicks, Runnable task) {
-		final TaskScheduler scheduler = ProxyServer.getInstance().getScheduler();
-
-		return scheduler.schedule(SimplePlugin.getInstance(), task, delayTicks * 50, repeatTicks * 50, TimeUnit.MILLISECONDS);
-	}
 
 	/**
 	 * Runs the task timer async even if the plugin is disabled.
@@ -2306,9 +2216,9 @@ public final class Common {
 	 * @return
 	 */
 	public static ScheduledTask runTimerAsync(final int delayTicks, final int repeatTicks, Runnable task) {
-		final TaskScheduler scheduler = ProxyServer.getInstance().getScheduler();
-
-		return scheduler.schedule(SimplePlugin.getInstance(), () -> scheduler.runAsync(SimplePlugin.getInstance(), task), delayTicks * 50, repeatTicks * 50, TimeUnit.MILLISECONDS);
+		return task instanceof BukkitRunnable
+				? ((BukkitRunnable) task).runTaskTimerAsynchronously(SimplePlugin.getInstance(), delayTicks, repeatTicks)
+				: ProxyServer.getInstance().getScheduler().schedule(SimplePlugin.getInstance(), task, delayTicks * 50, repeatTicks * 50, TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -2338,16 +2248,30 @@ public final class Common {
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Resolves the inner Map in a Bukkit's MemorySection
+	 * Resolves the inner Map in MemorySection
 	 *
 	 * @param mapOrSection
 	 * @return
 	 */
-	public static Map<String, Object> getMapFromSection(@NonNull final Object mapOrSection) {
-		final Map<String, Object> map = mapOrSection instanceof Map ? (Map<String, Object>) mapOrSection : mapOrSection instanceof Configuration ? ReflectionUtil.getFieldContent(mapOrSection, "self") : null;
+	public static Map<String, Object> getMapFromSection(@NonNull Object mapOrSection) {
+		mapOrSection = Remain.getRootOfSectionPathData(mapOrSection);
+
+		final Map<String, Object> map = mapOrSection instanceof ConfigSection ? ((ConfigSection) mapOrSection).getValues(false)
+				: mapOrSection instanceof Map ? (Map<String, Object>) mapOrSection
+						: mapOrSection instanceof Configuration ? ReflectionUtil.getFieldContent(mapOrSection, "self") : null;
+
 		Valid.checkNotNull(map, "Unexpected " + mapOrSection.getClass().getSimpleName() + " '" + mapOrSection + "'. Must be Map or MemorySection! (Do not just send config name here, but the actual section with get('section'))");
 
-		return map;
+		final Map<String, Object> copy = new LinkedHashMap<>();
+
+		for (final Map.Entry<String, Object> entry : map.entrySet()) {
+			final String key = entry.getKey();
+			final Object value = entry.getValue();
+
+			copy.put(key, Remain.getRootOfSectionPathData(value));
+		}
+
+		return copy;
 	}
 
 	/**
@@ -2511,7 +2435,13 @@ final class TimedCharSequence implements CharSequence {
 		//if (System.currentTimeMillis() > futureTimestampLimit)
 		//	throw new RegexTimeoutException(message, futureTimestampLimit);
 
-		return message.charAt(index);
+		try {
+			return message.charAt(index);
+		} catch (final StringIndexOutOfBoundsException ex) {
+
+			// Odd case: Java 8 seems to overflow for too-long unicode characters, security feature
+			return ' ';
+		}
 	}
 
 	@Override

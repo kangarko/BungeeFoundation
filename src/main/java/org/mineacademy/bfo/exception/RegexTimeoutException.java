@@ -3,7 +3,7 @@ package org.mineacademy.bfo.exception;
 import lombok.Getter;
 
 /**
- * Thrown when we check a regex
+ * Thrown when we check a regex, see {@link org.mineacademy.bfo.Common#regExMatch(java.util.regex.Matcher)}
  * and the evaluation takes over the given limit
  */
 @Getter

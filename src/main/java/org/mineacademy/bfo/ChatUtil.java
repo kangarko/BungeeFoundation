@@ -6,9 +6,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Matcher;
 
-import org.mineacademy.bfo.model.RandomUtil;
 import org.mineacademy.bfo.model.Whiteblacklist;
+import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -112,12 +113,13 @@ public final class ChatUtil {
 
 		final int halvedMessageSize = messagePxSize / 2;
 		final int toCompensate = centerPx - halvedMessageSize;
-		final int spaceLength = DefaultFontInfo.getDefaultFontInfo(space).getLength() + (isBold ? 2 : 1);
+		final DefaultFontInfo font = DefaultFontInfo.getDefaultFontInfo(space);
+		final double spaceLength = isBold ? font.getBoldLength() : font.getLength();
 
-		int compensated = 0;
+		double compensated = 0;
 
 		while (compensated < toCompensate) {
-			builder.append(space);
+			builder.append(" ");
 
 			compensated += spaceLength;
 		}
@@ -183,7 +185,7 @@ public final class ChatUtil {
 	 * @param message the message to check
 	 * @return capitalized message
 	 */
-	public static String capitalize(final String message) {
+	public static String capitalizeFirst(final String message) {
 		if (message.isEmpty())
 			return "";
 
@@ -204,6 +206,70 @@ public final class ChatUtil {
 		}
 
 		return tempMessage.trim();
+	}
+
+	/**
+	 * <p>Converts all the whitespace separated words in a String into capitalized words,
+	 * that is each word is made up of a titlecase character and then a series of
+	 * lowercase characters.  </p>
+	 *
+	 * <p>Whitespace is defined by {@link Character#isWhitespace(char)}.
+	 * A <code>null</code> input String returns <code>null</code>.
+	 * Capitalization uses the unicode title case, normally equivalent to
+	 * upper case.</p>
+	 *
+	 * <pre>
+	 * capitalizeFully(null)        = null
+	 * capitalizeFully("")          = ""
+	 * capitalizeFully("i am FINE") = "I Am Fine"
+	 * </pre>
+	 *
+	 * @param message  the String to capitalize, may be null
+	 * @return capitalized String, <code>null</code> if null String input
+	 */
+	public static String capitalizeFully(String message) {
+		return capitalize(message == null ? null : message.toLowerCase());
+	}
+
+	/**
+	 * <p>Capitalizes all the whitespace separated words in a String.
+	 * Only the first letter of each word is changed.
+	 *
+	 * <p>Whitespace is defined by {@link Character#isWhitespace(char)}.
+	 * A <code>null</code> input String returns <code>null</code>.
+	 * Capitalization uses the unicode title case, normally equivalent to
+	 * upper case.</p>
+	 *
+	 * <pre>
+	 * capitalize(null)        = null
+	 * capitalize("")          = ""
+	 * capitalize("i am FINE") = "I Am FINE"
+	 * </pre>
+	 *
+	 * @author Apache Commons - WordUtils
+	 * @param message  the String to capitalize, may be null
+	 * @return capitalized String, <code>null</code> if null String input
+	 */
+	public static String capitalize(String message) {
+		if (message == null || message.length() == 0)
+			return message;
+
+		final int length = message.length();
+		final StringBuffer buffer = new StringBuffer(length);
+		boolean next = true;
+
+		for (int i = 0; i < length; i++) {
+			final char letter = message.charAt(i);
+
+			if (next) {
+				buffer.append(Character.toTitleCase(letter));
+				next = false;
+
+			} else
+				buffer.append(letter);
+		}
+
+		return buffer.toString();
 	}
 
 	/**
@@ -232,6 +298,29 @@ public final class ChatUtil {
 	}
 
 	/**
+	 * An improved version of {@link Matcher#quoteReplacement(String)}
+	 * where we quote additional letters such as ()+
+	 *
+	 * @param message
+	 * @return
+	 */
+	public static String quoteReplacement(String message) {
+
+		final StringBuilder builder = new StringBuilder();
+
+		for (int index = 0; index < message.length(); index++) {
+			final char c = message.charAt(index);
+
+			if (c == ' ' || c == '\\' || c == '$' || c == '(' || c == ')' || c == '+' || c == '.' || c == '-' || c == '_' || c == '^')
+				builder.append('\\');
+
+			builder.append(c);
+		}
+
+		return builder.toString();
+	}
+
+	/**
 	 * Attempts to remove all emojis from the given input
 	 *
 	 * @author https://stackoverflow.com/a/32101331
@@ -247,7 +336,7 @@ public final class ChatUtil {
 		for (int i = 0; i < message.length(); i++) {
 
 			// Emojis are two characters long in java, e.g. a rocket emoji is "\uD83D\uDE80";
-			if (i < (message.length() - 1)) {
+			if (i < message.length() - 1) {
 
 				if (Character.isSurrogatePair(message.charAt(i), message.charAt(i + 1))) {
 					// also skip the second character of the emoji
@@ -320,7 +409,7 @@ public final class ChatUtil {
 	 * How many big letters the message has.
 	 *
 	 * @param message the message to check
-	 * @param list
+	 * @param list the list of strings to ignore (whitelist)
 	 *
 	 * @return how many big letters are in message
 	 */
@@ -379,7 +468,9 @@ public final class ChatUtil {
 	 */
 	private static String removeSimilarity(String message) {
 
-		message = replaceDiacritic(message);
+		if (SimplePlugin.getInstance().similarityStripAccents())
+			message = replaceDiacritic(message);
+
 		message = Common.stripColors(message);
 		message = message.toLowerCase();
 
@@ -554,9 +645,10 @@ public final class ChatUtil {
 /**
  * Contains information about all allowed Minecraft letters
  *
- * @deprecated new Minecraft versions support Unicode and a much broader range
+ * @deprecated does not properly format bold and new Minecraft unicode letters
  *
  */
+@Deprecated
 enum DefaultFontInfo {
 
 	A('A', 5),
@@ -653,7 +745,7 @@ enum DefaultFontInfo {
 	TICK('`', 2),
 	PERIOD('.', 1),
 	COMMA(',', 1),
-	SPACE(' ', 3),
+	SPACE(' ', 4),
 	DEFAULT('a', 4);
 
 	private final char character;

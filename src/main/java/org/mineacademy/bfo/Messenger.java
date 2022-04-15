@@ -1,13 +1,13 @@
 package org.mineacademy.bfo;
 
 import org.mineacademy.bfo.model.Replacer;
+import org.mineacademy.bfo.remain.Remain;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 /**
@@ -69,7 +69,7 @@ public class Messenger {
 	 * @param message
 	 */
 	public void broadcastInfo(final String message) {
-		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+		for (final ProxiedPlayer online : Remain.getOnlinePlayers())
 			tell(online, infoPrefix, message);
 	}
 
@@ -79,7 +79,7 @@ public class Messenger {
 	 * @param message
 	 */
 	public void broadcastSuccess(final String message) {
-		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+		for (final ProxiedPlayer online : Remain.getOnlinePlayers())
 			tell(online, successPrefix, message);
 	}
 
@@ -89,7 +89,7 @@ public class Messenger {
 	 * @param message
 	 */
 	public void broadcastWarn(final String message) {
-		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+		for (final ProxiedPlayer online : Remain.getOnlinePlayers())
 			tell(online, warnPrefix, message);
 	}
 
@@ -99,7 +99,7 @@ public class Messenger {
 	 * @param message
 	 */
 	public void broadcastError(final String message) {
-		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+		for (final ProxiedPlayer online : Remain.getOnlinePlayers())
 			tell(online, errorPrefix, message);
 	}
 
@@ -109,7 +109,7 @@ public class Messenger {
 	 * @param message
 	 */
 	public void broadcastQuestion(final String message) {
-		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+		for (final ProxiedPlayer online : Remain.getOnlinePlayers())
 			tell(online, questionPrefix, message);
 	}
 
@@ -119,7 +119,7 @@ public class Messenger {
 	 * @param message
 	 */
 	public void broadcastAnnounce(final String message) {
-		for (final ProxiedPlayer online : ProxyServer.getInstance().getPlayers())
+		for (final ProxiedPlayer online : Remain.getOnlinePlayers())
 			tell(online, announcePrefix, message);
 	}
 

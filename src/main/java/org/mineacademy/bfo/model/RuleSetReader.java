@@ -58,7 +58,7 @@ public abstract class RuleSetReader<T extends Rule> {
 			final String line = lines.get(i);
 
 			// Found our rule
-			if (line.equals(this.newKeyword + " " + rule.getUid()))
+			if (line.equals(this.newKeyword + " " + rule.getGroupName()))
 				found = true;
 
 			// Found something else
@@ -211,6 +211,5 @@ public abstract class RuleSetReader<T extends Rule> {
 	 *
 	 * @return the rule created, or null if the value is not valid
 	 */
-
 	protected abstract T createRule(File file, String value);
 }

@@ -4,48 +4,44 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.mineacademy.bfo.FileUtil;
-import org.mineacademy.bfo.Messenger;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.settings.SimpleLocalization;
+import org.mineacademy.bfo.settings.YamlConfig;
+import org.mineacademy.bfo.settings.SimpleLocalization.Commands;
 
 /**
  * A simple predefined sub-command for quickly reloading the plugin
  * using /{label} reload|rl
  */
-public final class ReloadCommand extends SimpleCommand {
+public final class ReloadCommand extends SimpleSubCommand {
 
 	/**
 	 * Create a new reload sub-command with the given permission.
 	 *
-	 * @param label
 	 * @param permission
 	 */
-	public ReloadCommand(String label, String permission) {
-		this(label);
+	public ReloadCommand(String permission) {
+		this();
 
 		setPermission(permission);
 	}
 
 	/**
 	 * Create a new reload sub-command
-	 *
-	 * @param label
 	 */
-	public ReloadCommand(String label) {
-		super(label);
+	public ReloadCommand() {
+		super("reload|rl");
 
-		setDescription("Reload the plugin and its configuration.");
+		setDescription(Commands.RELOAD_DESCRIPTION);
 	}
 
 	@Override
 	protected void onCommand() {
 		try {
-			tell(Messenger.getInfoPrefix() + "Reloading " + SimplePlugin.getNamed() + " " + SimplePlugin.getVersion() + "..");
+			tell(Commands.RELOAD_STARTED);
 
 			// Syntax check YML files before loading
 			boolean syntaxParsed = true;
-			Throwable errorFromReloading = null;
 
 			final List<File> yamlFiles = new ArrayList<>();
 
@@ -53,24 +49,23 @@ public final class ReloadCommand extends SimpleCommand {
 
 			for (final File file : yamlFiles) {
 				try {
-					FileUtil.loadConfigurationStrict(file);
+					YamlConfig.fromFile(file);
 
 				} catch (final Throwable t) {
 					t.printStackTrace();
 
-					errorFromReloading = t;
 					syntaxParsed = false;
 				}
 			}
 
 			if (!syntaxParsed) {
-				tell(SimpleLocalization.Commands.RELOAD_FAIL.replace("{error}", errorFromReloading.getMessage() != null ? errorFromReloading.getMessage() : "unknown"));
+				tell(SimpleLocalization.Commands.RELOAD_FILE_LOAD_ERROR);
 
 				return;
 			}
 
 			SimplePlugin.getInstance().reload();
-			tell(Messenger.getSuccessPrefix() + SimpleLocalization.Commands.RELOAD_SUCCESS);
+			tell(SimpleLocalization.Commands.RELOAD_SUCCESS);
 
 		} catch (final Throwable t) {
 			tell(SimpleLocalization.Commands.RELOAD_FAIL.replace("{error}", t.getMessage() != null ? t.getMessage() : "unknown"));
@@ -95,5 +90,13 @@ public final class ReloadCommand extends SimpleCommand {
 			}
 
 		return list;
+	}
+
+	/**
+	 * @see org.mineacademy.bfo.command.SimpleCommand#tabComplete()
+	 */
+	@Override
+	protected List<String> tabComplete() {
+		return NO_COMPLETE;
 	}
 }

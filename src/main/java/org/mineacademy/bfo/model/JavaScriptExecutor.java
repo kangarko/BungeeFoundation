@@ -19,7 +19,6 @@ import org.mineacademy.bfo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.bfo.exception.EventHandledException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.remain.Remain;
-import org.mineacademy.bfo.settings.SimpleLocalization.Player;
 
 import lombok.NonNull;
 import net.md_5.bungee.api.CommandSender;
@@ -92,7 +91,7 @@ public final class JavaScriptExecutor {
 						"To fix this, install Java 11 from Oracle",
 						"or other vendor that supports Nashorn."));
 
-			Common.logFramed(false, Common.toArray(warningMessage));
+			Common.logFramed(Common.toArray(warningMessage));
 		}
 	}
 
@@ -140,7 +139,8 @@ public final class JavaScriptExecutor {
 		}
 
 		if (engine == null) {
-			Common.warning("Not running script" + (sender != null ? " for " + sender.getName() : "") + " because JavaScript library is missing (install Oracle Java 8, 11 or use mineacademy.org/nashorn): " + javascript);
+			Common.warning("Not running script" + (sender == null ? "" : " for " + sender.getName()) + " because JavaScript library is missing "
+					+ "(install Oracle Java 8, 11 or 16 and download mineacademy.org/nashorn): " + javascript);
 
 			return null;
 		}
@@ -156,7 +156,7 @@ public final class JavaScriptExecutor {
 
 			final Object result = engine.eval(javascript);
 
-			if (sender instanceof Player) {
+			if (sender instanceof ProxiedPlayer) {
 				if (cached == null)
 					cached = new HashMap<>();
 
@@ -175,10 +175,15 @@ public final class JavaScriptExecutor {
 
 			// Special support for throwing exceptions in the JS code so that users
 			// can send messages to player directly if upstream supports that
-			if (ex.getCause() != null && ex.getCause().toString().contains("event handled: ")) {
-				final String[] errorMessage = ex.getCause().toString().split("event handled\\: ");
+			final String cause = ex.getCause().toString();
 
-				throw new EventHandledException(true, errorMessage.length == 2 ? errorMessage[1] : null);
+			if (ex.getCause() != null && cause.contains("event handled")) {
+				final String[] errorMessageSplit = cause.contains("event handled: ") ? cause.split("event handled\\: ") : new String[0];
+
+				if (errorMessageSplit.length == 2)
+					Common.tellNoPrefix(sender, errorMessageSplit[1]);
+
+				throw new EventHandledException(true);
 			}
 
 			throw new RuntimeException(error + " '" + javascript + "'", ex);
@@ -196,7 +201,8 @@ public final class JavaScriptExecutor {
 	public static Object run(final String javascript, final Map<String, Object> replacements) {
 
 		if (engine == null) {
-			Common.warning("Not running script because JavaScript library is missing (install Oracle Java 8 or 11): " + javascript);
+			Common.warning("Not running script because JavaScript library is missing "
+					+ "(install Oracle Java 8, 11 or 16 and download mineacademy.org/nashorn): " + javascript);
 
 			return javascript;
 		}

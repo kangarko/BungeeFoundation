@@ -1,13 +1,10 @@
-package org.mineacademy.bfo.model;
+package org.mineacademy.bfo;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
-
-import org.mineacademy.bfo.Common;
-import org.mineacademy.bfo.Valid;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -27,7 +24,7 @@ public final class RandomUtil {
 	/**
 	 * Symbols for chat colors using the & character including decorations like bold italics etc
 	 */
-	private static final char[] COLORS_AND_DECORATION = new char[] {
+	private static final char[] COLORS_AND_DECORATION = {
 			'0', '1', '2', '3', '4',
 			'5', '6', '7', '8', '9',
 			'a', 'b', 'c', 'd', 'e',
@@ -37,7 +34,7 @@ public final class RandomUtil {
 	/**
 	 * Only valid chat colors without decorations
 	 */
-	private static final char[] CHAT_COLORS = new char[] {
+	private static final char[] CHAT_COLORS = {
 			'0', '1', '2', '3', '4',
 			'5', '6', '7', '8', '9',
 			'a', 'b', 'c', 'd', 'e',
@@ -47,7 +44,7 @@ public final class RandomUtil {
 	/**
 	 * English alphabet letters
 	 */
-	private static final char[] LETTERS = new char[] {
+	private static final char[] LETTERS = {
 			'a', 'b', 'c', 'd', 'e',
 			'f', 'g', 'h', 'i', 'j',
 			'k', 'l', 'm', 'n', 'o',
@@ -110,7 +107,7 @@ public final class RandomUtil {
 	/**
 	 * Generates random text, like lorem ipsum but completely
 	 * different.
-	 * 
+	 *
 	 * @param length
 	 * @return
 	 */

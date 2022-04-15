@@ -1,11 +1,16 @@
 package org.mineacademy.bfo.bungee.message;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.UUID;
 
+import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.Valid;
-import org.mineacademy.bfo.bungee.BungeeAction;
+import org.mineacademy.bfo.bungee.BungeeListener;
+import org.mineacademy.bfo.bungee.BungeeMessageType;
 import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
@@ -18,10 +23,10 @@ import net.md_5.bungee.api.connection.Server;
 
 /**
  * Represents an incoming plugin message.
- *
+ * <p>
  * NB: This uses the standardized Foundation model where the first
  * string is the server name and the second string is the
- * {@link BungeeAction} by its name *read automatically*.
+ * {@link BungeeMessageType} by its name *read automatically*.
  */
 public final class IncomingMessage extends Message {
 
@@ -37,24 +42,46 @@ public final class IncomingMessage extends Message {
 	private final ByteArrayDataInput input;
 
 	/**
+	 * The internal stream
+	 */
+	private final ByteArrayInputStream stream;
+
+	/**
 	 * Create a new incoming message from the given array
-	 *
+	 * <p>
 	 * NB: This uses the standardized Foundation model where the first
 	 * string is the server name and the second string is the
-	 * {@link BungeeAction} by its name *read automatically*.
+	 * {@link BungeeMessageType} by its name *read automatically*.
 	 *
 	 * @param data
 	 */
 	public IncomingMessage(byte[] data) {
+		this(SimplePlugin.getInstance().getBungeeCord(), data);
+	}
+
+	/**
+	 * Create a new incoming message from the given array
+	 * <p>
+	 * NB: This uses the standardized Foundation model where the first
+	 * string is the server name and the second string is the
+	 * {@link BungeeMessageType} by its name *read automatically*.
+	 *
+	 * @param listener
+	 * @param data
+	 */
+	public IncomingMessage(BungeeListener listener, byte[] data) {
+		super(listener);
+
 		this.data = data;
-		this.input = ByteStreams.newDataInput(data);
+		this.stream = new ByteArrayInputStream(data);
+		this.input = ByteStreams.newDataInput(stream);
 
 		// -----------------------------------------------------------------
 		// We are automatically reading the first two strings assuming the
 		// first is the senders server name and the second is the action
 		// -----------------------------------------------------------------
 
-		// Read sender UUID if any
+		// Read senders UUID
 		setSenderUid(input.readUTF());
 
 		// Read server name
@@ -62,26 +89,6 @@ public final class IncomingMessage extends Message {
 
 		// Read action
 		setAction(input.readUTF());
-	}
-
-	/**
-	 * Read UUID from the data
-	 *
-	 * @return
-	 */
-	public UUID readUUID() {
-		moveHead(String.class);
-
-		return UUID.fromString(input.readUTF());
-	}
-
-	/**
-	 * Read map from the data
-	 *
-	 * @return
-	 */
-	public SerializedMap readMap() {
-		return SerializedMap.fromJson(this.readString());
 	}
 
 	/**
@@ -93,6 +100,41 @@ public final class IncomingMessage extends Message {
 		moveHead(String.class);
 
 		return input.readUTF();
+	}
+
+	/**
+	 * Read a UUID from the string data
+	 *
+	 * @return
+	 */
+	public UUID readUUID() {
+		moveHead(UUID.class);
+
+		return UUID.fromString(input.readUTF());
+	}
+
+	/**
+	 * Read a map from the string data if json
+	 *
+	 * @return
+	 */
+	public SerializedMap readMap() {
+		moveHead(String.class);
+
+		return SerializedMap.fromJson(input.readUTF());
+	}
+
+	/**
+	 * Read an enumerator from the given string data
+	 *
+	 * @param <T>
+	 * @param typeOf
+	 * @return
+	 */
+	public <T extends Enum<T>> T readEnum(Class<T> typeOf) {
+		moveHead(typeOf);
+
+		return ReflectionUtil.lookupEnum(typeOf, input.readUTF());
 	}
 
 	/**
@@ -115,6 +157,26 @@ public final class IncomingMessage extends Message {
 		moveHead(Byte.class);
 
 		return input.readByte();
+	}
+
+	/**
+	 * Reads the rest of the bytes
+	 *
+	 * @return
+	 */
+	public byte[] readBytes() {
+		moveHead(byte[].class);
+
+		final byte[] array = new byte[stream.available()];
+
+		try {
+			stream.read(array);
+
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+
+		return array;
 	}
 
 	/**
@@ -144,7 +206,7 @@ public final class IncomingMessage extends Message {
 	 *
 	 * @return
 	 */
-	public int readInt() {
+	public int writeInt() {
 		moveHead(Integer.class);
 
 		return input.readInt();

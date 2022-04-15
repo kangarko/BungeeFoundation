@@ -1,13 +1,10 @@
 package org.mineacademy.bfo.settings;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
@@ -28,6 +24,8 @@ import org.yaml.snakeyaml.Yaml;
 
 import lombok.NonNull;
 import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 
 /**
  * A class to update/add new sections/keys to your config while keeping your current values and keeping your comments
@@ -72,17 +70,9 @@ public final class YamlComments {
 	 */
 	public static void writeComments(@NonNull String jarPath, @NonNull File diskFile, @NonNull List<String> ignoredSections) throws IOException {
 
-		final InputStream internalResource = FileUtil.getInternalResource(jarPath);
-
-		if (internalResource == null)
-			return;
-
-		final BufferedReader newReader = new BufferedReader(new InputStreamReader(internalResource, StandardCharsets.UTF_8));
-		final List<String> newLines = newReader.lines().collect(Collectors.toList());
-		newReader.close();
-
-		final Configuration oldConfig = YamlConfig.PROVIDER.load(diskFile);
-		final Configuration newConfig = YamlConfig.PROVIDER.load(FileUtil.getInternalResource(jarPath));
+		final List<String> newLines = FileUtil.getInternalFileContent(jarPath);
+		final Configuration oldConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(diskFile);
+		final Configuration newConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(String.join("\n", FileUtil.getInternalFileContent(jarPath)));
 
 		final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(diskFile), StandardCharsets.UTF_8));
 
@@ -111,12 +101,12 @@ public final class YamlComments {
 		if (!removedKeys.isEmpty()) {
 			final File backupFile = FileUtil.getOrMakeFile("unused/" + diskFile.getName());
 
-			final Configuration backupConfig = YamlConfig.PROVIDER.load(backupFile);
+			final Configuration backupConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(backupFile);
 
 			for (final Map.Entry<String, Object> entry : removedKeys.entrySet())
 				backupConfig.set(entry.getKey(), entry.getValue());
 
-			YamlConfig.PROVIDER.save(backupConfig, new FileWriter(backupFile));
+			ConfigurationProvider.getProvider(YamlConfiguration.class).save(backupConfig, new FileWriter(backupFile));
 
 			Common.warning("The following entries in " + diskFile.getName() + " are unused and were moved into " + backupFile.getName() + ": " + removedKeys.keySet());
 		}

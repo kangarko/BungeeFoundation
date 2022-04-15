@@ -1,8 +1,9 @@
 package org.mineacademy.bfo.model;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
 
-import org.mineacademy.bfo.collection.StrictList;
+import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.collection.StrictSet;
 
 import lombok.Getter;
@@ -17,7 +18,7 @@ import lombok.Getter;
  *
  * @param <T>
  */
-public final class IsInList<T> {
+public final class IsInList<T> implements Iterable<T> {
 
 	/**
 	 * The internal set for matching
@@ -31,39 +32,14 @@ public final class IsInList<T> {
 	private final boolean matchAll;
 
 	/**
-	 * Create a new matching list
+	 * Create a new is in list
 	 *
 	 * @param list
+	 * @param matchAll
 	 */
-	public IsInList(final StrictSet<T> list) {
-		this(list.getSource());
-	}
-
-	/**
-	 * Create a new matching list
-	 *
-	 * @param list
-	 */
-	public IsInList(final StrictList<T> list) {
-		this(list.getSource());
-	}
-
-	/**
-	 * Create a new matching list
-	 *
-	 * @param list
-	 */
-	public IsInList(final Collection<T> list) {
+	private IsInList(final Iterable<T> list, boolean matchAll) {
 		this.list = new StrictSet<>(list);
-
-		if (list.isEmpty())
-			matchAll = true;
-
-		else if (list.iterator().next().equals("*"))
-			matchAll = true;
-
-		else
-			matchAll = false;
+		this.matchAll = matchAll;
 	}
 
 	/**
@@ -73,6 +49,65 @@ public final class IsInList<T> {
 	 * @return
 	 */
 	public boolean contains(final T toEvaluateAgainst) {
+
+		// Return false when list is empty and we are not always true
+		if (!matchAll && list.isEmpty())
+			return false;
+
 		return matchAll || list.contains(toEvaluateAgainst);
 	}
+
+	/**
+	 * Return true if list is equal to ["*"]
+	 *
+	 * @return
+	 */
+	public boolean isEntireList() {
+		return matchAll;
+	}
+
+	/**
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	public Iterator<T> iterator() {
+		return this.list.iterator();
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "IsInList[entire=" + this.matchAll + ", list=" + Common.join(this.list) + "]";
+	}
+
+	/**
+	 * Create a new matching list from the given list
+	 *
+	 * @param list
+	 * @return
+	 */
+	public static <T> IsInList<T> fromList(Iterable<T> list) {
+		boolean matchAll = false;
+
+		for (final T t : list)
+			if ("*".equals(t)) {
+				matchAll = true;
+
+				break;
+			}
+
+		return new IsInList<>(list, matchAll);
+	}
+
+	/**
+	 * Create a new matching list that is always true
+	 *
+	 * @return
+	 */
+	public static <T> IsInList<T> fromStar() {
+		return new IsInList<>(new ArrayList<T>(), true);
+	}
+
 }

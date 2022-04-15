@@ -1,12 +1,15 @@
 package org.mineacademy.bfo.settings;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.List;
+
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.constants.FoConstants;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.debug.LagCatcher;
-import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
 /**
@@ -17,12 +20,12 @@ import org.mineacademy.bfo.plugin.SimplePlugin;
  */
 // Use for settings.yml
 @SuppressWarnings("unused")
-public abstract class SimpleSettings extends YamlStaticConfig {
+public class SimpleSettings extends YamlStaticConfig {
 
 	/**
 	 * A flag indicating that this class has been loaded
 	 * <p>
-	 * You can place this class to {@link org.mineacademy.fo.plugin.SimplePlugin#getSettings()} ()} to
+	 * You can place this class to {@link org.mineacademy.bfo.plugin.SimplePlugin#getSettings()} ()} to
 	 * make it load automatically
 	 */
 	private static boolean settingsClassCalled;
@@ -32,8 +35,8 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	// --------------------------------------------------------------------
 
 	@Override
-	protected final void load() throws Exception {
-		createFileAndLoad(getSettingsFileName());
+	protected final void onLoad() throws Exception {
+		loadConfiguration(getSettingsFileName());
 	}
 
 	/**
@@ -52,7 +55,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	/**
 	 * The configuration version number, found in the "Version" key in the file.,
 	 */
-	protected static Integer VERSION;
+	public static Integer VERSION;
 
 	/**
 	 * Set and update the config version automatically, however the {@link #VERSION} will
@@ -64,7 +67,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	@Override
 	protected void preLoad() {
 		// Load version first so we can use it later
-		pathPrefix(null);
+		setPathPrefix(null);
 
 		if ((VERSION = getInteger("Version")) != getConfigVersion())
 			set("Version", getConfigVersion());
@@ -77,12 +80,24 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	 *
 	 * @return
 	 */
-	protected abstract int getConfigVersion();
+	protected int getConfigVersion() {
+		return 1;
+	}
 
 	// --------------------------------------------------------------------
 	// Settings we offer by default for your main config file
 	// Specify those you need to modify
 	// --------------------------------------------------------------------
+
+	/**
+	 * The {timestamp} format.
+	 */
+	public static DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+
+	/**
+	 * The {location} format.
+	 */
+	public static String LOCATION_FORMAT = "{world} [{x}, {y}, {z}]";
 
 	/**
 	 * What debug sections should we enable in {@link Debugger} ? When you call {@link Debugger#debug(String, String...)}
@@ -93,7 +108,7 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	public static StrictList<String> DEBUG_SECTIONS = new StrictList<>();
 
 	/**
-	 * The plugin prefix in front of chat/console messages, added automatically
+	 * The plugin prefix in front of chat/console messages.
 	 * <p>
 	 * Typically for ChatControl:
 	 * <p>
@@ -119,6 +134,17 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	public static Integer REGEX_TIMEOUT = 100;
 
 	/**
+	 * What commands should trigger the your main plugin command (separated by a comma ,)? See {@link SimplePlugin#getMainCommand()}
+	 * <p>
+	 * Typical values for ChatControl:
+	 * <p>
+	 * Command_Aliases: [chatcontrol, chc, cc]
+	 * <p>
+	 * // ONLY MANDATORY IF YOU OVERRIDE {@link SimplePlugin#getMainCommand()} //
+	 */
+	public static StrictList<String> MAIN_COMMAND_ALIASES = new StrictList<>();
+
+	/**
 	 * The localization prefix, given you are using {@link SimpleLocalization} class to load and manage your
 	 * locale file. Typically the file path is: localization/messages_PREFIX.yml with this prefix below.
 	 * <p>
@@ -134,7 +160,19 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 	private static void init() {
 		Valid.checkBoolean(!settingsClassCalled, "Settings class already loaded!");
 
-		pathPrefix(null);
+		setPathPrefix(null);
+		upgradeOldSettings();
+
+		if (isSetDefault("Timestamp_Format"))
+			try {
+				TIMESTAMP_FORMAT = new SimpleDateFormat(getString("Timestamp_Format"));
+
+			} catch (final IllegalArgumentException ex) {
+				Common.throwError(ex, "Wrong 'Timestamp_Format '" + getString("Timestamp_Format") + "', see https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html for examples'");
+			}
+
+		if (isSetDefault("Location_Format"))
+			LOCATION_FORMAT = getString("Location_Format");
 
 		if (isSetDefault("Prefix"))
 			PLUGIN_PREFIX = getString("Prefix");
@@ -158,34 +196,50 @@ public abstract class SimpleSettings extends YamlStaticConfig {
 		// -------------------------------------------------------------------
 
 		{ // Load localization
-			final boolean hasLocalization = hasLocalization();
 			final boolean keySet = isSetDefault("Locale");
 
-			if (hasLocalization && !keySet)
-				throw new FoException("Since you have your Localization class you must set the 'Locale' key in " + getFileName());
-
 			LOCALE_PREFIX = keySet ? getString("Locale") : LOCALE_PREFIX;
+		}
+
+		{ // Load main command alias
+			final boolean keySet = isSetDefault("Command_Aliases");
+
+			MAIN_COMMAND_ALIASES = keySet ? getCommandList("Command_Aliases") : MAIN_COMMAND_ALIASES;
 		}
 
 		settingsClassCalled = true;
 	}
 
 	/**
-	 * Inspect if some settings classes extend localization and make sure only one does, if any
-	 *
-	 * @return
+	 * Upgrade some of the old and ancient settings from our premium plugins.
 	 */
-	private static boolean hasLocalization() {
-		final SimplePlugin plugin = SimplePlugin.getInstance();
-		int localeClasses = 0;
+	private static void upgradeOldSettings() {
 
-		if (plugin.getSettings() != null)
-			for (final Class<?> clazz : plugin.getSettings())
-				if (SimpleLocalization.class.isAssignableFrom(clazz))
-					localeClasses++;
+		{ // Debug
+			if (isSet("Debugger"))
+				move("Debugger", "Debug");
 
-		Valid.checkBoolean(localeClasses < 2, "You cannot have more than 1 class extend SimpleLocalization!");
-		return localeClasses == 1;
+			if (isSet("Serialization_Number"))
+				move("Serialization_Number", "Serialization");
+
+			// ChatControl
+			if (isSet("Debugger.Keys")) {
+				move("Debugger.Keys", "Serialization");
+				move("Debugger.Sections", "Debug");
+			}
+
+			// Archaic
+			if (isSet("Debug") && !(getObject("Debug") instanceof List))
+				set("Debug", null);
+		}
+
+		{ // Prefix
+			if (isSet("Plugin_Prefix"))
+				move("Plugin_Prefix", "Prefix");
+
+			if (isSet("Check_Updates"))
+				move("Check_Updates", "Notify_Updates");
+		}
 	}
 
 	/**

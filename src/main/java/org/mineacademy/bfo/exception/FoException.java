@@ -2,6 +2,9 @@ package org.mineacademy.bfo.exception;
 
 import org.mineacademy.bfo.debug.Debugger;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Represents our core exception. All exceptions of this
  * kind are logged automatically to the error.log file
@@ -11,6 +14,13 @@ public class FoException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	/**
+	 * Should we save thrown exceptions to error.log file automatically when they are thrown?
+	 */
+	@Getter
+	@Setter
+	private static boolean errorSavedAutomatically = true;
+
+	/**
 	 * Create a new exception and logs it
 	 *
 	 * @param t
@@ -18,7 +28,8 @@ public class FoException extends RuntimeException {
 	public FoException(Throwable t) {
 		super(t);
 
-		Debugger.saveError(t);
+		if (errorSavedAutomatically)
+			Debugger.saveError(t);
 	}
 
 	/**
@@ -29,7 +40,18 @@ public class FoException extends RuntimeException {
 	public FoException(String message) {
 		super(message);
 
-		Debugger.saveError(this, message);
+		if (errorSavedAutomatically)
+			Debugger.saveError(this, message);
+	}
+
+	/**
+	 * Create a new exception and logs it
+	 *
+	 * @param message
+	 * @param t
+	 */
+	public FoException(String message, Throwable t) {
+		this(t, message);
 	}
 
 	/**
@@ -41,18 +63,21 @@ public class FoException extends RuntimeException {
 	public FoException(Throwable t, String message) {
 		super(message, t);
 
-		Debugger.saveError(t, message);
+		if (errorSavedAutomatically)
+			Debugger.saveError(t, message);
 	}
 
 	/**
 	 * Create a new exception and logs it
 	 */
 	public FoException() {
-		Debugger.saveError(this);
+
+		if (errorSavedAutomatically)
+			Debugger.saveError(this);
 	}
 
 	@Override
 	public String getMessage() {
-		return "Report / " + super.getMessage();
+		return "Report: " + super.getMessage();
 	}
 }

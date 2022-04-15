@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.mineacademy.bfo.ChatUtil;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.MathUtil;
 import org.mineacademy.bfo.collection.SerializedMap;
@@ -200,7 +201,7 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 	 * @param operation
 	 */
 	private void logPerformance(final String operation) {
-		LagCatcher.end("mysql", MathUtil.atLeast(200, SimpleSettings.LAG_THRESHOLD_MILLIS), Common.capitalize(operation) + " data to MySQL took {time} ms");
+		LagCatcher.end("mysql", MathUtil.atLeast(200, SimpleSettings.LAG_THRESHOLD_MILLIS), ChatUtil.capitalize(operation) + " data to MySQL took {time} ms");
 	}
 
 	/**

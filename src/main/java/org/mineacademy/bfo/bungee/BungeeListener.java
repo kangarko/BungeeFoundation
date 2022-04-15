@@ -4,14 +4,15 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.message.IncomingMessage;
 import org.mineacademy.bfo.bungee.message.OutgoingMessage;
 import org.mineacademy.bfo.debug.Debugger;
-import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NonNull;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.Server;
@@ -33,6 +34,18 @@ public abstract class BungeeListener implements Listener {
 	private static final Set<BungeeListener> registeredListeners = new HashSet<>();
 
 	/**
+	 * The channel
+	 */
+	@Getter
+	private final String channel;
+
+	/**
+	 * The actions
+	 */
+	@Getter
+	private final BungeeMessageType[] actions;
+
+	/**
 	 * Temporary variable storing the senders connection
 	 */
 	@Getter(value = AccessLevel.PROTECTED)
@@ -51,16 +64,34 @@ public abstract class BungeeListener implements Listener {
 	private byte[] data;
 
 	/**
-	 * Create a new bungee listener for the {@link SimplePlugin#getBungeeChannel()}
+	 * Create a new bungee suite with the given params
 	 *
 	 * @param channel
+	 * @param listener
+	 * @param actions
 	 */
-	protected BungeeListener() {
+	protected BungeeListener(@NonNull String channel, Class<? extends BungeeMessageType> actionEnum) {
+		this.channel = channel;
+		this.actions = toActions(actionEnum);
+
 		for (final BungeeListener listener : registeredListeners)
 			if (listener.getChannel().equals(this.getChannel()))
 				return;
 
 		registeredListeners.add(this);
+	}
+
+	private static BungeeMessageType[] toActions(@NonNull Class<? extends BungeeMessageType> actionEnum) {
+		Valid.checkBoolean(actionEnum.isEnum(), "BungeeListener expects BungeeMessageType to be an enum, given: " + actionEnum);
+
+		try {
+			return (BungeeMessageType[]) actionEnum.getMethod("values").invoke(null);
+
+		} catch (final ReflectiveOperationException ex) {
+			Common.throwError(ex, "Unable to get values() of " + actionEnum + ", ensure it is an enum!");
+
+			return null;
+		}
 	}
 
 	/**
@@ -77,11 +108,11 @@ public abstract class BungeeListener implements Listener {
 	 * and this listeners channel
 	 *
 	 * @param senderUid
-	 * @param action
+	 * @param messageType
 	 * @return
 	 */
-	protected final OutgoingMessage createOutgoingMessage(UUID senderUid, BungeeAction action) {
-		return new OutgoingMessage(senderUid, sender.getInfo().getName(), action);
+	protected final OutgoingMessage createOutgoingMessage(UUID senderUid, BungeeMessageType messageType) {
+		return new OutgoingMessage(senderUid, sender.getInfo().getName(), messageType);
 	}
 
 	/**
@@ -91,15 +122,6 @@ public abstract class BungeeListener implements Listener {
 	 */
 	protected final ProxyServer getProxy() {
 		return ProxyServer.getInstance();
-	}
-
-	/**
-	 * A proxy for SimplePlugin.getBungee().getChannel()
-	 *
-	 * @return
-	 */
-	public final String getChannel() {
-		return SimplePlugin.getBungee().getChannel();
 	}
 
 	@Override

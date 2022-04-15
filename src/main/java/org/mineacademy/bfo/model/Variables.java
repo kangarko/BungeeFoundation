@@ -1,21 +1,27 @@
 package org.mineacademy.bfo.model;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.mineacademy.bfo.Common;
+import org.mineacademy.bfo.GeoAPI;
+import org.mineacademy.bfo.GeoAPI.GeoResponse;
+import org.mineacademy.bfo.Messenger;
 import org.mineacademy.bfo.TimeUtil;
-import org.mineacademy.bfo.Valid;
+import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.collection.StrictMap;
 import org.mineacademy.bfo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.settings.SimpleLocalization;
+import org.mineacademy.bfo.settings.SimpleSettings;
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -25,12 +31,33 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 public final class Variables {
 
 	/**
+	 * The pattern to find singular [syntax_name] variables
+	 */
+	public static final Pattern MESSAGE_PLACEHOLDER_PATTERN = Pattern.compile("[\\[]([^\\[\\]]+)[\\]]");
+
+	/**
 	 * The pattern to find simple {} placeholders
 	 */
-	protected static final Pattern BRACKET_PLACEHOLDER_PATTERN = Pattern.compile("[{]([^{}]+)[}]");
+	public static final Pattern BRACKET_PLACEHOLDER_PATTERN = Pattern.compile("[({|%)]([^{}]+)[(}|%)]");
+
+	/**
+	 * The patter to find simple {} placeholders starting with {rel_ (used for PlaceholderAPI)
+	 */
+	public static final Pattern BRACKET_REL_PLACEHOLDER_PATTERN = Pattern.compile("[({|%)](rel_)([^}]+)[(}|%)]");
+
+	/**
+	 * Player - [Original Message - Translated Message]
+	 */
+	private static final Map<String, Map<String, String>> cache = ExpiringMap.builder().expiration(500, TimeUnit.MILLISECONDS).build();
+
+	/**
+	 * Should we replace javascript placeholders from variables/ folder automatically?
+	 * Used internally to prevent race condition
+	 */
+	static boolean REPLACE_JAVASCRIPT = true;
 
 	// ------------------------------------------------------------------------------------------------------------
-	// Changing variables for loading
+	// Custom variables
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
@@ -39,44 +66,42 @@ public final class Variables {
 	 * You take in a command sender (may/may not be a player) and output a replaced string.
 	 * The variable name (the key) is automatically surrounded by {} brackets
 	 */
-	private static final Map<String, Function<CommandSender, String>> customVariables = new HashMap<>();
+	private static final StrictMap<String, Function<CommandSender, String>> customVariables = new StrictMap<>();
 
 	/**
-	 * Player, Their Cached Variables
+	 * Variables added to Foundation by you or other plugins
+	 *
+	 * This is used to dynamically replace the variable based on its content, like
+	 * PlaceholderAPI.
+	 *
+	 * We also hook into PlaceholderAPI, however, you'll have to use your plugin's prefix before
+	 * all variables when called from there.
 	 */
-	private static final StrictMap<String, Map<String, String>> cache = new StrictMap<>();
+	private static final StrictList<SimpleExpansion> customExpansions = new StrictList<>();
 
 	/**
-	 * Player, Original Message, Translated Message
-	 */
-	private static final Map<String, Map<String, String>> fastCache = makeNewFastCache();
-
-	// ------------------------------------------------------------------------------------------------------------
-	// Custom variables
-	// ------------------------------------------------------------------------------------------------------------
-
-	/**
-	 * As a developer you can add or remove custom variables. Return an unmodifiable
-	 * set of all added custom variables
+	 * Return the variable for the given key that is a function of replacing
+	 * itself for the player. Returns null if no such variable by key is present.
+	 * @param key
 	 *
 	 * @return
 	 */
-	public static Set<String> getVariables() {
-		return Collections.unmodifiableSet(customVariables.keySet());
+	public static Function<CommandSender, String> getVariable(String key) {
+		return customVariables.get(key);
 	}
 
 	/**
 	 * Register a new variable. The variable will be found inside {} block so if you give the variable
 	 * name player_health it will be {player_health}. The function takes in a command sender (can be player)
 	 * and outputs the variable value.
-	 *
+	 * <p>
 	 * Please keep in mind we replace your variables AFTER PlaceholderAPI and Javascript variables
 	 *
 	 * @param variable
 	 * @param replacer
 	 */
 	public static void addVariable(String variable, Function<CommandSender, String> replacer) {
-		customVariables.put(variable, replacer);
+		customVariables.override(variable, replacer);
 	}
 
 	/**
@@ -100,131 +125,249 @@ public final class Variables {
 		return customVariables.containsKey(variable);
 	}
 
+	/**
+	 * Return an immutable list of all currently loaded expansions
+	 *
+	 * @return
+	 */
+	public static List<SimpleExpansion> getExpansions() {
+		return Collections.unmodifiableList(customExpansions.getSource());
+	}
+
+	/**
+	 * Registers a new expansion if it was not already registered
+	 *
+	 * @param expansion
+	 */
+	public static void addExpansion(SimpleExpansion expansion) {
+		customExpansions.addIfNotExist(expansion);
+	}
+
+	/**
+	 * Unregisters an expansion if it was registered already
+	 *
+	 * @param expansion
+	 */
+	public static void removeExpansion(SimpleExpansion expansion) {
+		customExpansions.remove(expansion);
+	}
+
+	/**
+	 * Return true if the expansion has already been registered
+	 *
+	 * @param expansion
+	 * @return
+	 */
+	public static boolean hasExpansion(SimpleExpansion expansion) {
+		return customExpansions.contains(expansion);
+	}
+
 	// ------------------------------------------------------------------------------------------------------------
 	// Replacing
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
+	 * Replaces variables in the messages using the message sender as an object to replace
+	 * player-related placeholders.
+	 *
+	 * We also support PlaceholderAPI and MvdvPlaceholderAPI (only if sender is a Player).
+	 *
+	 * @param messages
+	 * @param sender
+	 * @param replacements
+	 * @return
+	 */
+	public static List<String> replace(Iterable<String> messages, CommandSender sender, Map<String, Object> replacements) {
+
+		// Trick: Join the lines to only parse variables at once -- performance++ -- then split again
+		final String deliminer = "%FLVJ%";
+
+		return Arrays.asList(replace(String.join(deliminer, messages), sender, replacements).split(deliminer));
+	}
+
+	/**
 	 * Replaces variables in the message using the message sender as an object to replace
 	 * player-related placeholders.
+	 *
+	 * We also support PlaceholderAPI and MvdvPlaceholderAPI (only if sender is a Player).
 	 *
 	 * @param message
 	 * @param sender
 	 * @return
 	 */
 	public static String replace(String message, CommandSender sender) {
-		Valid.checkNotNull(sender, "Sender cannot be null!");
+		return replace(message, sender, null);
+	}
 
+	/**
+	 * Replaces variables in the message using the message sender as an object to replace
+	 * player-related placeholders.
+	 *
+	 * We also support PlaceholderAPI and MvdvPlaceholderAPI (only if sender is a Player).
+	 *
+	 * @param message
+	 * @param sender
+	 * @param replacements
+	 * @return
+	 */
+	public static String replace(String message, CommandSender sender, Map<String, Object> replacements) {
+		return replace(message, sender, replacements, true);
+	}
+
+	/**
+	 * Replaces variables in the message using the message sender as an object to replace
+	 * player-related placeholders.
+	 *
+	 * We also support PlaceholderAPI and MvdvPlaceholderAPI (only if sender is a Player).
+	 *
+	 * @param message
+	 * @param sender
+	 * @param replacements
+	 * @param colorize
+	 * @return
+	 */
+	public static String replace(String message, CommandSender sender, Map<String, Object> replacements, boolean colorize) {
 		if (message == null || message.isEmpty())
 			return "";
 
 		final String original = message;
+		final boolean senderIsPlayer = sender instanceof ProxiedPlayer;
 
-		{
+		// Replace custom variables first
+		if (replacements != null && !replacements.isEmpty())
+			message = Replacer.replaceArray(message, replacements);
+
+		if (senderIsPlayer) {
+
 			// Already cached ? Return.
-			final Map<String, String> cached = fastCache.get(sender.getName());
+			final Map<String, String> cached = cache.get(sender.getName());
+			final String cachedVar = cached != null ? cached.get(message) : null;
 
-			if (cached != null && cached.containsKey(original))
-				return cached.get(original);
+			if (cachedVar != null)
+				return cachedVar;
+		}
+
+		// Custom placeholders
+		if (REPLACE_JAVASCRIPT) {
+			REPLACE_JAVASCRIPT = false;
+
+			try {
+				message = replaceJavascriptVariables0(message, sender, replacements);
+
+			} finally {
+				REPLACE_JAVASCRIPT = true;
+			}
 		}
 
 		// Default
-		message = replaceVariables0(sender, message);
+		message = replaceHardVariables0(sender, message);
 
 		// Support the & color system
-		message = Common.colorize(message);
+		if (!message.startsWith("[JSON]"))
+			message = Common.colorize(message);
 
-		{
-			final Map<String, String> map = fastCache.get(sender.getName());
+		if (senderIsPlayer) {
+			final Map<String, String> map = cache.get(sender.getName());
 
 			if (map != null)
 				map.put(original, message);
 			else
-				fastCache.put(sender.getName(), Common.newHashMap(original, message));
+				cache.put(sender.getName(), Common.newHashMap(original, message));
 		}
 
 		return message;
 	}
 
-	/**
-	 * Replaces our hardcoded variables in the message, using a cache for better performance
-	 *
-	 * @param sender
-	 * @param message
-	 * @return
+	/*
+	 * Replaces JavaScript variables in the message
 	 */
-	private static String replaceVariables0(CommandSender sender, String message) {
+	private static String replaceJavascriptVariables0(String message, CommandSender sender, Map<String, Object> replacements) {
+
+		final Matcher matcher = BRACKET_PLACEHOLDER_PATTERN.matcher(message);
+
+		while (matcher.find()) {
+			final String variableKey = matcher.group();
+
+			// Find the variable key without []
+			final Variable variable = Variable.findVariable(variableKey.substring(1, variableKey.length() - 1));
+
+			if (variable != null && variable.getType() == Variable.Type.FORMAT) {
+				final SimpleComponent component = variable.build(sender, SimpleComponent.empty(), replacements);
+
+				// We do not support interact chat elements in format variables,
+				// so we just flatten the variable. Use formatting or chat variables instead.
+				String plain = component.getPlainMessage();
+
+				// And we remove the white prefix that is by default added in every component
+				if (plain.startsWith(ChatColor.COLOR_CHAR + "f" + ChatColor.COLOR_CHAR + "f"))
+					plain = plain.substring(4);
+
+				message = message.replace(variableKey, plain);
+			}
+		}
+
+		return message;
+	}
+
+	/*
+	 * Replaces our hardcoded variables in the message, using a cache for better performance
+	 */
+	private static String replaceHardVariables0(CommandSender sender, String message) {
 		final Matcher matcher = Variables.BRACKET_PLACEHOLDER_PATTERN.matcher(message);
 		final ProxiedPlayer player = sender instanceof ProxiedPlayer ? (ProxiedPlayer) sender : null;
 
 		while (matcher.find()) {
-			final String variable = matcher.group(1);
+			String variable = matcher.group(1);
+			boolean frontSpace = false;
+			boolean backSpace = false;
 
-			final boolean isSenderCached = cache.containsKey(sender.getName());
-			boolean makeCache = true;
+			if (variable.startsWith("+")) {
+				variable = variable.substring(1);
 
-			String value = null;
-
-			// Player is cached
-			if (isSenderCached) {
-				final Map<String, String> senderCache = cache.get(sender.getName());
-				final String storedVariable = senderCache.get(variable);
-
-				// This specific variable is cached
-				if (storedVariable != null) {
-					value = storedVariable;
-					makeCache = false;
-				}
+				frontSpace = true;
 			}
 
-			if (makeCache) {
-				value = replaceVariable0(variable, player, sender);
+			if (variable.endsWith("+")) {
+				variable = variable.substring(0, variable.length() - 1);
 
-				if (value != null) {
-					final Map<String, String> speciCache = cache.getOrPut(sender.getName(), makeNewCache());
-
-					speciCache.put(variable, value);
-				}
+				backSpace = true;
 			}
 
-			if (value != null)
-				message = message.replace("{" + variable + "}", Common.colorize(value));
+			String value = lookupVariable0(player, sender, variable);
+
+			if (value != null) {
+				final boolean emptyColorless = Common.stripColors(value).isEmpty();
+				value = value.isEmpty() ? "" : (frontSpace && !emptyColorless ? " " : "") + Common.colorize(value) + (backSpace && !emptyColorless ? " " : "");
+
+				message = message.replace(matcher.group(), value);
+			}
 		}
+
+		message = Messenger.replacePrefixes(message);
 
 		return message;
 	}
 
-	/**
+	/*
 	 * Replaces the given variable with a few hardcoded within the plugin, see below
-	 *
-	 * Also, if the variable ends with +, we insert a space after it if it is not empty
-	 *
-	 * @param variable
-	 * @param player
-	 * @param console
-	 * @return
-	 */
-	private static String replaceVariable0(String variable, ProxiedPlayer player, CommandSender console) {
-		final boolean insertSpace = variable.endsWith("+");
-
-		if (insertSpace)
-			variable = variable.substring(0, variable.length() - 1); // Remove the + symbol
-
-		final String found = lookupVariable0(player, console, variable);
-
-		return found == null ? null : found + (insertSpace && !found.isEmpty() ? " " : "");
-	}
-
-	/**
-	 * Replaces the given variable with a few hardcoded within the plugin, see below
-	 *
-	 * @param player
-	 * @param console
-	 * @param variable
-	 * @return
 	 */
 	private static String lookupVariable0(ProxiedPlayer player, CommandSender console, String variable) {
-		{ // Replace custom variables
+		GeoResponse geoResponse = null;
+
+		if (player != null && Arrays.asList("country_code", "country_name", "region_name", "isp").contains(variable))
+			geoResponse = GeoAPI.getCountry(player.getAddress());
+
+		if (console != null) {
+
+			// Replace custom expansions
+			for (final SimpleExpansion expansion : customExpansions) {
+				final String value = expansion.replacePlaceholders(console, variable);
+
+				if (value != null)
+					return value;
+			}
+
+			// Replace custom variables
 			final Function<CommandSender, String> customReplacer = customVariables.get(variable);
 
 			if (customReplacer != null)
@@ -232,67 +375,54 @@ public final class Variables {
 		}
 
 		switch (variable) {
-			case "plugin_name":
-				return SimplePlugin.getNamed();
-			case "plugin_version":
-				return SimplePlugin.getVersion();
-
 			case "timestamp":
-				return TimeUtil.getFormattedDate();
-
+				return SimpleSettings.TIMESTAMP_FORMAT.format(System.currentTimeMillis());
+			case "timestamp_short":
+				return TimeUtil.getFormattedDateShort();
+			case "chat_line":
+				return Common.chatLine();
+			case "chat_line_smooth":
+				return Common.chatLineSmooth();
 			case "player":
-				return player == null ? console.getName() : player.getName();
-			case "player_display_name":
-				return player == null ? console.getName() : player.getDisplayName();
-			case "player_server_name":
-				return player == null ? "" : player.getServer().getInfo().getName();
-			case "player_address":
+			case "player_name": {
+				if (console == null)
+					return null;
+
+				return player == null ? Common.resolveSenderName(console) : player.getName();
+			}
+			case "display_name":
+				return player == null ? Common.resolveSenderName(console) : player.getDisplayName();
+			case "ip_address":
+			case "pl_address":
 				return player == null ? "" : formatIp0(player);
+			case "country_code":
+				return player == null ? "" : geoResponse.getCountryCode();
+			case "country_name":
+				return player == null ? "" : geoResponse.getCountryName();
+			case "region_name":
+				return player == null ? "" : geoResponse.getRegionName();
+			case "isp":
+				return player == null ? "" : geoResponse.getIsp();
+			case "label":
+				return SimplePlugin.getInstance().getMainCommand() != null ? SimplePlugin.getInstance().getMainCommand().getLabel() : SimpleLocalization.NONE;
+			case "sender_is_player":
+				return player != null ? "true" : "false";
+			case "sender_is_console":
+				return !(console instanceof ProxiedPlayer) ? "true" : "false";
 		}
 
 		return null;
 	}
 
-	/**
-	 * Formats the {pl_address} variable for the player
-	 *
-	 * @param player
-	 * @return
+	/*
+	 * Formats the IP address variable for the player
 	 */
 	private static String formatIp0(ProxiedPlayer player) {
 		try {
 			return player.getAddress().toString().split("\\:")[0];
+
 		} catch (final Throwable t) {
 			return player.getAddress() != null ? player.getAddress().toString() : "";
 		}
-	}
-
-	// ------------------------------------------------------------------------------------------------------------
-	// Cache making
-	// ------------------------------------------------------------------------------------------------------------
-
-	/**
-	 * Create a new expiring map with 10 millisecond expiration
-	 *
-	 * @return
-	 */
-	private static Map<String, Map<String, String>> makeNewFastCache() {
-		return ExpiringMap.builder()
-				.maxSize(300)
-				.expiration(10, TimeUnit.MILLISECONDS)
-				.build();
-	}
-
-	/**
-	 * Create a new expiring map with 1 second expiration, used to cache player-related
-	 * variables that are called 10x after each other to save performance
-	 *
-	 * @return
-	 */
-	private static Map<String, String> makeNewCache() {
-		return ExpiringMap.builder()
-				.maxSize(300)
-				.expiration(1, TimeUnit.SECONDS)
-				.build();
 	}
 }

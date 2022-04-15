@@ -7,30 +7,34 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Set;
 
+import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.collection.StrictList;
-import org.mineacademy.bfo.model.Replacer;
+import org.mineacademy.bfo.model.BoxedMessage;
+import org.mineacademy.bfo.model.IsInList;
 import org.mineacademy.bfo.model.SimpleTime;
-import org.mineacademy.bfo.plugin.SimplePlugin;
-import org.mineacademy.bfo.settings.YamlConfig.CasusHelper;
-import org.mineacademy.bfo.settings.YamlConfig.TitleHelper;
-
-import net.md_5.bungee.config.Configuration;
+import org.mineacademy.bfo.remain.Remain;
+import org.mineacademy.bfo.settings.FileConfig.AccusativeHelper;
+import org.mineacademy.bfo.settings.FileConfig.TitleHelper;
 
 /**
- * A special case {@link YamlConfig} that allows static access to this config. This is unsafe
- * however this is only to be used in two config instances - the main settings.yml file and
- * localization file, which allow static access from anywhere for convenience.
+ * A special case {@link YamlConfig} that allows static access to config.
  * <p>
- * Keep in mind you can only access values during initialization and you must write "private static
- * void init()" method in your class so that we can invoke it automatically!
+ * You can only load or set values during initialization. Write "private static void init()"
+ * methods in your class (and inner classes), we will invoke it automatically!
  * <p>
- * Also keep in mind that all static fields must be set after the class has finished loading!
+ * You cannot set values after the class has been loaded!
  */
 public abstract class YamlStaticConfig {
+
+	/**
+	 * Represents "null" which you can use as convenience shortcut in loading config
+	 * that has no internal from path.
+	 */
+	public static final String NO_DEFAULT = null;
 
 	/**
 	 * The temporary {@link YamlConfig} instance we store here to get values from
@@ -49,13 +53,18 @@ public abstract class YamlStaticConfig {
 			}
 
 			@Override
-			protected void onLoadFinish() {
-				loadViaReflection();
+			protected boolean saveComments() {
+				return YamlStaticConfig.this.saveComments();
 			}
 
 			@Override
 			protected List<String> getUncommentedSections() {
 				return YamlStaticConfig.this.getUncommentedSections();
+			}
+
+			@Override
+			protected void onLoad() {
+				loadViaReflection();
 			}
 		};
 	}
@@ -65,31 +74,21 @@ public abstract class YamlStaticConfig {
 	// -----------------------------------------------------------------------------------------------------
 
 	/**
-	 * Load all given static config classes
+	 * Load the given static config class
 	 *
-	 * @param classes
-	 * @throws Exception
+	 * @param clazz
 	 */
-	public static final void load(final List<Class<? extends YamlStaticConfig>> classes) throws Exception {
-		if (classes == null)
-			return;
-
-		for (final Class<? extends YamlStaticConfig> clazz : classes) {
+	public static final void load(Class<? extends YamlStaticConfig> clazz) {
+		try {
 			final YamlStaticConfig config = clazz.newInstance();
 
-			config.load();
+			config.onLoad();
 
 			TEMPORARY_INSTANCE = null;
-		}
-	}
 
-	/**
-	 * @see YamlConfig#getUncommentedSections()
-	 *
-	 * @return
-	 */
-	protected List<String> getUncommentedSections() {
-		return new ArrayList<>();
+		} catch (final Throwable t) {
+			Common.throwError(t, "Failed to load static settings " + clazz);
+		}
 	}
 
 	/**
@@ -113,15 +112,37 @@ public abstract class YamlStaticConfig {
 	 *
 	 * @throws Exception
 	 */
-	protected abstract void load() throws Exception;
+	protected abstract void onLoad() throws Exception;
 
 	/**
+	 * Return true if you have a default file and want to save comments from it
+	 *
+	 * Any user-generated comments will be lost, any user-written values will be lost.
+	 *
+	 * Please see {@link #getUncommentedSections()} to write sections containing maps users
+	 * can create to prevent losing them.
+	 *
+	 * @return
+	 */
+	protected boolean saveComments() {
+		return true;
+	}
+
+	/**
+	 * See {@link #saveComments()}
+	 *
+	 * @return
+	 */
+	protected List<String> getUncommentedSections() {
+		return new ArrayList<>();
+	}
+
+	/*
 	 * Loads the class via reflection, scanning for "private static void init()" methods to run
 	 */
-	private final void loadViaReflection() {
+	private void loadViaReflection() {
 		Valid.checkNotNull(TEMPORARY_INSTANCE, "Instance cannot be null " + getFileName());
-		Valid.checkNotNull(TEMPORARY_INSTANCE.getConfig(), "Config cannot be null for " + getFileName());
-		Valid.checkNotNull(TEMPORARY_INSTANCE.getDefaults(), "Default config cannot be null for " + getFileName());
+		Valid.checkNotNull(TEMPORARY_INSTANCE.defaults, "Default config cannot be null for " + getFileName());
 
 		try {
 			preLoad();
@@ -140,15 +161,12 @@ public abstract class YamlStaticConfig {
 			if (t instanceof InvocationTargetException && t.getCause() != null)
 				t = t.getCause();
 
-			t.printStackTrace();
+			Remain.sneaky(t);
 		}
 	}
 
-	/**
+	/*
 	 * Invoke all "private static void init()" methods in the class and its subclasses
-	 *
-	 * @param clazz
-	 * @throws Exception
 	 */
 	private void invokeAll(final Class<?> clazz) throws Exception {
 		invokeMethodsIn(clazz);
@@ -163,50 +181,48 @@ public abstract class YamlStaticConfig {
 		}
 	}
 
-	/**
+	/*
 	 * Invoke all "private static void init()" methods in the class
-	 *
-	 * @param clazz
-	 * @throws Exception
 	 */
 	private void invokeMethodsIn(final Class<?> clazz) throws Exception {
-		for (final Method m : clazz.getDeclaredMethods()) {
+		for (final Method method : clazz.getDeclaredMethods()) {
+			final int mod = method.getModifiers();
 
-			if (!SimplePlugin.getInstance().isEnabled())
-				return;
+			if (method.getName().equals("init")) {
+				Valid.checkBoolean(Modifier.isPrivate(mod) &&
+						Modifier.isStatic(mod) &&
+						method.getReturnType() == Void.TYPE &&
+						method.getParameterTypes().length == 0,
+						"Method '" + method.getName() + "' in " + clazz + " must be 'private static void init()'");
 
-			final int mod = m.getModifiers();
-
-			if (m.getName().equals("init")) {
-				Valid.checkBoolean(Modifier.isPrivate(mod) && Modifier.isStatic(mod) && m.getReturnType() == Void.TYPE && m.getParameterTypes().length == 0, "Method '" + m.getName() + "' in " + clazz + " must be 'private static void init()'");
-
-				m.setAccessible(true);
-				m.invoke(null);
+				method.setAccessible(true);
+				method.invoke(null);
 			}
 		}
 
 		checkFields(clazz);
 	}
 
-	/**
+	/*
 	 * Safety check whether all fields have been set
-	 *
-	 * @param clazz
-	 * @throws Exception
 	 */
 	private void checkFields(final Class<?> clazz) throws Exception {
-		for (final Field f : clazz.getDeclaredFields()) {
-			f.setAccessible(true);
 
-			if (Modifier.isPublic(f.getModifiers()))
-				Valid.checkBoolean(!f.getType().isPrimitive(), "Field '" + f.getName() + "' in " + clazz + " must not be primitive!");
+		if (clazz == YamlStaticConfig.class)
+			return;
+
+		for (final Field field : clazz.getDeclaredFields()) {
+			field.setAccessible(true);
+
+			if (Modifier.isPublic(field.getModifiers()))
+				Valid.checkBoolean(!field.getType().isPrimitive(), "Field '" + field.getName() + "' in " + clazz + " must not be primitive!");
 
 			Object result = null;
 			try {
-				result = f.get(null);
+				result = field.get(null);
 			} catch (final NullPointerException ex) {
 			}
-			Valid.checkNotNull(result, "Null " + f.getType().getSimpleName() + " field '" + f.getName() + "' in " + clazz);
+			Valid.checkNotNull(result, "Null " + field.getType().getSimpleName() + " field '" + field.getName() + "' in " + clazz);
 		}
 	}
 
@@ -214,72 +230,50 @@ public abstract class YamlStaticConfig {
 	// Delegate methods
 	// -----------------------------------------------------------------------------------------------------
 
-	protected final void createLocalizationFile(final String localePrefix) throws Exception {
-		getStaticInstance().loadLocalization(localePrefix);
+	protected final void loadConfiguration(String internalPath) {
+		TEMPORARY_INSTANCE.loadConfiguration(internalPath, internalPath);
 	}
 
-	protected final void createFileAndLoad(final String path) throws Exception {
-		getStaticInstance().loadConfiguration(path, path);
+	protected final void loadConfiguration(String from, String to) {
+		TEMPORARY_INSTANCE.loadConfiguration(from, to);
 	}
 
-	/**
-	 * This set method sets the path-value pair and also saves the file
-	 * <p>
-	 * Pathprefix is added
-	 *
-	 * @param path
-	 * @param value
-	 */
 	protected static final void set(final String path, final Object value) {
-		getStaticInstance().setNoSave(path, value);
-	}
-
-	protected static final boolean isSetAbsolute(final String path) {
-		return getStaticInstance().isSetAbsolute(path);
+		TEMPORARY_INSTANCE.set(path, value);
 	}
 
 	protected static final boolean isSet(final String path) {
-		return getStaticInstance().isSet(path);
+		return TEMPORARY_INSTANCE.isSet(path);
 	}
 
 	protected static final boolean isSetDefault(final String path) {
-		return getStaticInstance().isSetDefault(path);
-	}
-
-	protected static final boolean isSetDefaultAbsolute(final String path) {
-		return getStaticInstance().isSetDefaultAbsolute(path);
+		return TEMPORARY_INSTANCE.isSetDefault(path);
 	}
 
 	protected static final void move(final String fromRelative, final String toAbsolute) {
-		getStaticInstance().move(fromRelative, toAbsolute);
+		TEMPORARY_INSTANCE.move(fromRelative, toAbsolute);
 	}
 
-	protected static final void move(final Object value, final String fromPath, final String toPath) {
-		getStaticInstance().move(value, fromPath, toPath);
-	}
-
-	protected static final void pathPrefix(final String pathPrefix) {
-		getStaticInstance().pathPrefix(pathPrefix);
+	protected static final void setPathPrefix(final String pathPrefix) {
+		TEMPORARY_INSTANCE.setPathPrefix(pathPrefix);
 	}
 
 	protected static final String getPathPrefix() {
-		return getStaticInstance().getPathPrefix();
-	}
-
-	protected static final void addDefaultIfNotExist(final String path) {
-		getStaticInstance().addDefaultIfNotExist(path);
+		return TEMPORARY_INSTANCE.getPathPrefix();
 	}
 
 	protected static final String getFileName() {
-		return getStaticInstance().getFileName();
+		return TEMPORARY_INSTANCE.getFileName();
 	}
 
-	protected static final Configuration getConfig() {
-		return getStaticInstance().getConfig();
-	}
-
-	protected static final Configuration getDefaults() {
-		return getStaticInstance().getDefaults();
+	/**
+	 * @deprecated ugly workaround for some of our older plugins, do not use
+	 *
+	 * @return
+	 */
+	@Deprecated
+	protected static YamlConfig getInstance() {
+		return TEMPORARY_INSTANCE;
 	}
 
 	// -----------------------------------------------------------------------------------------------------
@@ -287,125 +281,78 @@ public abstract class YamlStaticConfig {
 	// -----------------------------------------------------------------------------------------------------
 
 	protected static final StrictList<String> getCommandList(final String path) {
-		return getStaticInstance().getCommandList(path);
+		return TEMPORARY_INSTANCE.getCommandList(path);
 	}
 
 	protected static final List<String> getStringList(final String path) {
-		return getStaticInstance().getStringList(path);
+		return TEMPORARY_INSTANCE.getStringList(path);
+	}
+
+	protected static final <E> Set<E> getSet(final String path, Class<E> typeOf) {
+		return TEMPORARY_INSTANCE.getSet(path, typeOf);
 	}
 
 	protected static final <E> List<E> getList(final String path, final Class<E> listType) {
-		return getStaticInstance().getList(path, listType);
+		return TEMPORARY_INSTANCE.getList(path, listType);
+	}
+
+	protected static final <E> IsInList<E> getIsInList(final String path, final Class<E> listType) {
+		return TEMPORARY_INSTANCE.getIsInList(path, listType);
 	}
 
 	protected static final boolean getBoolean(final String path) {
-		return getStaticInstance().getBoolean(path);
-	}
-
-	protected static final String[] getStringArray(final String path) {
-		return getStaticInstance().getStringArray(path);
+		return TEMPORARY_INSTANCE.getBoolean(path);
 	}
 
 	protected static final String getString(final String path) {
-		return getStaticInstance().getString(path);
-	}
-
-	protected static final Replacer getReplacer(final String path) {
-		return getStaticInstance().getReplacer(path);
+		return TEMPORARY_INSTANCE.getString(path);
 	}
 
 	protected static final int getInteger(final String path) {
-		return getStaticInstance().getInteger(path);
+		return TEMPORARY_INSTANCE.getInteger(path);
 	}
 
-	/**
-	 * @deprecated use {@link #getDouble(String)}
-	 *
-	 * @param path
-	 * @return
-	 */
-	@Deprecated
-	protected static final double getDoubleSafe(final String path) {
-		return getStaticInstance().getDoubleSafe(path);
+	protected static final int getInteger(final String path, int def) {
+		return TEMPORARY_INSTANCE.getInteger(path, def);
 	}
 
 	protected static final double getDouble(final String path) {
-		return getStaticInstance().getDouble(path);
+		return TEMPORARY_INSTANCE.getDouble(path);
 	}
 
-	protected static final CasusHelper getCasus(final String path) {
-		return getStaticInstance().getCasus(path);
+	protected static final AccusativeHelper getCasus(final String path) {
+		return TEMPORARY_INSTANCE.getAccusativePeriod(path);
 	}
 
 	protected static final TitleHelper getTitle(final String path) {
-		return getStaticInstance().getTitle(path);
+		return TEMPORARY_INSTANCE.getTitle(path);
 	}
 
 	protected static final SimpleTime getTime(final String path) {
-		return getStaticInstance().getTime(path);
+		return TEMPORARY_INSTANCE.getTime(path);
+	}
+
+	protected static final double getPercentage(String path) {
+		return TEMPORARY_INSTANCE.getPercentage(path);
+	}
+
+	protected static final BoxedMessage getBoxedMessage(final String path) {
+		return TEMPORARY_INSTANCE.getBoxedMessage(path);
 	}
 
 	protected static final <E> E get(final String path, final Class<E> typeOf) {
-		return getStaticInstance().get(path, typeOf);
-	}
-
-	protected static final <E> E getWithData(final String path, final Class<E> typeOf, Object... deserializeArguments) {
-		return getStaticInstance().getWithData(path, typeOf, deserializeArguments);
+		return TEMPORARY_INSTANCE.get(path, typeOf);
 	}
 
 	protected static final Object getObject(final String path) {
-		return getStaticInstance().getObject(path);
-	}
-
-	protected static final <T> T getOrSetDefault(final String path, final T defaultValue) {
-		return getStaticInstance().getOrSetDefault(path, defaultValue);
+		return TEMPORARY_INSTANCE.getObject(path);
 	}
 
 	protected static final SerializedMap getMap(final String path) {
-		return getStaticInstance().getMap(path);
+		return TEMPORARY_INSTANCE.getMap(path);
 	}
 
 	protected static final <Key, Value> LinkedHashMap<Key, Value> getMap(final String path, final Class<Key> keyType, final Class<Value> valueType) {
-		return getStaticInstance().getMap(path, keyType, valueType);
-	}
-
-	protected static LinkedHashMap<String, LinkedHashMap<String, Object>> getValuesAndKeys(final String path) {
-		Valid.checkNotNull(path, "Path cannot be null");
-
-		getStaticInstance();
-
-		// add default
-		if (getDefaults() != null && !getConfig().contains(path)) {
-			Valid.checkBoolean(getDefaults().contains(path), "Default '" + getFileName() + "' lacks a section at " + path);
-
-			for (final String name : getDefaults().getSection(path).getKeys())
-				for (final String setting : getDefaults().getSection(path + "." + name).getKeys())
-					TEMPORARY_INSTANCE.addDefaultIfNotExist(path + "." + name + "." + setting, Object.class);
-		}
-
-		Valid.checkBoolean(getConfig().contains(path), "Malfunction copying default section to " + path);
-
-		// key, values assigned to the key
-		final TreeMap<String, LinkedHashMap<String, Object>> groups = new TreeMap<>();
-
-		final String old = TEMPORARY_INSTANCE.getPathPrefix();
-		TEMPORARY_INSTANCE.pathPrefix(null);
-		for (final String name : getConfig().getSection(path).getKeys()) {
-			// type, value (UNPARSED)
-
-			final LinkedHashMap<String, Object> valuesRaw = getMap(path + "." + name, String.class, Object.class);
-
-			groups.put(name, valuesRaw);
-		}
-
-		TEMPORARY_INSTANCE.pathPrefix(old);
-
-		return new LinkedHashMap<>(groups);
-	}
-
-	private static YamlConfig getStaticInstance() {
-		Valid.checkNotNull(TEMPORARY_INSTANCE, "Temporary instance is null!");
-
-		return TEMPORARY_INSTANCE;
+		return TEMPORARY_INSTANCE.getMap(path, keyType, valueType);
 	}
 }

@@ -1,17 +1,15 @@
 package org.mineacademy.bfo.bungee;
 
-import org.mineacademy.bfo.Valid;
-import org.mineacademy.bfo.plugin.SimplePlugin;
-
 /**
  * Represents an action sent over BungeeCord containing
  * a set of data. We recommend you create an enum that implements this.
  */
-public interface BungeeAction {
+public interface BungeeMessageType {
 
 	/**
 	 * Stores all valid values in this action in the order of which they
-	 * are being sent. Only primitive types and String are supported.
+	 * are being sent. Only primitive types, UUID, SerializedMap and String are supported.
+	 *
 	 * @return
 	 */
 	Class<?>[] getContent();
@@ -26,14 +24,15 @@ public interface BungeeAction {
 	/**
 	 * Retrieve BungeeAction by its name
 	 *
+	 * @param listener
 	 * @param name
+	 *
 	 * @return
 	 */
-	static BungeeAction getByName(String name) {
-		final BungeeAction[] actions = SimplePlugin.getBungee().getActions();
-		Valid.checkNotNull(actions, "Cannot get an action by name if getBungeeActions is not implemented in " + SimplePlugin.getNamed());
+	static BungeeMessageType getByName(BungeeListener listener, String name) {
+		final BungeeMessageType[] actions = listener.getActions();
 
-		for (final BungeeAction action : actions)
+		for (final BungeeMessageType action : actions)
 			if (action.name().equals(name))
 				return action;
 

@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.UUID;
 
 import org.mineacademy.bfo.Valid;
-import org.mineacademy.bfo.bungee.BungeeAction;
-import org.mineacademy.bfo.collection.SerializedMap;
+import org.mineacademy.bfo.bungee.BungeeListener;
+import org.mineacademy.bfo.bungee.BungeeMessageType;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
+import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
@@ -19,11 +20,9 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 
 /**
- *
- *
  * NB: This uses the standardized Foundation model where the first
  * String is the server name and the second String is the
- * {@link BungeeAction} by its name *written automatically*.
+ * {@link BungeeMessageType} by its name *written automatically*.
  */
 public final class OutgoingMessage extends Message {
 
@@ -33,24 +32,29 @@ public final class OutgoingMessage extends Message {
 	private final List<Object> queue = new ArrayList<>();
 
 	/**
-	 * Construct a new outgoing packet with null UUID and empty server name
+	 * Create a new outgoing message, see header of this class
 	 *
+	 * @param senderUid
+	 * @param server
 	 * @param action
 	 */
-	public OutgoingMessage(BungeeAction action) {
-		this(UUID.fromString("00000000-0000-0000-0000-000000000000"), "", action);
+	public OutgoingMessage(UUID senderUid, String server, BungeeMessageType action) {
+		this(SimplePlugin.getInstance().getBungeeCord(), server, senderUid, action);
 	}
 
 	/**
-	 * Construct a new outgoing packet
+	 * Create a new outgoing message, see header of this class
 	 *
-	 * @param fromSenderUid
-	 * @param fromServerName
+	 * @param listener
+	 * @param server
+	 * @param senderUid
 	 * @param action
 	 */
-	public OutgoingMessage(UUID fromSenderUid, String fromServerName, BungeeAction action) {
-		setSenderUid(fromSenderUid.toString());
-		setServerName(fromServerName);
+	public OutgoingMessage(BungeeListener listener, String server, UUID senderUid, BungeeMessageType action) {
+		super(listener);
+
+		setSenderUid(senderUid.toString());
+		setServerName(server);
 		setAction(action);
 
 		// -----------------------------------------------------------------
@@ -58,9 +62,9 @@ public final class OutgoingMessage extends Message {
 		// first is the senders server name and the second is the action
 		// -----------------------------------------------------------------
 
-		queue.add(fromSenderUid);
-		queue.add(fromServerName);
-		queue.add(action.name());
+		queue.add(senderUid);
+		queue.add(getServerName());
+		queue.add(getAction());
 	}
 
 	/**
@@ -71,15 +75,6 @@ public final class OutgoingMessage extends Message {
 	public void writeString(String... messages) {
 		for (final String message : messages)
 			write(message, String.class);
-	}
-
-	/**
-	 * Write the map into the message
-	 *
-	 * @param map
-	 */
-	public void writeMap(SerializedMap map) {
-		write(map.toJson(), String.class);
 	}
 
 	/**
@@ -156,9 +151,9 @@ public final class OutgoingMessage extends Message {
 
 	/**
 	 * Write an object of the given type into the message
-	 *
+	 * <p>
 	 * We move the head and ensure writing safety in accordance
-	 * to the {@link BungeeAction#getContent()} length and
+	 * to the {@link BungeeMessageType#getContent()} length and
 	 * data type at the given position
 	 *
 	 * @param object
@@ -205,7 +200,7 @@ public final class OutgoingMessage extends Message {
 	 *
 	 * @return
 	 */
-	public byte[] compileData() {
+	private byte[] compileData() {
 		final ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 		for (final Object object : queue)
@@ -232,9 +227,6 @@ public final class OutgoingMessage extends Message {
 
 			else if (object instanceof Short)
 				out.writeShort((Short) object);
-
-			else if (object instanceof UUID)
-				out.writeUTF(object.toString());
 
 			else if (object instanceof byte[])
 				out.write((byte[]) object);
