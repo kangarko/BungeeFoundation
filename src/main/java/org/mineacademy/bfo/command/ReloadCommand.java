@@ -6,31 +6,34 @@ import java.util.List;
 
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.settings.SimpleLocalization;
-import org.mineacademy.bfo.settings.YamlConfig;
 import org.mineacademy.bfo.settings.SimpleLocalization.Commands;
+import org.mineacademy.bfo.settings.YamlConfig;
 
 /**
  * A simple predefined sub-command for quickly reloading the plugin
  * using /{label} reload|rl
  */
-public final class ReloadCommand extends SimpleSubCommand {
+public final class ReloadCommand extends SimpleCommand {
 
 	/**
 	 * Create a new reload sub-command with the given permission.
 	 *
+	 * @param label
 	 * @param permission
 	 */
-	public ReloadCommand(String permission) {
-		this();
+	public ReloadCommand(String label, String permission) {
+		super(label, permission);
 
-		setPermission(permission);
+		setDescription(Commands.RELOAD_DESCRIPTION);
 	}
 
 	/**
 	 * Create a new reload sub-command
+	 *
+	 * @param label
 	 */
-	public ReloadCommand() {
-		super("reload|rl");
+	public ReloadCommand(String label) {
+		super(label);
 
 		setDescription(Commands.RELOAD_DESCRIPTION);
 	}
