@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.bungee.BungeeMessageType;
+import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
@@ -30,6 +31,15 @@ public final class OutgoingMessage extends Message {
 	 * The pending queue to write the message
 	 */
 	private final List<Object> queue = new ArrayList<>();
+
+	/**
+	 * Construct a new outgoing packet with null UUID and empty server name
+	 *
+	 * @param action
+	 */
+	public OutgoingMessage(BungeeMessageType action) {
+		this(UUID.fromString("00000000-0000-0000-0000-000000000000"), "", action);
+	}
 
 	/**
 	 * Create a new outgoing message, see header of this class
@@ -64,7 +74,16 @@ public final class OutgoingMessage extends Message {
 
 		queue.add(senderUid);
 		queue.add(getServerName());
-		queue.add(getAction());
+		queue.add(getAction().name());
+	}
+
+	/**
+	 * Write the map into the message
+	 *
+	 * @param map
+	 */
+	public void writeMap(SerializedMap map) {
+		write(map.toJson(), String.class);
 	}
 
 	/**
@@ -200,7 +219,7 @@ public final class OutgoingMessage extends Message {
 	 *
 	 * @return
 	 */
-	private byte[] compileData() {
+	public byte[] compileData() {
 		final ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 		for (final Object object : queue)
@@ -230,6 +249,9 @@ public final class OutgoingMessage extends Message {
 
 			else if (object instanceof byte[])
 				out.write((byte[]) object);
+
+			else if (object instanceof UUID)
+				out.writeUTF(object.toString());
 
 			else
 				throw new FoException("Unsupported write of " + object.getClass().getSimpleName() + " to channel " + getChannel() + " with action " + getAction().toString());
