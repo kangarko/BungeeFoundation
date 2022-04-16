@@ -182,7 +182,11 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @param aliases
 	 */
 	protected SimpleCommand(final String label, final String permission, final String... aliases) {
-		super(label, permission, aliases);
+		super(label, null, aliases);
+
+		// Bungee does not handle no permission message properly > no variables replaced etc.,
+		// so we make it think there's no required permission and handle on our end
+		this.setPermission(permission);
 	}
 
 	/*
