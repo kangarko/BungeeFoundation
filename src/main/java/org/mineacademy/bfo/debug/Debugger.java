@@ -63,13 +63,9 @@ public final class Debugger {
 	 * @param messages
 	 */
 	public static void debug(String section, String... messages) {
-		if (isDebugged(section)) {
+		if (isDebugged(section))
 			for (final String message : messages)
-				if (SimplePlugin.hasInstance())
-					Common.log("[" + section + "] " + message);
-				else
-					System.out.println("[" + section + "] " + message);
-		}
+				ProxyServer.getInstance().getLogger().info("[" + section + "] " + message);
 	}
 
 	/**
@@ -350,9 +346,6 @@ public final class Debugger {
 
 	// Print a simple console message
 	private static void print(String message) {
-		if (SimplePlugin.hasInstance())
-			Common.logNoPrefix(message);
-		else
-			System.out.println(message);
+		ProxyServer.getInstance().getLogger().info(message);
 	}
 }
