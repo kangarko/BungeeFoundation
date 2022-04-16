@@ -82,13 +82,14 @@ public abstract class BungeeListener implements Listener {
 	}
 
 	private static BungeeMessageType[] toActions(@NonNull Class<? extends BungeeMessageType> actionEnum) {
+		Valid.checkBoolean(actionEnum != BungeeMessageType.class, "When creating BungeeListener put your own class that extend BungeeMessageType there, not BungeeMessageType class itself!");
 		Valid.checkBoolean(actionEnum.isEnum(), "BungeeListener expects BungeeMessageType to be an enum, given: " + actionEnum);
 
 		try {
 			return (BungeeMessageType[]) actionEnum.getMethod("values").invoke(null);
 
 		} catch (final ReflectiveOperationException ex) {
-			Common.throwError(ex, "Unable to get values() of " + actionEnum + ", ensure it is an enum!");
+			Common.throwError(ex, "Unable to get values() of " + actionEnum + ", ensure it is an enum or has 'public static T[] values() method'!");
 
 			return null;
 		}
