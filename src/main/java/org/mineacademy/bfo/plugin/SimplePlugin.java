@@ -135,7 +135,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	/**
 	 * Shortcut to discover if the plugin was disabled (only used internally)
 	 */
-	private boolean enabled;
+	private boolean enabled = true;
 
 	// ----------------------------------------------------------------------------------------
 	// Main methods
