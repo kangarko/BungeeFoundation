@@ -220,7 +220,7 @@ public class YamlConfig extends FileConfig {
 
 		// Special case, write using comments engine
 		try {
-			YamlComments.writeComments(this.defaultsPath, this.file, this.getUncommentedSections());
+			YamlComments.writeComments(this.defaultsPath, this, this.file, this.getUncommentedSections());
 
 		} catch (final IOException ex) {
 			ex.printStackTrace();

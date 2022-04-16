@@ -3,12 +3,9 @@ package org.mineacademy.bfo.settings;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,9 +20,6 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import lombok.NonNull;
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
 
 /**
  * A class to update/add new sections/keys to your config while keeping your current values and keeping your comments
@@ -39,54 +33,40 @@ import net.md_5.bungee.config.YamlConfiguration;
  * Source: https://github.com/tchristofferson/Config-Updater
  * Modified by MineAcademy.org
  */
-public final class YamlComments {
+final class YamlComments {
 
 	/**
 	 * Update a yaml file from a resource inside your plugin jar
 	 *
 	 * @param jarPath The yaml file name to update from, typically config.yml
+	 * @param oldConfig
 	 * @param diskFile The yaml file to update
-	 */
-	public static void writeComments(@NonNull String jarPath, @NonNull File diskFile) {
-		try {
-			writeComments(jarPath, diskFile, new ArrayList<>());
-
-		} catch (final IOException ex) {
-			Common.error(ex,
-					"Failed writing comments!",
-					"Path in plugin jar wherefrom comments are fetched: " + jarPath,
-					"Disk file where comments are written: " + diskFile);
-		}
-	}
-
-	/**
-	 * Update a yaml file from a resource inside your plugin jar
-	 *
-	 * @param jarPath The yaml file name to update from, typically config.yml
-	 * @param diskFile The yaml file to update
+	 * @param oldContents the actual yaml content from the old file, to prevent overriding values
 	 * @param ignoredSections The sections to ignore from being forcefully updated & comments set
 	 *
 	 * @throws IOException If an IOException occurs
 	 */
-	public static void writeComments(@NonNull String jarPath, @NonNull File diskFile, @NonNull List<String> ignoredSections) throws IOException {
+	static void writeComments(@NonNull String jarPath, YamlConfig oldConfig, @NonNull File diskFile, @NonNull List<String> ignoredSections) throws IOException {
+		oldConfig.setPathPrefix(null);
 
 		final List<String> newLines = FileUtil.getInternalFileContent(jarPath);
-		final Configuration oldConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(diskFile);
-		final Configuration newConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(String.join("\n", FileUtil.getInternalFileContent(jarPath)));
+		final YamlConfig newConfig = new YamlConfig();
+		newConfig.loadFromString(String.join("\n", newLines));
 
 		final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(diskFile), StandardCharsets.UTF_8));
 
 		// ignoredSections can ONLY contain configurations sections
 		for (final String ignoredSection : ignoredSections)
-			if (newConfig.contains(ignoredSection))
-				Valid.checkBoolean(newConfig.get(ignoredSection) instanceof Configuration, "Can only ignore config sections in " + jarPath + " (file " + diskFile + ")" + " not '" + ignoredSection + "' that is " + newConfig.get(ignoredSection));
+			if (newConfig.isSet(ignoredSection))
+				Valid.checkBoolean(newConfig.getObject(ignoredSection) instanceof ConfigSection,
+						"Can only ignore config sections in " + jarPath + " (file " + diskFile + ")" + " not '" + ignoredSection + "' that is " + newConfig.getObject(ignoredSection).getClass());
 
 		// Save keys added to config that are not in default and would otherwise be lost
-		final List<String> newKeys = getDeepKeys(newConfig);
+		final Set<String> newKeys = newConfig.getKeys(true);
 		final Map<String, Object> removedKeys = new HashMap<>();
 
 		outerLoop:
-		for (final Map.Entry<String, Object> oldEntry : getMap(oldConfig).entrySet()) {
+		for (final Map.Entry<String, Object> oldEntry : oldConfig.getValues(true).entrySet()) {
 			final String oldKey = oldEntry.getKey();
 
 			for (final String ignoredKey : ignoredSections)
@@ -100,21 +80,22 @@ public final class YamlComments {
 		// Move to unused/ folder and retain old path
 		if (!removedKeys.isEmpty()) {
 			final File backupFile = FileUtil.getOrMakeFile("unused/" + diskFile.getName());
-
-			final Configuration backupConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(backupFile);
+			final YamlConfig backupConfig = YamlConfig.fromFileFast(backupFile);
 
 			for (final Map.Entry<String, Object> entry : removedKeys.entrySet())
 				backupConfig.set(entry.getKey(), entry.getValue());
 
-			ConfigurationProvider.getProvider(YamlConfiguration.class).save(backupConfig, new FileWriter(backupFile));
+			backupConfig.save(backupFile);
 
 			Common.warning("The following entries in " + diskFile.getName() + " are unused and were moved into " + backupFile.getName() + ": " + removedKeys.keySet());
 		}
 
-		final DumperOptions dumperOptions = new DumperOptions();
-		dumperOptions.setWidth(4096);
+		final Yaml yaml = new Yaml(new DumperOptions() {
+			{
+				this.setWidth(4096);
+			}
+		});
 
-		final Yaml yaml = new Yaml(dumperOptions);
 		final Map<String, String> comments = parseComments(newLines, ignoredSections, oldConfig, yaml);
 
 		write(newConfig, oldConfig, comments, ignoredSections, writer, yaml);
@@ -122,13 +103,13 @@ public final class YamlComments {
 
 	// Write method doing the work.
 	// It checks if key has a comment associated with it and writes comment then the key and value
-	private static void write(Configuration newConfig, Configuration oldConfig, Map<String, String> comments, List<String> ignoredSections, BufferedWriter writer, Yaml yaml) throws IOException {
+	private static void write(YamlConfig newConfig, YamlConfig oldConfig, Map<String, String> comments, List<String> ignoredSections, BufferedWriter writer, Yaml yaml) throws IOException {
 
 		final Set<String> copyAllowed = new HashSet<>();
 		final Set<String> reverseCopy = new HashSet<>();
 
 		outerloop:
-		for (final String key : getDeepKeys(newConfig)) {
+		for (final String key : newConfig.getKeys(true)) {
 
 			checkIgnore:
 			{
@@ -146,7 +127,7 @@ public final class YamlComments {
 					if (key.equals(ignoredSection)) {
 
 						// Write from new to old config
-						if ((!oldConfig.contains(ignoredSection) || oldConfig.getSection(ignoredSection).getKeys().isEmpty())) {
+						if ((!oldConfig.isSet(ignoredSection) || oldConfig.getMap(ignoredSection).keySet().isEmpty())) {
 							copyAllowed.add(ignoredSection);
 
 							break;
@@ -156,9 +137,8 @@ public final class YamlComments {
 						else {
 							write0(key, true, newConfig, oldConfig, comments, ignoredSections, writer, yaml);
 
-							for (final String oldKey : getDeepKeys(oldConfig.getSection(ignoredSection))) {
+							for (final String oldKey : ((ConfigSection) oldConfig.getObject(ignoredSection)).getKeys(true))
 								write0(ignoredSection + "." + oldKey, true, oldConfig, newConfig, comments, ignoredSections, writer, yaml);
-							}
 
 							reverseCopy.add(ignoredSection);
 							continue outerloop;
@@ -181,7 +161,8 @@ public final class YamlComments {
 		writer.close();
 	}
 
-	private static void write0(String key, boolean forceNew, Configuration newConfig, Configuration oldConfig, Map<String, String> comments, List<String> ignoredSections, BufferedWriter writer, Yaml yaml) throws IOException {
+	private static void write0(String key, boolean forceNew, YamlConfig newConfig, YamlConfig oldConfig, Map<String, String> comments, List<String> ignoredSections, BufferedWriter writer, Yaml yaml) throws IOException {
+
 		final String[] keys = key.split("\\.");
 		final String actualKey = keys[keys.length - 1];
 		final String comment = comments.remove(key);
@@ -195,30 +176,37 @@ public final class YamlComments {
 		if (comment != null)
 			writer.write(comment);
 
-		final Object newObj = newConfig.get(key);
-		final Object oldObj = oldConfig.get(key);
+		final Object newObj = newConfig.getObject(key);
+		final Object oldObj = oldConfig.getObject(key);
 
 		// Write the old section
-		if (newObj instanceof Configuration && !forceNew && oldObj instanceof Configuration)
-			writeSection(writer, actualKey, prefixSpaces, (Configuration) oldObj);
+		if (newObj instanceof ConfigSection && !forceNew && oldObj instanceof ConfigSection) {
+			System.out.println("Writing old section " + actualKey);
+
+			writeSection(writer, actualKey, prefixSpaces, (ConfigSection) oldObj);
+		}
 
 		// Write the new section, old value is no more
-		else if (newObj instanceof Configuration)
-			writeSection(writer, actualKey, prefixSpaces, (Configuration) newObj);
+		else if (newObj instanceof ConfigSection) {
+			System.out.println("Writing new section " + actualKey);
 
-		// Write the old object
-		else if (oldObj != null && !forceNew)
+			writeSection(writer, actualKey, prefixSpaces, (ConfigSection) newObj);
+
+			// Write the old object
+		} else if (oldObj != null && !forceNew) {
 			write(oldObj, actualKey, prefixSpaces, yaml, writer);
+		}
 
 		// Write new object
-		else
+		else {
 			write(newObj, actualKey, prefixSpaces, yaml, writer);
-
+		}
 	}
 
 	// Doesn't work with configuration sections, must be an actual object
 	// Auto checks if it is serializable and writes to file
 	private static void write(Object obj, String actualKey, String prefixSpaces, Yaml yaml, BufferedWriter writer) throws IOException {
+
 		if (obj instanceof ConfigSerializable)
 			writer.write(prefixSpaces + actualKey + ": " + yaml.dump(((ConfigSerializable) obj).serialize()));
 
@@ -248,8 +236,8 @@ public final class YamlComments {
 	}
 
 	// Writes a configuration section
-	private static void writeSection(BufferedWriter writer, String actualKey, String prefixSpaces, Configuration section) throws IOException {
-		if (getDeepKeys(section).isEmpty())
+	private static void writeSection(BufferedWriter writer, String actualKey, String prefixSpaces, ConfigSection section) throws IOException {
+		if (section.getKeys(false).isEmpty())
 			writer.write(prefixSpaces + actualKey + ":");
 
 		else
@@ -276,7 +264,26 @@ public final class YamlComments {
 		for (int i = 0; i < list.size(); i++) {
 			final Object o = list.get(i);
 
-			if (o instanceof String || o instanceof Character) {
+			if (o instanceof Map) {
+				int entryIndex = 0;
+				final int mapSize = ((Map<?, ?>) o).size();
+
+				for (final Map.Entry<?, ?> entry : ((Map<?, ?>) o).entrySet()) {
+					builder.append(prefixSpaces);
+
+					if (entryIndex == 0)
+						builder.append("- ");
+					else
+						builder.append("  ");
+
+					builder.append(entry.getKey()).append(": ").append(yaml.dump(entry.getValue()));
+					entryIndex++;
+
+					if (entryIndex != mapSize)
+						builder.append("\n");
+				}
+
+			} else if (o instanceof String || o instanceof Character) {
 				builder.append(prefixSpaces).append("- '").append(o.toString().replace("'", "''")).append("'");
 
 			} else if (o instanceof List) {
@@ -296,7 +303,7 @@ public final class YamlComments {
 
 	//Key is the config key, value = comment and/or ignored sections
 	//Parses comments, blank lines, and ignored sections
-	private static Map<String, String> parseComments(List<String> lines, List<String> ignoredSections, Configuration oldConfig, Yaml yaml) {
+	private static Map<String, String> parseComments(List<String> lines, List<String> ignoredSections, YamlConfig oldConfig, Yaml yaml) {
 		final Map<String, String> comments = new HashMap<>();
 		final StringBuilder builder = new StringBuilder();
 		final StringBuilder keyBuilder = new StringBuilder();
@@ -403,40 +410,5 @@ public final class YamlComments {
 
 	private static void appendPrefixSpaces(StringBuilder builder, int indents) {
 		builder.append(getPrefixSpaces(indents));
-	}
-
-	private static List<String> getDeepKeys(Configuration configuration) {
-		final List<String> keys = new ArrayList<>();
-		mapChildrenKeys("", keys, getMap(configuration));
-
-		return keys;
-	}
-
-	private static void mapChildrenKeys(String prefix, List<String> deepKeys, Map<String, Object> values) {
-
-		for (final Map.Entry<String, Object> entry : values.entrySet()) {
-			final String section = entry.getKey();
-			final Object value = entry.getValue();
-
-			if (value instanceof Configuration) {
-				deepKeys.add((prefix.isEmpty() ? "" : prefix + ".") + section);
-
-				mapChildrenKeys((prefix.isEmpty() ? "" : prefix + ".") + section, deepKeys, getMap(value));
-
-			} else
-				deepKeys.add((prefix.isEmpty() ? "" : prefix + ".") + section);
-		}
-	}
-
-	private static Map<String, Object> getMap(Object configuration) {
-		try {
-			final Field self = configuration.getClass().getDeclaredField("self");
-
-			self.setAccessible(true);
-			return (Map<String, Object>) self.get(configuration);
-
-		} catch (final ReflectiveOperationException ex) {
-			throw new RuntimeException(ex);
-		}
 	}
 }

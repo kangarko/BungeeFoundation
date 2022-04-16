@@ -1129,7 +1129,6 @@ public abstract class FileConfig {
 					// Update file
 					this.file = file;
 				}
-
 			} catch (final Exception ex) {
 				Remain.sneaky(ex);
 			}
