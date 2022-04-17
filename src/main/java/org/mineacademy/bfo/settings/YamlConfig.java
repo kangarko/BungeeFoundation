@@ -182,18 +182,6 @@ public class YamlConfig extends FileConfig {
 		this.loadFromString(content);
 	}
 
-	/**
-	 * Loads the configuration from the file WITHOUT calling {@link #onLoad()},
-	 * without setting defaults and without extracting the file.
-	 *
-	 * @param file
-	 */
-	public final void loadFast(File file) {
-		final String content = String.join("\n", FileUtil.readLines(file));
-
-		this.loadFromString(content);
-	}
-
 	/*
 	 * Dumps all values in this config into a saveable format
 	 */
@@ -220,7 +208,7 @@ public class YamlConfig extends FileConfig {
 
 		// Special case, write using comments engine
 		try {
-			YamlComments.writeComments(this.defaultsPath, this, this.file, this.getUncommentedSections());
+			YamlComments.writeComments(this.defaultsPath, this.file, this.getUncommentedSections());
 
 		} catch (final IOException ex) {
 			ex.printStackTrace();
@@ -380,26 +368,6 @@ public class YamlConfig extends FileConfig {
 
 		} catch (final Exception ex) {
 			ProxyServer.getInstance().getLogger().log(Level.SEVERE, "Cannot load " + path, ex);
-		}
-
-		return config;
-	}
-
-	/**
-	 * Loads configuration from the file without setting the file,
-	 * without extracting it and without defaults.
-	 *
-	 * @param file
-	 * @return
-	 */
-	@NonNull
-	public static final YamlConfig fromFileFast(@NonNull File file) {
-		final YamlConfig config = new YamlConfig();
-
-		try {
-			config.loadFast(file);
-		} catch (final Exception ex) {
-			ProxyServer.getInstance().getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
 		}
 
 		return config;

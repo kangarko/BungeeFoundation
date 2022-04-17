@@ -25,7 +25,7 @@ public class SimpleSettings extends YamlStaticConfig {
 	/**
 	 * A flag indicating that this class has been loaded
 	 * <p>
-	 * You can place this class to {@link org.mineacademy.bfo.plugin.SimplePlugin#getSettings()} ()} to
+	 * You can place this class to {@link org.mineacademy.fo.plugin.SimplePlugin#getSettings()} ()} to
 	 * make it load automatically
 	 */
 	private static boolean settingsClassCalled;

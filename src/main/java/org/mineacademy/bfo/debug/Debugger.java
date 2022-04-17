@@ -133,6 +133,17 @@ public final class Debugger {
 		return SimpleSettings.DEBUG_SECTIONS.contains(section) || SimpleSettings.DEBUG_SECTIONS.contains("*");
 	}
 
+	/**
+	 * Adds a new debugging section (does not save values in settings.yml).
+	 *
+	 * Throws error if the section is already debugged.
+	 *
+	 * @param section
+	 */
+	public static void addDebuggedSection(String section) {
+		SimpleSettings.DEBUG_SECTIONS.add(section);
+	}
+
 	// ----------------------------------------------------------------------------------------------------
 	// Saving errors to file
 	// ----------------------------------------------------------------------------------------------------

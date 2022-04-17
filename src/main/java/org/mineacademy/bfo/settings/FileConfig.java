@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
+import javax.xml.stream.Location;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.SerializeUtil;
@@ -391,6 +392,35 @@ public abstract class FileConfig {
 			Valid.checkBoolean(raw instanceof Number, "Expected a number at '" + path + "', got " + raw.getClass().getSimpleName() + ": " + raw);
 
 		return raw != null ? ((Number) raw).doubleValue() : null;
+	}
+
+	/**
+	 * Return a Location from the key at the given path
+	 * (see {@link #get(String, Class, Object, Object...)}).
+	 *
+	 * We use a custom method to store location on one line, this won't work
+	 * when using Bukkit's getLocation since Bukkit stores in using multiple keys.
+	 *
+	 * @param path
+	 * @return
+	 */
+	public final Location getLocation(final String path) {
+		return this.getLocation(path, null);
+	}
+
+	/**
+	 * Return a Location from the key at the given path, or supply with default
+	 * (see {@link #get(String, Class, Object, Object...)}).
+	 *
+	 * We use a custom method to store location on one line, this won't work
+	 * when using Bukkit's getLocation since Bukkit stores in using multiple keys.
+	 *
+	 * @param path
+	 * @param def
+	 * @return
+	 */
+	public final Location getLocation(final String path, final Location def) {
+		return this.get(path, Location.class, def);
 	}
 
 	/**
@@ -1129,6 +1159,7 @@ public abstract class FileConfig {
 					// Update file
 					this.file = file;
 				}
+
 			} catch (final Exception ex) {
 				Remain.sneaky(ex);
 			}
@@ -1421,5 +1452,4 @@ public abstract class FileConfig {
 			Remain.sendTitle(player, fadeIn, stay, fadeOut, replacer != null ? replacer.apply(this.title) : this.title, replacer != null ? replacer.apply(this.subtitle) : this.subtitle);
 		}
 	}
-
 }

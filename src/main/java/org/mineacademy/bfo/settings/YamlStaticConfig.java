@@ -16,6 +16,7 @@ import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.model.BoxedMessage;
 import org.mineacademy.bfo.model.IsInList;
 import org.mineacademy.bfo.model.SimpleTime;
+import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.remain.Remain;
 import org.mineacademy.bfo.settings.FileConfig.AccusativeHelper;
 import org.mineacademy.bfo.settings.FileConfig.TitleHelper;
@@ -186,6 +187,10 @@ public abstract class YamlStaticConfig {
 	 */
 	private void invokeMethodsIn(final Class<?> clazz) throws Exception {
 		for (final Method method : clazz.getDeclaredMethods()) {
+
+			if (!SimplePlugin.getInstance().isEnabled())
+				return;
+
 			final int mod = method.getModifiers();
 
 			if (method.getName().equals("init")) {

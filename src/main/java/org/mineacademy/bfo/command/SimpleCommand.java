@@ -54,15 +54,6 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	protected static final List<String> NO_COMPLETE = Collections.unmodifiableList(new ArrayList<>());
 
 	/**
-	 * Return the default permission syntax
-	 *
-	 * @return
-	 */
-	protected static final String getDefaultPermission() {
-		return SimplePlugin.getNamed().toLowerCase() + ".command.{label}";
-	}
-
-	/**
 	 * You can set the cooldown time before executing the command again. This map
 	 * stores the player uuid and his last execution of the command.
 	 */
@@ -548,7 +539,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	protected final ProxiedPlayer findPlayer(final String name) throws CommandException {
-		return findPlayer(name, SimpleLocalization.PlayerMessage.NOT_ONLINE);
+		return findPlayer(name, SimpleLocalization.Player.NOT_ONLINE);
 	}
 
 	/**
@@ -581,7 +572,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 		}
 
 		final ProxiedPlayer player = findPlayerInternal(name);
-		checkBoolean(player != null, SimpleLocalization.PlayerMessage.NOT_ONLINE.replace("{player}", name));
+		checkBoolean(player != null, SimpleLocalization.Player.NOT_ONLINE.replace("{player}", name));
 
 		return player;
 	}
@@ -1502,5 +1493,14 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	@Override
 	public final String toString() {
 		return "Command{label=/" + this.getLabel() + "}";
+	}
+
+	/**
+	 * Return the default permission syntax
+	 *
+	 * @return
+	 */
+	protected static final String getDefaultPermission() {
+		return SimplePlugin.getNamed().toLowerCase() + ".command.{label}";
 	}
 }

@@ -1,6 +1,7 @@
 package org.mineacademy.bfo.settings;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -17,8 +18,12 @@ import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.StrictMap;
+import org.mineacademy.bfo.remain.Remain;
 
 import lombok.NonNull;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 
 /**
  * A special class that can store loaded {@link YamlConfig} files
@@ -119,11 +124,17 @@ public final class ConfigItems<T extends YamlConfig> {
 
 		if (singleFile) {
 			final File file = FileUtil.extract(this.folder);
-			final YamlConfig config = YamlConfig.fromFileFast(file);
 
-			if (config.isSet(this.type))
-				for (final String name : config.getMap(this.type).keySet())
-					loadOrCreateItem(name);
+			try {
+				final Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+
+				if (config.contains(this.type))
+					for (final String name : config.getSection(this.type).getKeys())
+						loadOrCreateItem(name);
+
+			} catch (final IOException ex) {
+				Remain.sneaky(ex);
+			}
 		}
 
 		else {

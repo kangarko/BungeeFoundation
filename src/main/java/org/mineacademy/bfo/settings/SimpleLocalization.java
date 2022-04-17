@@ -6,6 +6,7 @@ import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.command.DebugCommand;
 import org.mineacademy.bfo.command.PermsCommand;
 import org.mineacademy.bfo.command.ReloadCommand;
+import org.mineacademy.bfo.model.ChatPaginator;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import net.md_5.bungee.api.ChatColor;
@@ -439,7 +440,7 @@ public class SimpleLocalization extends YamlStaticConfig {
 	/**
 	 * Key related to players
 	 */
-	public static final class PlayerMessage {
+	public static final class Player {
 
 		/**
 		 * Message shown when the player is not online on this server
@@ -447,7 +448,7 @@ public class SimpleLocalization extends YamlStaticConfig {
 		public static String NOT_ONLINE = "&cPlayer {player} &cis not online on this server.";
 
 		/**
-		 * Message shown when offline player returns that the player has not played before
+		 * Message shown when the player has not played before
 		 */
 		public static String NOT_PLAYED_BEFORE = "&cPlayer {player} &chas not played before or we could not locate his disk data.";
 
@@ -462,6 +463,51 @@ public class SimpleLocalization extends YamlStaticConfig {
 
 			if (isSetDefault("Not_Played_Before"))
 				NOT_PLAYED_BEFORE = getString("Not_Played_Before");
+		}
+	}
+
+	/**
+	 * Keys related to {@link ChatPaginator}
+	 */
+	public static final class Pages {
+
+		public static String NO_PAGE_NUMBER = "&cPlease specify the page number for this command.";
+		public static String NO_PAGES = "&cYou do not have any pages saved to show.";
+		public static String NO_PAGE = "Pages do not contain the given page number.";
+		public static String INVALID_PAGE = "&cYour input '{input}' is not a valid number.";
+		public static String GO_TO_PAGE = "&7Go to page {page}";
+		public static String GO_TO_FIRST_PAGE = "&7Go to the first page";
+		public static String[] TOOLTIP = {
+				"&7You can also navigate using the",
+				"&7hidden /#flp <page> command."
+		};
+
+		/**
+		 * Load the values -- this method is called automatically by reflection in the {@link YamlStaticConfig} class!
+		 */
+		private static void init() {
+			setPathPrefix("Pages");
+
+			if (isSetDefault("No_Page_Number"))
+				NO_PAGE_NUMBER = getString("No_Page_Number");
+
+			if (isSetDefault("No_Pages"))
+				NO_PAGES = getString("No_Pages");
+
+			if (isSetDefault("No_Page"))
+				NO_PAGE = getString("No_Page");
+
+			if (isSetDefault("Invalid_Page"))
+				INVALID_PAGE = getString("Invalid_Page");
+
+			if (isSetDefault("Go_To_Page"))
+				GO_TO_PAGE = getString("Go_To_Page");
+
+			if (isSetDefault("Go_To_First_Page"))
+				GO_TO_FIRST_PAGE = getString("Go_To_First_Page");
+
+			if (isSetDefault("Tooltip"))
+				TOOLTIP = Common.toArray(getStringList("Tooltip"));
 		}
 	}
 
