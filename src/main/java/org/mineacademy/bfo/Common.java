@@ -229,7 +229,7 @@ public final class Common {
 		if (!legacy.equals("none")) {
 			for (final ProxiedPlayer online : Remain.getOnlinePlayers())
 				if (PlayerUtil.hasPerm(online, permission))
-					Remain.sendComponent(online, message);
+					online.sendMessage(message);
 
 			if (log)
 				log(legacy);
@@ -1727,6 +1727,15 @@ public final class Common {
 			found.add(online.getName());
 
 		return found;
+	}
+
+	/**
+	 * Convenience method for getting a list of server names
+	 *
+	 * @return
+	 */
+	public static List<String> getServerNames() {
+		return new ArrayList<>(ProxyServer.getInstance().getServers().keySet());
 	}
 
 	/**
