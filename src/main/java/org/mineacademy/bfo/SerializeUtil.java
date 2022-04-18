@@ -258,7 +258,7 @@ public final class SerializeUtil {
 				object = RangedSimpleTime.parse(object.toString());
 
 			else if (classOf == net.md_5.bungee.api.ChatColor.class)
-				throw new FoException("Instead of net.md_5.bungee.api.ChatColor, use our CompChatColor");
+				object = net.md_5.bungee.api.ChatColor.of(object.toString());
 
 			else if (classOf == UUID.class)
 				object = UUID.fromString(object.toString());
