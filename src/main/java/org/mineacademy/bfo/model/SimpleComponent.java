@@ -433,7 +433,7 @@ public final class SimpleComponent implements ConfigSerializable {
 				}
 
 			} else
-				Remain.sendComponent(receiver, component);
+				receiver.sendMessage(component);
 		}
 	}
 
