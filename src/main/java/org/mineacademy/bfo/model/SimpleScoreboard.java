@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
-import com.google.gson.Gson;
 
 import lombok.Getter;
 import net.md_5.bungee.api.connection.Connection.Unsafe;
@@ -25,11 +24,6 @@ public class SimpleScoreboard {
 	 * Internal ID of the scoreboards created.
 	 */
 	private static int ids = 0;
-
-	/**
-	 * The Google GSON instance for toString methods
-	 */
-	private static final Gson gson = new Gson();
 
 	/**
 	 * This is the unique identifier that identifiers this board.
@@ -89,13 +83,13 @@ public class SimpleScoreboard {
 	public final void send(ProxiedPlayer player) {
 		final Unsafe unsafe = player.unsafe();
 		final String idString = Integer.toString(id);
-		final String message = gson.toJson(prepareMessage(player, title));
+		final String titleMessage = prepareMessage(player, title);
 
 		// Clear old objective
-		unsafe.sendPacket(new ScoreboardObjective(idString, message, HealthDisplay.INTEGER, (byte) 1));
+		unsafe.sendPacket(new ScoreboardObjective(idString, titleMessage, HealthDisplay.INTEGER, (byte) 1));
 
 		// Send objective
-		unsafe.sendPacket(new ScoreboardObjective(idString, message, HealthDisplay.INTEGER, (byte) 0));
+		unsafe.sendPacket(new ScoreboardObjective(idString, titleMessage, HealthDisplay.INTEGER, (byte) 0));
 
 		// Send lines
 		for (int i = 0; i < lines.size(); i++)
