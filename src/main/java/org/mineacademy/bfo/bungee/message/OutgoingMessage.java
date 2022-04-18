@@ -208,8 +208,14 @@ public final class OutgoingMessage extends Message {
 	 * @param server
 	 */
 	public void send(ServerInfo server) {
-		server.sendData(getChannel(), compileData());
 
+		if (server.getPlayers().isEmpty()) {
+			Debugger.debug("bungee", "NOT sending data on " + getChannel() + " channel from " + getAction() + " to " + server.getName() + " server because it is empty.");
+
+			return;
+		}
+
+		server.sendData(getChannel(), compileData());
 		Debugger.debug("bungee", "Sending data on " + getChannel() + " channel from " + getAction() + " to " + server.getName() + " server.");
 	}
 

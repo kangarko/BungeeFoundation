@@ -241,8 +241,15 @@ public final class IncomingMessage extends Message {
 	 */
 	public void forward(Connection connection) {
 		Valid.checkBoolean(connection instanceof Server, "Connection must be Server");
+		final Server server = (Server) connection;
 
-		((Server) connection).sendData(getChannel(), data);
+		if (server.getInfo().getPlayers().isEmpty()) {
+			Debugger.debug("bungee", "NOT sending data on " + getChannel() + " channel from " + getAction() + " to " + server.getInfo().getName() + " server because it is empty.");
+
+			return;
+		}
+
+		server.sendData(getChannel(), data);
 		Debugger.debug("bungee", "Forwarding data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
@@ -271,8 +278,14 @@ public final class IncomingMessage extends Message {
 	 * @param info
 	 */
 	public void forward(ServerInfo info) {
-		info.sendData(getChannel(), data);
 
+		if (info.getPlayers().isEmpty()) {
+			Debugger.debug("bungee", "NOT sending data on " + getChannel() + " channel from " + getAction() + " to " + info.getName() + " server because it is empty.");
+
+			return;
+		}
+
+		info.sendData(getChannel(), data);
 		Debugger.debug("bungee", "Forwarding data on " + getChannel() + " channel from " + getAction() + " to " + info.getName() + " server.");
 	}
 }
