@@ -198,6 +198,12 @@ public final class OutgoingMessage extends Message {
 
 		Valid.checkBoolean(connection instanceof Server, "Connection must be ServerConnection");
 
+		if (((Server) connection).getInfo().getPlayers().isEmpty()) {
+			Debugger.debug("bungee", "NOT sending data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server because it is empty.");
+
+			return;
+		}
+
 		((Server) connection).sendData(getChannel(), compileData());
 		Debugger.debug("bungee", "Sending data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
