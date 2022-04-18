@@ -1160,8 +1160,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	}
 
 	/**
-	 * Convenience method for completing all player names that the sender can see
-	 * and that are not vanished
+	 * Convenience method for completing all player names
 	 * <p>
 	 * TIP: You can simply return null for the same behaviour
 	 *
@@ -1169,6 +1168,15 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected List<String> completeLastWordPlayerNames() {
 		return TabUtil.complete(getLastArg(), isPlayer() ? Common.getPlayerNames() : Common.getPlayerNames());
+	}
+
+	/**
+	 * Convenience method for completing all server names
+	 *
+	 * @return
+	 */
+	protected List<String> completeLastWordServerNames() {
+		return TabUtil.complete(getLastArg(), ProxyServer.getInstance().getServers().keySet());
 	}
 
 	/**
