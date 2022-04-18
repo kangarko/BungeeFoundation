@@ -13,10 +13,12 @@ import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.ReflectionUtil.ReflectionException;
 import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.exception.FoException;
+import org.mineacademy.bfo.model.Variables;
 
 import com.google.gson.Gson;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -240,7 +242,7 @@ public final class Remain {
 
 			replaceHexPlaceholders(Arrays.asList(components), placeholders);
 
-			sendComponent(sender, components);
+			sender.sendMessage(components);
 
 		} catch (final RuntimeException ex) {
 			Common.error(ex, "Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json);
@@ -300,7 +302,7 @@ public final class Remain {
 	 */
 	public static void sendJson(final CommandSender sender, final String json) {
 		try {
-			sendComponent(sender, ComponentSerializer.parse(json));
+			sender.sendMessage(ComponentSerializer.parse(json));
 
 		} catch (final Throwable t) {
 
@@ -310,16 +312,6 @@ public final class Remain {
 
 			throw new RuntimeException("Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json, t);
 		}
-	}
-
-	/**
-	 * Sends JSON component to sender
-	 *
-	 * @param sender
-	 * @param comps
-	 */
-	public static void sendComponent(final CommandSender sender, final BaseComponent... comps) {
-		sender.sendMessage(comps);
 	}
 
 	/**
@@ -348,8 +340,8 @@ public final class Remain {
 				.fadeIn(fadeIn)
 				.fadeOut(fadeOut)
 				.stay(stay)
-				.title(TextComponent.fromLegacyText(Common.colorize(title)))
-				.subTitle(TextComponent.fromLegacyText(Common.colorize(title)))
+				.title(TextComponent.fromLegacyText(Common.colorize(Variables.replace(title, player))))
+				.subTitle(TextComponent.fromLegacyText(Common.colorize(Variables.replace(subtitle, player))))
 				.send(player);
 	}
 
@@ -373,7 +365,7 @@ public final class Remain {
 	 * @param footer the footer
 	 */
 	public static void sendTablist(final ProxiedPlayer player, final String header, final String footer) {
-		player.setTabHeader(toComponentLegacy(header), toComponentLegacy(footer));
+		player.setTabHeader(toComponentLegacy(Variables.replace(header, player)), toComponentLegacy(Variables.replace(footer, player)));
 	}
 
 	/**
@@ -384,10 +376,7 @@ public final class Remain {
 	 * @param text   the text
 	 */
 	public static void sendActionBar(final ProxiedPlayer player, final String text) {
-		final Title title = new Title(Action.ACTIONBAR);
-		title.setText(toJson(toComponentLegacy(text)));
-
-		sendPacket(player, title);
+		player.sendMessage(ChatMessageType.ACTION_BAR, toComponentLegacy(Variables.replace(text, player)));
 	}
 
 	/**
@@ -398,7 +387,7 @@ public final class Remain {
 	 * @param secondsToShow
 	 */
 	public static void sendBossbarTimed(ProxiedPlayer player, String message, int secondsToShow) {
-		final BossBar bar = sendBossbar(player, message, 1.0F);
+		final BossBar bar = sendBossbar(player, Variables.replace(message, player), 1.0F);
 
 		Common.runLaterAsync(secondsToShow * 20, (Runnable) () -> removeBossBar(player, bar.getUuid()));
 	}
@@ -430,7 +419,7 @@ public final class Remain {
 	public static BossBar sendBossbar(final ProxiedPlayer player, final String message, final float percent, final CompBarColor color, final CompBarStyle style) {
 		final BossBar bar = new BossBar(UUID.randomUUID(), 0);
 
-		bar.setTitle(toJson(message));
+		bar.setTitle(toJson(Variables.replace(message, player)));
 		bar.setHealth(percent);
 		bar.setColor(color.ordinal());
 		bar.setDivision(style.ordinal());
