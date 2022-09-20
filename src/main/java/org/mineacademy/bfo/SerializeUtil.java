@@ -296,10 +296,9 @@ public final class SerializeUtil {
 					return null;
 			}
 
-			else if (Color.class.isAssignableFrom(classOf)) {
+			else if (Color.class.isAssignableFrom(classOf))
 				object = ChatColor.of(object.toString()).getColor();
-
-			} else if (List.class.isAssignableFrom(classOf) && object instanceof List) {
+			else if (List.class.isAssignableFrom(classOf) && object instanceof List) {
 				// Good
 
 			} else if (Map.class.isAssignableFrom(classOf)) {

@@ -218,22 +218,22 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	public final void register() {
 		Valid.checkBoolean(!(this instanceof SimpleSubCommand), "Sub commands cannot be registered!");
-		Valid.checkBoolean(!registered, "The command /" + getLabel() + " has already been registered!");
+		Valid.checkBoolean(!this.registered, "The command /" + this.getLabel() + " has already been registered!");
 
-		if (!canRegister())
+		if (!this.canRegister())
 			return;
 
 		final PluginManager pluginManager = ProxyServer.getInstance().getPluginManager();
-		final Command oldCommand = findExistingCommand(getLabel());
+		final Command oldCommand = this.findExistingCommand(this.getLabel());
 
 		if (oldCommand != null) {
-			Debugger.debug("command", "Command /" + getLabel() + " already registered, re-registering for plugin " + SimplePlugin.getNamed());
+			Debugger.debug("command", "Command /" + this.getLabel() + " already registered, re-registering for plugin " + SimplePlugin.getNamed());
 
 			pluginManager.unregisterCommand(oldCommand);
 		}
 
 		pluginManager.registerCommand(SimplePlugin.getInstance(), this);
-		registered = true;
+		this.registered = true;
 	}
 
 	private Command findExistingCommand(final String label) {
@@ -251,12 +251,12 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	public final void unregister() {
 		Valid.checkBoolean(!(this instanceof SimpleSubCommand), "Sub commands cannot be unregistered!");
-		Valid.checkBoolean(registered, "The command /" + getLabel() + " is not registered!");
+		Valid.checkBoolean(this.registered, "The command /" + this.getLabel() + " is not registered!");
 
 		final PluginManager pluginManager = ProxyServer.getInstance().getPluginManager();
 
 		pluginManager.unregisterCommand(this);
-		registered = false;
+		this.registered = false;
 	}
 
 	/**
@@ -304,7 +304,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 
 		// Catch "errors" that contain a message to send to the player
 		// Measure performance of all commands
-		final String lagSection = "Command /" + getLabel() + sublabel + (args.length > 0 ? " " + String.join(" ", args) : "");
+		final String lagSection = "Command /" + this.getLabel() + sublabel + (args.length > 0 ? " " + String.join(" ", args) : "");
 
 		try {
 			// Prevent duplication since MainCommand delegates this
@@ -312,39 +312,39 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 				LagCatcher.start(lagSection);
 
 			// Check if sender has the proper permission
-			if (getPermission() != null)
-				checkPerm(getPermission());
+			if (this.getPermission() != null)
+				this.checkPerm(this.getPermission());
 
 			// Check for minimum required arguments and print help
-			if (args.length < getMinArguments() || autoHandleHelp && args.length == 1 && ("help".equals(args[0]) || "?".equals(args[0]))) {
+			if (args.length < this.getMinArguments() || this.autoHandleHelp && args.length == 1 && ("help".equals(args[0]) || "?".equals(args[0]))) {
 
 				Common.runAsync(() -> {
-					final String usage = getMultilineUsageMessage() != null ? String.join("\n&c", getMultilineUsageMessage()) : getUsage() != null ? getUsage() : null;
-					Valid.checkNotNull(usage, "getUsage() nor getMultilineUsageMessage() not implemented for '/" + getLabel() + sublabel + "' command!");
+					final String usage = this.getMultilineUsageMessage() != null ? String.join("\n&c", this.getMultilineUsageMessage()) : this.getUsage() != null ? this.getUsage() : null;
+					Valid.checkNotNull(usage, "getUsage() nor getMultilineUsageMessage() not implemented for '/" + this.getLabel() + sublabel + "' command!");
 
 					final ChatPaginator paginator = new ChatPaginator(SimpleLocalization.Commands.HEADER_SECONDARY_COLOR);
 					final List<String> pages = new ArrayList<>();
 
-					if (!Common.getOrEmpty(getDescription()).isEmpty()) {
-						pages.add(replacePlaceholders(SimpleLocalization.Commands.LABEL_DESCRIPTION));
-						pages.add(replacePlaceholders("&c" + getDescription()));
+					if (!Common.getOrEmpty(this.getDescription()).isEmpty()) {
+						pages.add(this.replacePlaceholders(SimpleLocalization.Commands.LABEL_DESCRIPTION));
+						pages.add(this.replacePlaceholders("&c" + this.getDescription()));
 					}
 
-					if (getMultilineUsageMessage() != null) {
+					if (this.getMultilineUsageMessage() != null) {
 						pages.add("");
-						pages.add(replacePlaceholders(SimpleLocalization.Commands.LABEL_USAGES));
+						pages.add(this.replacePlaceholders(SimpleLocalization.Commands.LABEL_USAGES));
 
 						for (final String usagePart : usage.split("\n"))
-							pages.add(replacePlaceholders("&c" + usagePart));
+							pages.add(this.replacePlaceholders("&c" + usagePart));
 
 					} else {
 						pages.add("");
 						pages.add(SimpleLocalization.Commands.LABEL_USAGE);
-						pages.add("&c" + replacePlaceholders("/" + this.getLabel() + sublabel + (!usage.startsWith("/") ? " " + Common.stripColors(usage) : "")));
+						pages.add("&c" + this.replacePlaceholders("/" + this.getLabel() + sublabel + (!usage.startsWith("/") ? " " + Common.stripColors(usage) : "")));
 					}
 
 					paginator
-							.setFoundationHeader(SimpleLocalization.Commands.LABEL_HELP_FOR.replace("{label}", getLabel() + sublabel))
+							.setFoundationHeader(SimpleLocalization.Commands.LABEL_HELP_FOR.replace("{label}", this.getLabel() + sublabel))
 							.setPages(Common.toArray(pages));
 
 					// Force sending on the main thread
@@ -355,33 +355,33 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 			}
 
 			// Check if we can run this command in time
-			if (cooldownSeconds > 0)
-				handleCooldown();
+			if (this.cooldownSeconds > 0)
+				this.handleCooldown();
 
-			onCommand();
+			this.onCommand();
 
 		} catch (final InvalidCommandArgException ex) {
-			if (getMultilineUsageMessage() == null)
-				dynamicTellError(ex.getMessage() != null ? ex.getMessage() : SimpleLocalization.Commands.INVALID_SUB_ARGUMENT);
+			if (this.getMultilineUsageMessage() == null)
+				this.dynamicTellError(ex.getMessage() != null ? ex.getMessage() : SimpleLocalization.Commands.INVALID_SUB_ARGUMENT);
 			else {
-				dynamicTellError(SimpleLocalization.Commands.INVALID_ARGUMENT_MULTILINE);
+				this.dynamicTellError(SimpleLocalization.Commands.INVALID_ARGUMENT_MULTILINE);
 
-				for (final String line : getMultilineUsageMessage())
-					tellNoPrefix("&c" + line);
+				for (final String line : this.getMultilineUsageMessage())
+					this.tellNoPrefix("&c" + line);
 			}
 
 		} catch (final EventHandledException ex) {
 			if (ex.getMessages() != null)
-				dynamicTellError(ex.getMessages());
+				this.dynamicTellError(ex.getMessages());
 
 		} catch (final CommandException ex) {
 			if (ex.getMessages() != null)
-				dynamicTellError(ex.getMessages());
+				this.dynamicTellError(ex.getMessages());
 
 		} catch (final Throwable t) {
-			dynamicTellError(SimpleLocalization.Commands.ERROR.replace("{error}", t.toString()));
+			this.dynamicTellError(SimpleLocalization.Commands.ERROR.replace("{error}", t.toString()));
 
-			Common.error(t, "Failed to execute command /" + getLabel() + sublabel + " " + String.join(" ", args));
+			Common.error(t, "Failed to execute command /" + this.getLabel() + sublabel + " " + String.join(" ", args));
 
 		} finally {
 			Common.setTellPrefix(oldTellPrefix);
@@ -399,9 +399,9 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	private void dynamicTellError(final String... messages) {
 		if (Messenger.ENABLED)
 			for (final String message : messages)
-				tellError(message);
+				this.tellError(message);
 		else
-			tell(messages);
+			this.tell(messages);
 	}
 
 	/**
@@ -409,17 +409,17 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * is run within the given limit, we stop it and inform the player
 	 */
 	private void handleCooldown() {
-		if (isPlayer()) {
-			final ProxiedPlayer player = getPlayer();
+		if (this.isPlayer()) {
+			final ProxiedPlayer player = this.getPlayer();
 
-			final long lastExecution = cooldownMap.getOrDefault(player.getUniqueId(), 0L);
+			final long lastExecution = this.cooldownMap.getOrDefault(player.getUniqueId(), 0L);
 			final long lastExecutionDifference = (System.currentTimeMillis() - lastExecution) / 1000;
 
 			// Check if the command was not run earlier within the wait threshold
-			checkBoolean(lastExecution == 0 || lastExecutionDifference > cooldownSeconds, Common.getOrDefault(cooldownMessage, SimpleLocalization.Commands.COOLDOWN_WAIT).replace("{duration}", cooldownSeconds - lastExecutionDifference + 1 + ""));
+			this.checkBoolean(lastExecution == 0 || lastExecutionDifference > this.cooldownSeconds, Common.getOrDefault(this.cooldownMessage, SimpleLocalization.Commands.COOLDOWN_WAIT).replace("{duration}", this.cooldownSeconds - lastExecutionDifference + 1 + ""));
 
 			// Update the last try with the current time
-			cooldownMap.put(player.getUniqueId(), System.currentTimeMillis());
+			this.cooldownMap.put(player.getUniqueId(), System.currentTimeMillis());
 		}
 	}
 
@@ -455,7 +455,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	protected final void checkConsole() throws CommandException {
-		if (!isPlayer())
+		if (!this.isPlayer())
 			throw new CommandException("&c" + SimpleLocalization.Commands.NO_CONSOLE);
 	}
 
@@ -466,8 +466,8 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	public final void checkPerm(@NonNull final String perm) throws CommandException {
-		if (isPlayer() && !hasPerm(perm))
-			throw new CommandException(getPermissionMessage().replace("{permission}", perm));
+		if (this.isPlayer() && !this.hasPerm(perm))
+			throw new CommandException(this.getPermissionMessage().replace("{permission}", perm));
 	}
 
 	/**
@@ -478,8 +478,8 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	public final void checkPerm(@NonNull CommandSender sender, @NonNull final String perm) throws CommandException {
-		if (isPlayer() && !hasPerm(sender, perm))
-			throw new CommandException(getPermissionMessage().replace("{permission}", perm));
+		if (this.isPlayer() && !this.hasPerm(sender, perm))
+			throw new CommandException(this.getPermissionMessage().replace("{permission}", perm));
 	}
 
 	/**
@@ -490,8 +490,8 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	protected final void checkArgs(final int minimumLength, final String falseMessage) throws CommandException {
-		if (args.length < minimumLength)
-			returnTell((Messenger.ENABLED ? "" : "&c") + falseMessage);
+		if (this.args.length < minimumLength)
+			this.returnTell((Messenger.ENABLED ? "" : "&c") + falseMessage);
 	}
 
 	/**
@@ -503,7 +503,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void checkBoolean(final boolean value, final String falseMessage) throws CommandException {
 		if (!value)
-			returnTell((Messenger.ENABLED ? "" : "&c") + falseMessage);
+			this.returnTell((Messenger.ENABLED ? "" : "&c") + falseMessage);
 	}
 
 	/**
@@ -515,7 +515,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void checkUsage(final boolean value) throws CommandException {
 		if (!value)
-			returnInvalidArgs();
+			this.returnInvalidArgs();
 	}
 
 	/**
@@ -527,7 +527,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void checkNotNull(final Object value, final String messageIfNull) throws CommandException {
 		if (value == null)
-			returnTell((Messenger.ENABLED ? "" : "&c") + messageIfNull);
+			this.returnTell((Messenger.ENABLED ? "" : "&c") + messageIfNull);
 	}
 
 	/**
@@ -539,7 +539,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	protected final ProxiedPlayer findPlayer(final String name) throws CommandException {
-		return findPlayer(name, SimpleLocalization.Player.NOT_ONLINE);
+		return this.findPlayer(name, SimpleLocalization.Player.NOT_ONLINE);
 	}
 
 	/**
@@ -551,8 +551,8 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	protected final ProxiedPlayer findPlayer(final String name, final String falseMessage) throws CommandException {
-		final ProxiedPlayer player = findPlayerInternal(name);
-		checkBoolean(player != null, falseMessage.replace("{player}", name));
+		final ProxiedPlayer player = this.findPlayerInternal(name);
+		this.checkBoolean(player != null, falseMessage.replace("{player}", name));
 
 		return player;
 	}
@@ -566,13 +566,13 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final ProxiedPlayer findPlayerOrSelf(final String name) throws CommandException {
 		if (name == null) {
-			checkBoolean(isPlayer(), SimpleLocalization.Commands.CONSOLE_MISSING_PLAYER_NAME);
+			this.checkBoolean(this.isPlayer(), SimpleLocalization.Commands.CONSOLE_MISSING_PLAYER_NAME);
 
-			return getPlayer();
+			return this.getPlayer();
 		}
 
-		final ProxiedPlayer player = findPlayerInternal(name);
-		checkBoolean(player != null, SimpleLocalization.Player.NOT_ONLINE.replace("{player}", name));
+		final ProxiedPlayer player = this.findPlayerInternal(name);
+		this.checkBoolean(player != null, SimpleLocalization.Player.NOT_ONLINE.replace("{player}", name));
 
 		return player;
 	}
@@ -602,7 +602,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 			return SimpleTime.from(raw);
 
 		} catch (final IllegalArgumentException ex) {
-			returnTell(SimpleLocalization.Commands.INVALID_TIME.replace("{input}", raw));
+			this.returnTell(SimpleLocalization.Commands.INVALID_TIME.replace("{input}", raw));
 
 			return null;
 		}
@@ -651,7 +651,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 			// Not found, pass through below to error out
 		}
 
-		checkNotNull(found, falseMessage.replace("{enum}", name).replace("{available}", Common.join(enumType.getEnumConstants())));
+		this.checkNotNull(found, falseMessage.replace("{enum}", name).replace("{available}", Common.join(enumType.getEnumConstants())));
 		return found;
 	}
 
@@ -666,7 +666,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final int findNumber(final int index, final int min, final int max, final String falseMessage) {
-		return findNumber(Integer.class, index, min, max, falseMessage);
+		return this.findNumber(Integer.class, index, min, max, falseMessage);
 	}
 
 	/**
@@ -677,7 +677,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final int findNumber(final int index, final String falseMessage) {
-		return findNumber(Integer.class, index, falseMessage);
+		return this.findNumber(Integer.class, index, falseMessage);
 	}
 
 	/**
@@ -694,8 +694,8 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final <T extends Number & Comparable<T>> T findNumber(final Class<T> numberType, final int index, final T min, final T max, final String falseMessage) {
-		final T number = findNumber(numberType, index, falseMessage);
-		checkBoolean(number.compareTo(min) >= 0 && number.compareTo(max) <= 0, falseMessage.replace("{min}", min + "").replace("{max}", max + ""));
+		final T number = this.findNumber(numberType, index, falseMessage);
+		this.checkBoolean(number.compareTo(min) >= 0 && number.compareTo(max) <= 0, falseMessage.replace("{min}", min + "").replace("{max}", max + ""));
 
 		return number;
 	}
@@ -711,10 +711,10 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final <T extends Number> T findNumber(final Class<T> numberType, final int index, final String falseMessage) {
-		checkBoolean(index < args.length, falseMessage);
+		this.checkBoolean(index < this.args.length, falseMessage);
 
 		try {
-			return (T) numberType.getMethod("valueOf", String.class).invoke(null, args[index]); // Method valueOf is part of all main Number sub classes, eg. Short, Integer, Double, etc.
+			return (T) numberType.getMethod("valueOf", String.class).invoke(null, this.args[index]); // Method valueOf is part of all main Number sub classes, eg. Short, Integer, Double, etc.
 		}
 
 		catch (final IllegalAccessException | NoSuchMethodException e) {
@@ -728,7 +728,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 				e.printStackTrace();
 		}
 
-		throw new CommandException(replacePlaceholders((Messenger.ENABLED ? "" : "&c") + falseMessage));
+		throw new CommandException(this.replacePlaceholders((Messenger.ENABLED ? "" : "&c") + falseMessage));
 	}
 
 	/**
@@ -739,15 +739,15 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final boolean findBoolean(final int index, final String invalidMessage) {
-		checkBoolean(index < args.length, invalidMessage);
+		this.checkBoolean(index < this.args.length, invalidMessage);
 
-		if (args[index].equalsIgnoreCase("true"))
+		if (this.args[index].equalsIgnoreCase("true"))
 			return true;
 
-		else if (args[index].equalsIgnoreCase("false"))
+		else if (this.args[index].equalsIgnoreCase("false"))
 			return false;
 
-		throw new CommandException(replacePlaceholders((Messenger.ENABLED ? "" : "&c") + invalidMessage));
+		throw new CommandException(this.replacePlaceholders((Messenger.ENABLED ? "" : "&c") + invalidMessage));
 	}
 
 	// ----------------------------------------------------------------------
@@ -765,7 +765,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final boolean hasPerm(String permission) {
-		return this.hasPerm(sender, permission);
+		return this.hasPerm(this.sender, permission);
 	}
 
 	/**
@@ -780,7 +780,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final boolean hasPerm(CommandSender sender, String permission) {
-		return permission == null ? true : PlayerUtil.hasPerm(sender, permission.replace("{label}", getLabel()));
+		return permission == null ? true : PlayerUtil.hasPerm(sender, permission.replace("{label}", this.getLabel()));
 	}
 
 	// ----------------------------------------------------------------------
@@ -796,7 +796,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @param replacements
 	 */
 	protected final void tellReplaced(final String message, final Object... replacements) {
-		tell(Replacer.replaceArray(message, replacements));
+		this.tell(Replacer.replaceArray(message, replacements));
 	}
 
 	/**
@@ -808,7 +808,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void tell(List<SimpleComponent> components) {
 		if (components != null)
-			tell(components.toArray(new SimpleComponent[components.size()]));
+			this.tell(components.toArray(new SimpleComponent[components.size()]));
 	}
 
 	/**
@@ -821,7 +821,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	protected final void tell(SimpleComponent... components) {
 		if (components != null)
 			for (final SimpleComponent component : components)
-				component.send(sender);
+				component.send(this.sender);
 	}
 
 	/**
@@ -831,7 +831,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void tell(Collection<String> messages) {
 		if (messages != null)
-			tell(messages.toArray(new String[messages.size()]));
+			this.tell(messages.toArray(new String[messages.size()]));
 	}
 
 	/**
@@ -840,7 +840,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @param messages
 	 */
 	protected final void tellNoPrefix(Collection<String> messages) {
-		tellNoPrefix(messages.toArray(new String[messages.size()]));
+		this.tellNoPrefix(messages.toArray(new String[messages.size()]));
 	}
 
 	/**
@@ -853,7 +853,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 
 		this.tellPrefix = "";
 
-		tell(messages);
+		this.tell(messages);
 
 		this.tellPrefix = oldLocalPrefix;
 	}
@@ -874,13 +874,12 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 			Common.setTellPrefix(this.tellPrefix);
 
 		try {
-			messages = replacePlaceholders(messages);
+			messages = this.replacePlaceholders(messages);
 
-			if (messages.length > 2) {
-				Common.tellNoPrefix(sender, messages);
-
-			} else
-				Common.tell(sender, messages);
+			if (messages.length > 2)
+				Common.tellNoPrefix(this.sender, messages);
+			else
+				Common.tell(this.sender, messages);
 
 		} finally {
 			Common.setTellPrefix(oldTellPrefix);
@@ -894,9 +893,9 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void tellSuccess(String message) {
 		if (message != null) {
-			message = replacePlaceholders(message);
+			message = this.replacePlaceholders(message);
 
-			Messenger.success(sender, message);
+			Messenger.success(this.sender, message);
 		}
 	}
 
@@ -907,9 +906,9 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void tellInfo(String message) {
 		if (message != null) {
-			message = replacePlaceholders(message);
+			message = this.replacePlaceholders(message);
 
-			Messenger.info(sender, message);
+			Messenger.info(this.sender, message);
 		}
 	}
 
@@ -920,9 +919,9 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void tellWarn(String message) {
 		if (message != null) {
-			message = replacePlaceholders(message);
+			message = this.replacePlaceholders(message);
 
-			Messenger.warn(sender, message);
+			Messenger.warn(this.sender, message);
 		}
 	}
 
@@ -933,9 +932,9 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void tellError(String message) {
 		if (message != null) {
-			message = replacePlaceholders(message);
+			message = this.replacePlaceholders(message);
 
-			Messenger.error(sender, message);
+			Messenger.error(this.sender, message);
 		}
 	}
 
@@ -946,9 +945,9 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final void tellQuestion(String message) {
 		if (message != null) {
-			message = replacePlaceholders(message);
+			message = this.replacePlaceholders(message);
 
-			Messenger.question(sender, message);
+			Messenger.question(this.sender, message);
 		}
 	}
 
@@ -957,7 +956,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * message for player
 	 */
 	protected final void returnInvalidArgs() {
-		tellError(SimpleLocalization.Commands.INVALID_ARGUMENT.replace("{label}", getLabel()));
+		this.tellError(SimpleLocalization.Commands.INVALID_ARGUMENT.replace("{label}", this.getLabel()));
 
 		throw new CommandException();
 	}
@@ -969,7 +968,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	protected final void returnTell(final Collection<String> messages) throws CommandException {
-		returnTell(messages.toArray(new String[messages.size()]));
+		this.returnTell(messages.toArray(new String[messages.size()]));
 	}
 
 	/**
@@ -979,7 +978,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @throws CommandException
 	 */
 	protected final void returnTell(final String... messages) throws CommandException {
-		throw new CommandException(replacePlaceholders(messages));
+		throw new CommandException(this.replacePlaceholders(messages));
 	}
 
 	/**
@@ -1004,7 +1003,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected final String[] replacePlaceholders(final String[] messages) {
 		for (int i = 0; i < messages.length; i++)
-			messages[i] = replacePlaceholders(messages[i]).replace("{prefix}", Common.getTellPrefix());
+			messages[i] = this.replacePlaceholders(messages[i]).replace("{prefix}", Common.getTellPrefix());
 
 		return messages;
 	}
@@ -1017,11 +1016,11 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	protected String replacePlaceholders(String message) {
 		// Replace basic labels
-		message = replaceBasicPlaceholders0(message);
+		message = this.replaceBasicPlaceholders0(message);
 
 		// Replace {X} with arguments
-		for (int i = 0; i < args.length; i++)
-			message = message.replace("{" + i + "}", Common.getOrEmpty(args[i]));
+		for (int i = 0; i < this.args.length; i++)
+			message = message.replace("{" + i + "}", Common.getOrEmpty(this.args[i]));
 
 		return message;
 	}
@@ -1034,8 +1033,8 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	private String replaceBasicPlaceholders0(final String message) {
 		return message
-				.replace("{label}", getLabel())
-				.replace("{sublabel}", this instanceof SimpleSubCommand ? ((SimpleSubCommand) this).getSublabels()[0] : this.args != null && this.args.length > 0 ? this.args[0] : getLabel());
+				.replace("{label}", this.getLabel())
+				.replace("{sublabel}", this instanceof SimpleSubCommand ? ((SimpleSubCommand) this).getSublabels()[0] : this.args != null && this.args.length > 0 ? this.args[0] : this.getLabel());
 	}
 
 	/**
@@ -1047,10 +1046,10 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @param value
 	 */
 	protected final void setArg(final int position, final String value) {
-		if (args.length <= position)
-			args = Arrays.copyOf(args, position + 1);
+		if (this.args.length <= position)
+			this.args = Arrays.copyOf(this.args, position + 1);
 
-		args[position] = value;
+		this.args[position] = value;
 	}
 
 	/**
@@ -1059,7 +1058,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final String getLastArg() {
-		return args.length > 0 ? args[args.length - 1] : "";
+		return this.args.length > 0 ? this.args[this.args.length - 1] : "";
 	}
 
 	/**
@@ -1070,7 +1069,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final String[] rangeArgs(final int from) {
-		return rangeArgs(from, args.length);
+		return this.rangeArgs(from, this.args.length);
 	}
 
 	/**
@@ -1082,7 +1081,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final String[] rangeArgs(final int from, final int to) {
-		return Arrays.copyOfRange(args, from, to);
+		return Arrays.copyOfRange(this.args, from, to);
 	}
 
 	/**
@@ -1093,7 +1092,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final String joinArgs(final int from) {
-		return joinArgs(from, args.length);
+		return this.joinArgs(from, this.args.length);
 	}
 
 	/**
@@ -1107,8 +1106,8 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	protected final String joinArgs(final int from, final int to) {
 		String message = "";
 
-		for (int i = from; i < args.length && i < to; i++)
-			message += args[i] + (i + 1 == args.length ? "" : " ");
+		for (int i = from; i < this.args.length && i < to; i++)
+			message += this.args[i] + (i + 1 == this.args.length ? "" : " ");
 
 		return message;
 	}
@@ -1128,12 +1127,12 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 		this.sender = sender;
 		this.args = args;
 
-		if (hasPerm(getPermission())) {
-			List<String> suggestions = tabComplete();
+		if (this.hasPerm(this.getPermission())) {
+			List<String> suggestions = this.tabComplete();
 
 			// Return online player names when suggestions are null - simulate Bukkit behaviour
 			if (suggestions == null)
-				suggestions = completeLastWordPlayerNames();
+				suggestions = this.completeLastWordPlayerNames();
 
 			return suggestions;
 		}
@@ -1167,7 +1166,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected List<String> completeLastWordPlayerNames() {
-		return TabUtil.complete(getLastArg(), isPlayer() ? Common.getPlayerNames() : Common.getPlayerNames());
+		return TabUtil.complete(this.getLastArg(), this.isPlayer() ? Common.getPlayerNames() : Common.getPlayerNames());
 	}
 
 	/**
@@ -1176,7 +1175,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected List<String> completeLastWordServerNames() {
-		return TabUtil.complete(getLastArg(), ProxyServer.getInstance().getServers().keySet());
+		return TabUtil.complete(this.getLastArg(), ProxyServer.getInstance().getServers().keySet());
 	}
 
 	/**
@@ -1190,7 +1189,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	@SafeVarargs
 	protected final <T> List<String> completeLastWord(final T... suggestions) {
-		return TabUtil.complete(getLastArg(), suggestions);
+		return TabUtil.complete(this.getLastArg(), suggestions);
 	}
 
 	/**
@@ -1208,7 +1207,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 		for (final T suggestion : suggestions)
 			list.add(suggestion);
 
-		return TabUtil.complete(getLastArg(), list.toArray());
+		return TabUtil.complete(this.getLastArg(), list.toArray());
 	}
 
 	/**
@@ -1227,7 +1226,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 		for (final T suggestion : suggestions)
 			list.add(toString.apply(suggestion));
 
-		return TabUtil.complete(getLastArg(), list.toArray());
+		return TabUtil.complete(this.getLastArg(), list.toArray());
 	}
 
 	// ----------------------------------------------------------------------
@@ -1241,7 +1240,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final ProxiedPlayer getPlayer() {
-		return isPlayer() ? (ProxiedPlayer) getSender() : null;
+		return this.isPlayer() ? (ProxiedPlayer) this.getSender() : null;
 	}
 
 	/**
@@ -1250,7 +1249,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final boolean isPlayer() {
-		return sender instanceof ProxiedPlayer;
+		return this.sender instanceof ProxiedPlayer;
 	}
 
 	/**
@@ -1282,9 +1281,9 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @param unit
 	 */
 	protected final void setCooldown(final int cooldown, final TimeUnit unit) {
-		Valid.checkBoolean(cooldown >= 0, "Cooldown must be >= 0 for /" + getLabel());
+		Valid.checkBoolean(cooldown >= 0, "Cooldown must be >= 0 for /" + this.getLabel());
 
-		cooldownSeconds = (int) unit.toSeconds(cooldown);
+		this.cooldownSeconds = (int) unit.toSeconds(cooldown);
 	}
 
 	/**
@@ -1320,7 +1319,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 */
 	@Override
 	public final String getPermission() {
-		return this.permission == null ? null : replaceBasicPlaceholders0(this.permission);
+		return this.permission == null ? null : this.replaceBasicPlaceholders0(this.permission);
 	}
 
 	/**
@@ -1349,9 +1348,9 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final CommandSender getSender() {
-		Valid.checkNotNull(sender, "Sender cannot be null");
+		Valid.checkNotNull(this.sender, "Sender cannot be null");
 
-		return sender;
+		return this.sender;
 	}
 
 	/**
@@ -1384,7 +1383,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	public final String getUsage() {
 		final String bukkitUsage = this.usage;
 
-		return bukkitUsage.equals("/" + getLabel()) ? "" : bukkitUsage;
+		return bukkitUsage.equals("/" + this.getLabel()) ? "" : bukkitUsage;
 	}
 
 	/**
@@ -1474,20 +1473,19 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 
 		} catch (final CommandException ex) {
 			if (ex.getMessages() != null)
-				for (final String message : ex.getMessages()) {
+				for (final String message : ex.getMessages())
 					if (Messenger.ENABLED)
-						Messenger.error(sender, message);
+						Messenger.error(this.sender, message);
 					else
-						Common.tell(sender, message);
-				}
+						Common.tell(this.sender, message);
 
 		} catch (final Throwable t) {
 			final String errorMessage = SimpleLocalization.Commands.ERROR.replace("{error}", t.toString());
 
 			if (Messenger.ENABLED)
-				Messenger.error(sender, errorMessage);
+				Messenger.error(this.sender, errorMessage);
 			else
-				Common.tell(sender, errorMessage);
+				Common.tell(this.sender, errorMessage);
 
 			throw t;
 		}
@@ -1495,7 +1493,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 
 	@Override
 	public boolean equals(final Object obj) {
-		return obj instanceof SimpleCommand ? ((SimpleCommand) obj).getLabel().equals(getLabel()) && ((SimpleCommand) obj).getAliases().equals(getAliases()) : false;
+		return obj instanceof SimpleCommand ? ((SimpleCommand) obj).getLabel().equals(this.getLabel()) && ((SimpleCommand) obj).getAliases().equals(this.getAliases()) : false;
 	}
 
 	@Override

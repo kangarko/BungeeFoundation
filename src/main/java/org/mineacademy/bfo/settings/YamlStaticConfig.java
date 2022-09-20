@@ -50,7 +50,7 @@ public abstract class YamlStaticConfig {
 		TEMPORARY_INSTANCE = new YamlConfig() {
 
 			{
-				beforeLoad();
+				YamlStaticConfig.this.beforeLoad();
 			}
 
 			@Override
@@ -65,7 +65,7 @@ public abstract class YamlStaticConfig {
 
 			@Override
 			protected void onLoad() {
-				loadViaReflection();
+				YamlStaticConfig.this.loadViaReflection();
 			}
 		};
 	}
@@ -146,17 +146,17 @@ public abstract class YamlStaticConfig {
 		Valid.checkNotNull(TEMPORARY_INSTANCE.defaults, "Default config cannot be null for " + getFileName());
 
 		try {
-			preLoad();
+			this.preLoad();
 
 			// Parent class if applicable.
-			if (YamlStaticConfig.class.isAssignableFrom(getClass().getSuperclass())) {
-				final Class<?> superClass = getClass().getSuperclass();
+			if (YamlStaticConfig.class.isAssignableFrom(this.getClass().getSuperclass())) {
+				final Class<?> superClass = this.getClass().getSuperclass();
 
-				invokeAll(superClass);
+				this.invokeAll(superClass);
 			}
 
 			// The class itself.
-			invokeAll(getClass());
+			this.invokeAll(this.getClass());
 
 		} catch (Throwable t) {
 			if (t instanceof InvocationTargetException && t.getCause() != null)
@@ -170,15 +170,15 @@ public abstract class YamlStaticConfig {
 	 * Invoke all "private static void init()" methods in the class and its subclasses
 	 */
 	private void invokeAll(final Class<?> clazz) throws Exception {
-		invokeMethodsIn(clazz);
+		this.invokeMethodsIn(clazz);
 
 		// All sub-classes in superclass.
 		for (final Class<?> subClazz : clazz.getDeclaredClasses()) {
-			invokeMethodsIn(subClazz);
+			this.invokeMethodsIn(subClazz);
 
 			// And classes in sub-classes in superclass.
 			for (final Class<?> subSubClazz : subClazz.getDeclaredClasses())
-				invokeMethodsIn(subSubClazz);
+				this.invokeMethodsIn(subSubClazz);
 		}
 	}
 
@@ -205,7 +205,7 @@ public abstract class YamlStaticConfig {
 			}
 		}
 
-		checkFields(clazz);
+		this.checkFields(clazz);
 	}
 
 	/*

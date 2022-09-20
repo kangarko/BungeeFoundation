@@ -235,10 +235,8 @@ final class AutoRegisterScanner {
 			eventsRegistered = true;
 		}
 
-		else if (SimpleCommand.class.isAssignableFrom(clazz)) {
+		else if (SimpleCommand.class.isAssignableFrom(clazz))
 			plugin.registerCommand((SimpleCommand) instance);
-		}
-
 		else if (SimpleCommandGroup.class.isAssignableFrom(clazz)) {
 			final SimpleCommandGroup group = (SimpleCommandGroup) instance;
 

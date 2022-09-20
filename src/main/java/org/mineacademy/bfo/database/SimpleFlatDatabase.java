@@ -54,13 +54,13 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 	protected final void onConnected() {
 
 		// First, see if the database exists, create it if not
-		update("CREATE TABLE IF NOT EXISTS {table}(UUID varchar(64), Name text, Data text, Updated bigint)");
+		this.update("CREATE TABLE IF NOT EXISTS {table}(UUID varchar(64), Name text, Data text, Updated bigint)");
 
 		// Remove entries that have not been updated in the last X days
-		removeOldEntries();
+		this.removeOldEntries();
 
 		// Call any hooks
-		onConnectFinish();
+		this.onConnectFinish();
 	}
 
 	/**
@@ -75,9 +75,9 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 	 * last given X amount of days
 	 */
 	private void removeOldEntries() {
-		final long threshold = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(getExpirationDays());
+		final long threshold = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(this.getExpirationDays());
 
-		update("DELETE FROM {table} WHERE Updated < " + threshold + "");
+		this.update("DELETE FROM {table} WHERE Updated < " + threshold + "");
 	}
 
 	/**
@@ -100,16 +100,16 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 	 * @param cache
 	 */
 	public final void load(final UUID uuid, final T cache) {
-		if (!isLoaded() || isQuerying)
+		if (!this.isLoaded() || this.isQuerying)
 			return;
 
 		try {
 			LagCatcher.start("mysql");
-			isQuerying = true;
+			this.isQuerying = true;
 
 			Debugger.debug("mysql", "---------------- MySQL - Loading data for " + uuid);
 
-			final ResultSet resultSet = query("SELECT * FROM {table} WHERE UUID='" + uuid + "'");
+			final ResultSet resultSet = this.query("SELECT * FROM {table} WHERE UUID='" + uuid + "'");
 			final String dataRaw = resultSet.next() ? resultSet.getString("Data") : "{}";
 			Debugger.debug("mysql", "JSON: " + dataRaw);
 
@@ -117,7 +117,7 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 			Debugger.debug("mysql", "Deserialized data: " + data);
 
 			// Call the user specified load method
-			onLoad(data, cache);
+			this.onLoad(data, cache);
 
 			// Close connection at the end
 			resultSet.close();
@@ -129,9 +129,9 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 					"Error: %error");
 
 		} finally {
-			isQuerying = false;
+			this.isQuerying = false;
 
-			logPerformance("loading");
+			this.logPerformance("loading");
 		}
 	}
 
@@ -154,15 +154,15 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 	 * @param cache
 	 */
 	public final void save(final String name, final UUID uuid, final T cache) {
-		if (!isLoaded() || isQuerying)
+		if (!this.isLoaded() || this.isQuerying)
 			return;
 
 		try {
 			LagCatcher.start("mysql");
-			isQuerying = true;
+			this.isQuerying = true;
 
 			// Save using the user configured save method
-			final SerializedMap data = onSave(cache);
+			final SerializedMap data = this.onSave(cache);
 
 			Debugger.debug("mysql", "---------------- MySQL - Saving data for " + uuid);
 			Debugger.debug("mysql", "Raw data: " + data);
@@ -170,15 +170,15 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 
 			// Remove data if empty
 			if (data == null || data.isEmpty()) {
-				update("DELETE FROM {table} WHERE UUID= '" + uuid + "';");
+				this.update("DELETE FROM {table} WHERE UUID= '" + uuid + "';");
 
 				if (Debugger.isDebugged("mysql"))
 					Debugger.debug("mysql", "Data was empty, row has been removed.");
 
-			} else if (isStored(uuid))
-				update("UPDATE {table} SET Data='" + data.toJson() + "', Updated='" + System.currentTimeMillis() + "' WHERE UUID='" + uuid + "';");
+			} else if (this.isStored(uuid))
+				this.update("UPDATE {table} SET Data='" + data.toJson() + "', Updated='" + System.currentTimeMillis() + "' WHERE UUID='" + uuid + "';");
 			else
-				update("INSERT INTO {table}(UUID, Name, Data, Updated) VALUES ('" + uuid + "', '" + name + "', '" + data.toJson() + "', '" + System.currentTimeMillis() + "');");
+				this.update("INSERT INTO {table}(UUID, Name, Data, Updated) VALUES ('" + uuid + "', '" + name + "', '" + data.toJson() + "', '" + System.currentTimeMillis() + "');");
 
 		} catch (final Throwable ex) {
 			Common.error(ex,
@@ -187,9 +187,9 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 					"Error: %error");
 
 		} finally {
-			isQuerying = false;
+			this.isQuerying = false;
 
-			logPerformance("saving");
+			this.logPerformance("saving");
 		}
 	}
 
@@ -212,7 +212,7 @@ public abstract class SimpleFlatDatabase<T> extends SimpleDatabase {
 	 * @throws SQLException
 	 */
 	private boolean isStored(@NonNull final UUID uuid) throws SQLException {
-		final ResultSet resultSet = query("SELECT * FROM {table} WHERE UUID= '" + uuid.toString() + "'");
+		final ResultSet resultSet = this.query("SELECT * FROM {table} WHERE UUID= '" + uuid.toString() + "'");
 
 		if (resultSet == null)
 			return false;

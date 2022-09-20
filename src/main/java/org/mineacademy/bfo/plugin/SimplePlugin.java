@@ -197,7 +197,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 			Common.registerEvents(new BungeeListener.BungeeListenerImpl());
 
-			if (!getProxy().getChannels().contains("BungeeCord"))
+			if (!this.getProxy().getChannels().contains("BungeeCord"))
 				this.getProxy().registerChannel("BungeeCord");
 
 			// Hide plugin name before console messages
@@ -416,7 +416,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			this.onPluginReload();
 
 			// Something went wrong in the reload pipeline
-			if (!enabled)
+			if (!this.enabled)
 				return;
 
 			// Register classes
@@ -559,7 +559,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			((SimpleCommand) command).register();
 
 		else
-			getProxy().getPluginManager().registerCommand(this, command);
+			this.getProxy().getPluginManager().registerCommand(this, command);
 	}
 
 	/**

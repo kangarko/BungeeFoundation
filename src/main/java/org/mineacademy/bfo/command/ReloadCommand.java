@@ -24,7 +24,7 @@ public final class ReloadCommand extends SimpleCommand {
 	public ReloadCommand(String label, String permission) {
 		super(label, permission);
 
-		setDescription(Commands.RELOAD_DESCRIPTION);
+		this.setDescription(Commands.RELOAD_DESCRIPTION);
 	}
 
 	/**
@@ -35,22 +35,22 @@ public final class ReloadCommand extends SimpleCommand {
 	public ReloadCommand(String label) {
 		super(label);
 
-		setDescription(Commands.RELOAD_DESCRIPTION);
+		this.setDescription(Commands.RELOAD_DESCRIPTION);
 	}
 
 	@Override
 	protected void onCommand() {
 		try {
-			tell(Commands.RELOAD_STARTED);
+			this.tell(Commands.RELOAD_STARTED);
 
 			// Syntax check YML files before loading
 			boolean syntaxParsed = true;
 
 			final List<File> yamlFiles = new ArrayList<>();
 
-			collectYamlFiles(SimplePlugin.getData(), yamlFiles);
+			this.collectYamlFiles(SimplePlugin.getData(), yamlFiles);
 
-			for (final File file : yamlFiles) {
+			for (final File file : yamlFiles)
 				try {
 					YamlConfig.fromFile(file);
 
@@ -59,19 +59,18 @@ public final class ReloadCommand extends SimpleCommand {
 
 					syntaxParsed = false;
 				}
-			}
 
 			if (!syntaxParsed) {
-				tell(SimpleLocalization.Commands.RELOAD_FILE_LOAD_ERROR);
+				this.tell(SimpleLocalization.Commands.RELOAD_FILE_LOAD_ERROR);
 
 				return;
 			}
 
 			SimplePlugin.getInstance().reload();
-			tell(SimpleLocalization.Commands.RELOAD_SUCCESS);
+			this.tell(SimpleLocalization.Commands.RELOAD_SUCCESS);
 
 		} catch (final Throwable t) {
-			tell(SimpleLocalization.Commands.RELOAD_FAIL.replace("{error}", t.getMessage() != null ? t.getMessage() : "unknown"));
+			this.tell(SimpleLocalization.Commands.RELOAD_FAIL.replace("{error}", t.getMessage() != null ? t.getMessage() : "unknown"));
 
 			t.printStackTrace();
 		}
@@ -89,7 +88,7 @@ public final class ReloadCommand extends SimpleCommand {
 					list.add(file);
 
 				if (file.isDirectory())
-					collectYamlFiles(file, list);
+					this.collectYamlFiles(file, list);
 			}
 
 		return list;

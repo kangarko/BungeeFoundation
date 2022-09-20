@@ -753,8 +753,7 @@ public abstract class FileConfig {
 	public final <K, V> List<Tuple<K, V>> getTupleList(final String path, final Class<K> tupleKey, final Class<V> tupleValue) {
 		final List<Tuple<K, V>> list = new ArrayList<>();
 
-		for (final Object object : this.getList(path)) {
-
+		for (final Object object : this.getList(path))
 			if (object == null)
 				list.add(null);
 			else {
@@ -762,7 +761,6 @@ public abstract class FileConfig {
 
 				list.add(tuple);
 			}
-		}
 
 		return list;
 	}
@@ -1118,7 +1116,7 @@ public abstract class FileConfig {
 	public final void save() {
 		Valid.checkNotNull(this.file, "Cannot call save() for " + this + " when no file was set! Call load first!");
 
-		this.save(file);
+		this.save(this.file);
 	}
 
 	/**

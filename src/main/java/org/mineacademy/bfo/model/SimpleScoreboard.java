@@ -82,8 +82,8 @@ public class SimpleScoreboard {
 	 */
 	public final void send(ProxiedPlayer player) {
 		final Unsafe unsafe = player.unsafe();
-		final String idString = Integer.toString(id);
-		final String titleMessage = prepareMessage(player, title);
+		final String idString = Integer.toString(this.id);
+		final String titleMessage = this.prepareMessage(player, this.title);
 
 		// Clear old objective
 		unsafe.sendPacket(new ScoreboardObjective(idString, titleMessage, HealthDisplay.INTEGER, (byte) 1));
@@ -92,8 +92,8 @@ public class SimpleScoreboard {
 		unsafe.sendPacket(new ScoreboardObjective(idString, titleMessage, HealthDisplay.INTEGER, (byte) 0));
 
 		// Send lines
-		for (int i = 0; i < lines.size(); i++)
-			unsafe.sendPacket(new ScoreboardScore(prepareMessage(player, lines.get(i)), (byte) 0, idString, lines.size() - i));
+		for (int i = 0; i < this.lines.size(); i++)
+			unsafe.sendPacket(new ScoreboardScore(this.prepareMessage(player, this.lines.get(i)), (byte) 0, idString, this.lines.size() - i));
 
 		// Display
 		unsafe.sendPacket(new ScoreboardDisplay((byte) 1, idString));
@@ -101,7 +101,7 @@ public class SimpleScoreboard {
 
 	// Replace colors and variables
 	private String prepareMessage(ProxiedPlayer player, String text) {
-		text = replaceVariables(player, text);
+		text = this.replaceVariables(player, text);
 		text = Variables.replace(text, player);
 
 		return text;
@@ -118,6 +118,6 @@ public class SimpleScoreboard {
 
 	@Override
 	public final boolean equals(Object object) {
-		return object instanceof SimpleScoreboard && ((SimpleScoreboard) object).id == id;
+		return object instanceof SimpleScoreboard && ((SimpleScoreboard) object).id == this.id;
 	}
 }

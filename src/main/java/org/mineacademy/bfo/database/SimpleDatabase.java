@@ -83,7 +83,7 @@ public class SimpleDatabase {
 	 * @param password
 	 */
 	public final void connect(final String host, final int port, final String database, final String user, final String password) {
-		connect(host, port, database, user, password, null);
+		this.connect(host, port, database, user, password, null);
 	}
 
 	/**
@@ -98,7 +98,7 @@ public class SimpleDatabase {
 	 * @param table
 	 */
 	public final void connect(final String host, final int port, final String database, final String user, final String password, final String table) {
-		connect(host, port, database, user, password, table, true);
+		this.connect(host, port, database, user, password, table, true);
 	}
 
 	/**
@@ -114,7 +114,7 @@ public class SimpleDatabase {
 	 * @param autoReconnect
 	 */
 	public final void connect(final String host, final int port, final String database, final String user, final String password, final String table, final boolean autoReconnect) {
-		connect("jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false&useUnicode=yes&characterEncoding=UTF-8&autoReconnect=" + autoReconnect, user, password, table);
+		this.connect("jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false&useUnicode=yes&characterEncoding=UTF-8&autoReconnect=" + autoReconnect, user, password, table);
 	}
 
 	/**
@@ -125,7 +125,7 @@ public class SimpleDatabase {
 	 * @param password
 	 */
 	public final void connect(final String url, final String user, final String password) {
-		connect(url, user, password, null);
+		this.connect(url, user, password, null);
 	}
 
 	/**
@@ -240,8 +240,8 @@ public class SimpleDatabase {
 	 * i.e. connect function was never called
 	 */
 	private final void connectUsingLastCredentials() {
-		if (lastCredentials != null)
-			connect(lastCredentials.url, lastCredentials.user, lastCredentials.password, lastCredentials.table);
+		if (this.lastCredentials != null)
+			this.connect(this.lastCredentials.url, this.lastCredentials.user, this.lastCredentials.password, this.lastCredentials.table);
 	}
 
 	/**
@@ -259,11 +259,11 @@ public class SimpleDatabase {
 	 */
 	public final void close() {
 		try {
-			if (connection != null)
-				connection.close();
+			if (this.connection != null)
+				this.connection.close();
 
-			if (hikariDataSource != null)
-				ReflectionUtil.invoke("close", hikariDataSource);
+			if (this.hikariDataSource != null)
+				ReflectionUtil.invoke("close", this.hikariDataSource);
 
 		} catch (final SQLException e) {
 			Common.error(e, "Error closing MySQL connection!");
@@ -294,7 +294,7 @@ public class SimpleDatabase {
 		final String values = Common.join(columsAndValues.values(), ", ", value -> value == null || value.equals("NULL") ? "NULL" : "'" + SerializeUtil.serialize(value).toString() + "'");
 		final String duplicateUpdate = Common.join(columsAndValues.entrySet(), ", ", entry -> entry.getKey() + "=VALUES(" + entry.getKey() + ")");
 
-		update("INSERT INTO " + replaceVariables(table) + " (" + columns + ") VALUES (" + values + ") ON DUPLICATE KEY UPDATE " + duplicateUpdate + ";");
+		this.update("INSERT INTO " + this.replaceVariables(table) + " (" + columns + ") VALUES (" + values + ") ON DUPLICATE KEY UPDATE " + duplicateUpdate + ";");
 	}
 
 	/**
@@ -341,24 +341,24 @@ public class SimpleDatabase {
 	 * @param sql
 	 */
 	protected final void update(String sql) {
-		checkEstablished();
+		this.checkEstablished();
 
-		if (!isConnected())
-			connectUsingLastCredentials();
+		if (!this.isConnected())
+			this.connectUsingLastCredentials();
 
-		sql = replaceVariables(sql);
+		sql = this.replaceVariables(sql);
 		Valid.checkBoolean(!sql.contains("{table}"), "Table not set! Either use connect() method that specifies it or call addVariable(table, 'yourtablename') in your constructor!");
 
 		Debugger.debug("mysql", "Updating MySQL with: " + sql);
 
 		try {
-			final Statement statement = connection.createStatement();
+			final Statement statement = this.connection.createStatement();
 
 			statement.executeUpdate(sql);
 			statement.close();
 
 		} catch (final SQLException e) {
-			handleError(e, "Error on updating MySQL with: " + sql);
+			this.handleError(e, "Error on updating MySQL with: " + sql);
 		}
 	}
 
@@ -371,23 +371,23 @@ public class SimpleDatabase {
 	 * @return
 	 */
 	protected final ResultSet query(String sql) {
-		checkEstablished();
+		this.checkEstablished();
 
-		if (!isConnected())
-			connectUsingLastCredentials();
+		if (!this.isConnected())
+			this.connectUsingLastCredentials();
 
-		sql = replaceVariables(sql);
+		sql = this.replaceVariables(sql);
 
 		Debugger.debug("mysql", "Querying MySQL with: " + sql);
 
 		try {
-			final Statement statement = connection.createStatement();
+			final Statement statement = this.connection.createStatement();
 			final ResultSet resultSet = statement.executeQuery(sql);
 
 			return resultSet;
 
 		} catch (final SQLException ex) {
-			handleError(ex, "Error on querying MySQL with: " + sql);
+			this.handleError(ex, "Error on querying MySQL with: " + sql);
 		}
 
 		return null;
@@ -403,31 +403,31 @@ public class SimpleDatabase {
 			return;
 
 		try {
-			final Statement batchStatement = getConnection().createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			final Statement batchStatement = this.getConnection().createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			final int processedCount = sqls.size();
 
 			// Prevent automatically sending db instructions
-			getConnection().setAutoCommit(false);
+			this.getConnection().setAutoCommit(false);
 
 			for (final String sql : sqls)
-				batchStatement.addBatch(replaceVariables(sql));
+				batchStatement.addBatch(this.replaceVariables(sql));
 
 			if (processedCount > 10_000)
 				Common.log("Updating your database (" + processedCount + " entries)... PLEASE BE PATIENT THIS WILL TAKE "
 						+ (processedCount > 50_000 ? "10-20 MINUTES" : "5-10 MINUTES") + " - If server will print a crash report, ignore it, update will proceed.");
 
 			// Set the flag to start time notifications timer
-			batchUpdateGoingOn = true;
+			this.batchUpdateGoingOn = true;
 
 			// Notify console that progress still is being made
 			new Timer().scheduleAtFixedRate(new TimerTask() {
 
 				@Override
 				public void run() {
-					if (batchUpdateGoingOn)
+					if (SimpleDatabase.this.batchUpdateGoingOn)
 						Common.log("Database batch update is still processing, " + RandomUtil.nextItem("keep calm", "stand by", "watch the show", "check your db", "drink water", "call your friend") + " and DO NOT SHUTDOWN YOUR SERVER.");
 					else
-						cancel();
+						this.cancel();
 				}
 			}, 1000 * 30, 1000 * 30);
 
@@ -435,7 +435,7 @@ public class SimpleDatabase {
 			batchStatement.executeBatch();
 
 			// This will block the thread
-			getConnection().commit();
+			this.getConnection().commit();
 
 			//Common.log("Updated " + processedCount + " database entries.");
 
@@ -447,7 +447,7 @@ public class SimpleDatabase {
 			errorLog.add(Common.consoleLine());
 
 			for (final String statement : sqls)
-				errorLog.add(replaceVariables(statement));
+				errorLog.add(this.replaceVariables(statement));
 
 			FileUtil.write("sql-error.log", sqls);
 
@@ -455,14 +455,14 @@ public class SimpleDatabase {
 
 		} finally {
 			try {
-				getConnection().setAutoCommit(true);
+				this.getConnection().setAutoCommit(true);
 
 			} catch (final SQLException ex) {
 				ex.printStackTrace();
 			}
 
 			// Even in case of failure, cancel
-			batchUpdateGoingOn = false;
+			this.batchUpdateGoingOn = false;
 		}
 	}
 
@@ -476,16 +476,16 @@ public class SimpleDatabase {
 	 * @throws SQLException
 	 */
 	protected final java.sql.PreparedStatement prepareStatement(String sql) throws SQLException {
-		checkEstablished();
+		this.checkEstablished();
 
-		if (!isConnected())
-			connectUsingLastCredentials();
+		if (!this.isConnected())
+			this.connectUsingLastCredentials();
 
-		sql = replaceVariables(sql);
+		sql = this.replaceVariables(sql);
 
 		Debugger.debug("mysql", "Preparing statement: " + sql);
 
-		return connection.prepareStatement(sql);
+		return this.connection.prepareStatement(sql);
 	}
 
 	/**
@@ -495,11 +495,11 @@ public class SimpleDatabase {
 	 * @return whether the connection driver was set
 	 */
 	protected final boolean isConnected() {
-		if (!isLoaded())
+		if (!this.isLoaded())
 			return false;
 
 		try {
-			return !connection.isClosed() && connection.isValid(0);
+			return !this.connection.isClosed() && this.connection.isValid(0);
 
 		} catch (final SQLException ex) {
 			return false;
@@ -535,16 +535,16 @@ public class SimpleDatabase {
 	 * @return
 	 */
 	protected final String getTable() {
-		checkEstablished();
+		this.checkEstablished();
 
-		return Common.getOrEmpty(lastCredentials.table);
+		return Common.getOrEmpty(this.lastCredentials.table);
 	}
 
 	/**
 	 * Checks if the connect() function was called
 	 */
 	private final void checkEstablished() {
-		Valid.checkBoolean(isLoaded(), "Connection was never established");
+		Valid.checkBoolean(this.isLoaded(), "Connection was never established");
 	}
 
 	/**
@@ -553,7 +553,7 @@ public class SimpleDatabase {
 	 * @return
 	 */
 	public final boolean isLoaded() {
-		return connection != null;
+		return this.connection != null;
 	}
 
 	// --------------------------------------------------------------------
@@ -568,7 +568,7 @@ public class SimpleDatabase {
 	 * @param value
 	 */
 	protected final void addVariable(final String name, final String value) {
-		sqlVariables.put(name, value);
+		this.sqlVariables.put(name, value);
 	}
 
 	/**
@@ -579,10 +579,10 @@ public class SimpleDatabase {
 	 */
 	protected final String replaceVariables(String sql) {
 
-		for (final Entry<String, String> entry : sqlVariables.entrySet())
+		for (final Entry<String, String> entry : this.sqlVariables.entrySet())
 			sql = sql.replace("{" + entry.getKey() + "}", entry.getValue());
 
-		return sql.replace("{table}", getTable());
+		return sql.replace("{table}", this.getTable());
 	}
 
 	/**

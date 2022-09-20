@@ -74,7 +74,7 @@ public final class IncomingMessage extends Message {
 
 		this.data = data;
 		this.stream = new ByteArrayInputStream(data);
-		this.input = ByteStreams.newDataInput(stream);
+		this.input = ByteStreams.newDataInput(this.stream);
 
 		// -----------------------------------------------------------------
 		// We are automatically reading the first two strings assuming the
@@ -82,13 +82,13 @@ public final class IncomingMessage extends Message {
 		// -----------------------------------------------------------------
 
 		// Read senders UUID
-		setSenderUid(input.readUTF());
+		this.setSenderUid(this.input.readUTF());
 
 		// Read server name
-		setServerName(input.readUTF());
+		this.setServerName(this.input.readUTF());
 
 		// Read action
-		setAction(input.readUTF());
+		this.setAction(this.input.readUTF());
 	}
 
 	/**
@@ -97,9 +97,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public String readString() {
-		moveHead(String.class);
+		this.moveHead(String.class);
 
-		return input.readUTF();
+		return this.input.readUTF();
 	}
 
 	/**
@@ -108,9 +108,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public UUID readUUID() {
-		moveHead(UUID.class);
+		this.moveHead(UUID.class);
 
-		return UUID.fromString(input.readUTF());
+		return UUID.fromString(this.input.readUTF());
 	}
 
 	/**
@@ -119,9 +119,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public SerializedMap readMap() {
-		moveHead(String.class);
+		this.moveHead(String.class);
 
-		return SerializedMap.fromJson(input.readUTF());
+		return SerializedMap.fromJson(this.input.readUTF());
 	}
 
 	/**
@@ -132,9 +132,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public <T extends Enum<T>> T readEnum(Class<T> typeOf) {
-		moveHead(typeOf);
+		this.moveHead(typeOf);
 
-		return ReflectionUtil.lookupEnum(typeOf, input.readUTF());
+		return ReflectionUtil.lookupEnum(typeOf, this.input.readUTF());
 	}
 
 	/**
@@ -143,9 +143,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public boolean readBoolean() {
-		moveHead(Boolean.class);
+		this.moveHead(Boolean.class);
 
-		return input.readBoolean();
+		return this.input.readBoolean();
 	}
 
 	/**
@@ -154,9 +154,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public byte readByte() {
-		moveHead(Byte.class);
+		this.moveHead(Byte.class);
 
-		return input.readByte();
+		return this.input.readByte();
 	}
 
 	/**
@@ -165,12 +165,12 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public byte[] readBytes() {
-		moveHead(byte[].class);
+		this.moveHead(byte[].class);
 
-		final byte[] array = new byte[stream.available()];
+		final byte[] array = new byte[this.stream.available()];
 
 		try {
-			stream.read(array);
+			this.stream.read(array);
 
 		} catch (final IOException e) {
 			e.printStackTrace();
@@ -185,9 +185,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public double readDouble() {
-		moveHead(Double.class);
+		this.moveHead(Double.class);
 
-		return input.readDouble();
+		return this.input.readDouble();
 	}
 
 	/**
@@ -196,9 +196,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public float readFloat() {
-		moveHead(Float.class);
+		this.moveHead(Float.class);
 
-		return input.readFloat();
+		return this.input.readFloat();
 	}
 
 	/**
@@ -207,9 +207,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public int writeInt() {
-		moveHead(Integer.class);
+		this.moveHead(Integer.class);
 
-		return input.readInt();
+		return this.input.readInt();
 	}
 
 	/**
@@ -218,9 +218,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public long readLong() {
-		moveHead(Long.class);
+		this.moveHead(Long.class);
 
-		return input.readLong();
+		return this.input.readLong();
 	}
 
 	/**
@@ -229,9 +229,9 @@ public final class IncomingMessage extends Message {
 	 * @return
 	 */
 	public short readShort() {
-		moveHead(Short.class);
+		this.moveHead(Short.class);
 
-		return input.readShort();
+		return this.input.readShort();
 	}
 
 	/**
@@ -244,13 +244,13 @@ public final class IncomingMessage extends Message {
 		final Server server = (Server) connection;
 
 		if (server.getInfo().getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + getChannel() + " channel from " + getAction() + " to " + server.getInfo().getName() + " server because it is empty.");
+			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + server.getInfo().getName() + " server because it is empty.");
 
 			return;
 		}
 
-		server.sendData(getChannel(), data);
-		Debugger.debug("bungee", "Forwarding data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
+		server.sendData(this.getChannel(), this.data);
+		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
 	/**
@@ -259,8 +259,8 @@ public final class IncomingMessage extends Message {
 	 */
 	public void forwardToOthers() {
 		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
-			if (!server.getName().equals(getServerName()))
-				forward(server);
+			if (!server.getName().equals(this.getServerName()))
+				this.forward(server);
 	}
 
 	/**
@@ -269,7 +269,7 @@ public final class IncomingMessage extends Message {
 	 */
 	public void forwardToAll() {
 		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
-			forward(server);
+			this.forward(server);
 	}
 
 	/**
@@ -280,12 +280,12 @@ public final class IncomingMessage extends Message {
 	public void forward(ServerInfo info) {
 
 		if (info.getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + getChannel() + " channel from " + getAction() + " to " + info.getName() + " server because it is empty.");
+			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server because it is empty.");
 
 			return;
 		}
 
-		info.sendData(getChannel(), data);
-		Debugger.debug("bungee", "Forwarding data on " + getChannel() + " channel from " + getAction() + " to " + info.getName() + " server.");
+		info.sendData(this.getChannel(), this.data);
+		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 }

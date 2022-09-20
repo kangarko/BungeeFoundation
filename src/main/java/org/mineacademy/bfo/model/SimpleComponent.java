@@ -79,7 +79,7 @@ public final class SimpleComponent implements ConfigSerializable {
 	 * @return
 	 */
 	public SimpleComponent onHover(Collection<String> texts) {
-		return onHover(Common.toArray(texts));
+		return this.onHover(Common.toArray(texts));
 	}
 
 	/**
@@ -142,7 +142,7 @@ public final class SimpleComponent implements ConfigSerializable {
 	 * @return
 	 */
 	public SimpleComponent onClickRunCmd(String text) {
-		return onClick(Action.RUN_COMMAND, text);
+		return this.onClick(Action.RUN_COMMAND, text);
 	}
 
 	/**
@@ -152,7 +152,7 @@ public final class SimpleComponent implements ConfigSerializable {
 	 * @return
 	 */
 	public SimpleComponent onClickSuggestCmd(String text) {
-		return onClick(Action.SUGGEST_COMMAND, text);
+		return this.onClick(Action.SUGGEST_COMMAND, text);
 	}
 
 	/**
@@ -162,7 +162,7 @@ public final class SimpleComponent implements ConfigSerializable {
 	 * @return
 	 */
 	public SimpleComponent onClickOpenUrl(String url) {
-		return onClick(Action.OPEN_URL, url);
+		return this.onClick(Action.OPEN_URL, url);
 	}
 
 	/**
@@ -310,7 +310,7 @@ public final class SimpleComponent implements ConfigSerializable {
 	 * @return
 	 */
 	public String getPlainMessage() {
-		return build(null).toLegacyText();
+		return this.build(null).toLegacyText();
 	}
 
 	/**
@@ -319,7 +319,7 @@ public final class SimpleComponent implements ConfigSerializable {
 	 * @return
 	 */
 	public TextComponent getTextComponent() {
-		return build(null);
+		return this.build(null);
 	}
 
 	/**
@@ -417,7 +417,7 @@ public final class SimpleComponent implements ConfigSerializable {
 	 */
 	public <T extends CommandSender> void sendAs(CommandSender sender, Iterable<T> receivers) {
 		for (final CommandSender receiver : receivers) {
-			final TextComponent component = build(receiver);
+			final TextComponent component = this.build(receiver);
 
 			// Prevent clients being kicked out, so we just send plain message instead
 			if (STRIP_OVERSIZED_COMPONENTS && Remain.toJson(component).length() + 1 >= Short.MAX_VALUE) {
@@ -778,20 +778,20 @@ public final class SimpleComponent implements ConfigSerializable {
 		 * @return
 		 */
 		private TextComponent toTextComponent(boolean checkForReceiver, CommandSender receiver) {
-			if ((checkForReceiver && !canSendTo(receiver)) || isEmpty())
+			if ((checkForReceiver && !this.canSendTo(receiver)) || this.isEmpty())
 				return null;
 
 			final List<BaseComponent> base = toComponent(this.text, this.inheritFormatting)[0].getExtra();
 
 			for (final BaseComponent part : base) {
 				if (this.hoverEvent != null)
-					part.setHoverEvent(hoverEvent);
+					part.setHoverEvent(this.hoverEvent);
 
 				if (this.clickEvent != null)
-					part.setClickEvent(clickEvent);
+					part.setClickEvent(this.clickEvent);
 
 				if (this.insertion != null)
-					part.setInsertion(insertion);
+					part.setInsertion(this.insertion);
 			}
 
 			return new TextComponent(base.toArray(new BaseComponent[base.size()]));
@@ -821,7 +821,7 @@ public final class SimpleComponent implements ConfigSerializable {
 				if (result != null) {
 					Valid.checkBoolean(result instanceof Boolean, "View condition must return Boolean not " + (result == null ? "null" : result.getClass()) + " for component: " + this);
 
-					if ((boolean) result == false)
+					if (!((boolean) result))
 						return false;
 				}
 			}

@@ -113,7 +113,7 @@ public abstract class BungeeListener implements Listener {
 	 * @return
 	 */
 	protected final OutgoingMessage createOutgoingMessage(UUID senderUid, BungeeMessageType messageType) {
-		return new OutgoingMessage(senderUid, sender.getInfo().getName(), messageType);
+		return new OutgoingMessage(senderUid, this.sender.getInfo().getName(), messageType);
 	}
 
 	/**

@@ -214,20 +214,20 @@ public final class ChatPaginator {
 	public void send(CommandSender sender, int page) {
 		/*if (sender instanceof ProxiedPlayer) {
 			final ProxiedPlayer player = (ProxiedPlayer) sender;
-		
+
 			// Remove old FoPages to prevent conflicts when two or more plugins use Foundation shaded
 			if (player.hasMetadata("FoPages")) {
 				final Plugin owningPlugin = player.getMetadata("FoPages").get(0).getOwningPlugin();
-		
+
 				player.removeMetadata("FoPages", owningPlugin);
 			}
-		
+
 			player.setMetadata("FoPages", new FixedMetadataValue(SimplePlugin.getInstance(), SimplePlugin.getNamed()));
 			player.setMetadata(getPageNbtTag(), new FixedMetadataValue(SimplePlugin.getInstance(), this));
-		
+
 			player.chat("/#flp " + page);
 		}
-		
+
 		else {*/
 		for (final SimpleComponent component : this.header)
 			component.send(sender);

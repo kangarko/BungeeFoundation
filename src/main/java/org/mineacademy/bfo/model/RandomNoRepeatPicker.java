@@ -42,7 +42,7 @@ public abstract class RandomNoRepeatPicker<T> {
 	 * @return
 	 */
 	public boolean isEmpty() {
-		return list.isEmpty();
+		return this.list.isEmpty();
 	}
 
 	/**
@@ -53,7 +53,7 @@ public abstract class RandomNoRepeatPicker<T> {
 	 * @return
 	 */
 	public T pickFrom(final Iterable<T> items) {
-		return pickFromFor(items, null);
+		return this.pickFromFor(items, null);
 	}
 
 	/**
@@ -66,9 +66,9 @@ public abstract class RandomNoRepeatPicker<T> {
 	 */
 	public T pickFromFor(final Iterable<T> items, final ProxiedPlayer player) {
 		for (final T item : items)
-			list.add(item);
+			this.list.add(item);
 
-		return pickRandom(player);
+		return this.pickRandom(player);
 	}
 
 	/**
@@ -78,7 +78,7 @@ public abstract class RandomNoRepeatPicker<T> {
 	 * @return
 	 */
 	public T pickRandom() {
-		return pickRandom(null);
+		return this.pickRandom(null);
 	}
 
 	/**
@@ -89,13 +89,13 @@ public abstract class RandomNoRepeatPicker<T> {
 	 * @return
 	 */
 	public T pickRandom(final ProxiedPlayer player) {
-		if (list.isEmpty())
+		if (this.list.isEmpty())
 			return null;
 
-		while (!list.isEmpty()) {
-			final T picked = list.remove(RandomUtil.nextInt(list.size()));
+		while (!this.list.isEmpty()) {
+			final T picked = this.list.remove(RandomUtil.nextInt(this.list.size()));
 
-			if (picked != null && canObtain(player, picked))
+			if (picked != null && this.canObtain(player, picked))
 				return picked;
 		}
 

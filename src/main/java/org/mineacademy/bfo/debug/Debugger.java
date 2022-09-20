@@ -309,11 +309,10 @@ public final class Debugger {
 			while ((cause = cause.getCause()) != null);
 		}
 
-		if (throwable instanceof FoException && !causes.isEmpty()) {
+		if (throwable instanceof FoException && !causes.isEmpty())
 			// Do not print parent exception if we are only wrapping it, saves console spam
 			print(throwable.getMessage());
-
-		} else {
+		else {
 			print(throwable.toString());
 
 			printStackTraceElements(throwable);

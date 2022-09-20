@@ -63,18 +63,18 @@ public final class OutgoingMessage extends Message {
 	public OutgoingMessage(BungeeListener listener, String server, UUID senderUid, BungeeMessageType action) {
 		super(listener);
 
-		setSenderUid(senderUid.toString());
-		setServerName(server);
-		setAction(action);
+		this.setSenderUid(senderUid.toString());
+		this.setServerName(server);
+		this.setAction(action);
 
 		// -----------------------------------------------------------------
 		// We are automatically writing the first two strings assuming the
 		// first is the senders server name and the second is the action
 		// -----------------------------------------------------------------
 
-		queue.add(senderUid);
-		queue.add(getServerName());
-		queue.add(getAction().name());
+		this.queue.add(senderUid);
+		this.queue.add(this.getServerName());
+		this.queue.add(this.getAction().name());
 	}
 
 	/**
@@ -83,7 +83,7 @@ public final class OutgoingMessage extends Message {
 	 * @param map
 	 */
 	public void writeMap(SerializedMap map) {
-		write(map.toJson(), String.class);
+		this.write(map.toJson(), String.class);
 	}
 
 	/**
@@ -93,7 +93,7 @@ public final class OutgoingMessage extends Message {
 	 */
 	public void writeString(String... messages) {
 		for (final String message : messages)
-			write(message, String.class);
+			this.write(message, String.class);
 	}
 
 	/**
@@ -102,7 +102,7 @@ public final class OutgoingMessage extends Message {
 	 * @param bool
 	 */
 	public void writeBoolean(boolean bool) {
-		write(bool, Boolean.class);
+		this.write(bool, Boolean.class);
 	}
 
 	/**
@@ -111,7 +111,7 @@ public final class OutgoingMessage extends Message {
 	 * @param number
 	 */
 	public void writeByte(byte number) {
-		write(number, Byte.class);
+		this.write(number, Byte.class);
 	}
 
 	/**
@@ -120,7 +120,7 @@ public final class OutgoingMessage extends Message {
 	 * @param number
 	 */
 	public void writeDouble(double number) {
-		write(number, Double.class);
+		this.write(number, Double.class);
 	}
 
 	/**
@@ -129,7 +129,7 @@ public final class OutgoingMessage extends Message {
 	 * @param number
 	 */
 	public void writeFloat(float number) {
-		write(number, Float.class);
+		this.write(number, Float.class);
 	}
 
 	/**
@@ -138,7 +138,7 @@ public final class OutgoingMessage extends Message {
 	 * @param number
 	 */
 	public void writeInt(int number) {
-		write(number, Integer.class);
+		this.write(number, Integer.class);
 	}
 
 	/**
@@ -147,7 +147,7 @@ public final class OutgoingMessage extends Message {
 	 * @param number
 	 */
 	public void writeLong(long number) {
-		write(number, Long.class);
+		this.write(number, Long.class);
 	}
 
 	/**
@@ -156,7 +156,7 @@ public final class OutgoingMessage extends Message {
 	 * @param number
 	 */
 	public void writeShort(short number) {
-		write(number, Short.class);
+		this.write(number, Short.class);
 	}
 
 	/**
@@ -165,7 +165,7 @@ public final class OutgoingMessage extends Message {
 	 * @param uuid
 	 */
 	public void writeUUID(UUID uuid) {
-		write(uuid, UUID.class);
+		this.write(uuid, UUID.class);
 	}
 
 	/**
@@ -181,8 +181,8 @@ public final class OutgoingMessage extends Message {
 	private void write(Object object, Class<?> typeOf) {
 		Valid.checkNotNull(object, "Added object must not be null!");
 
-		moveHead(typeOf);
-		queue.add(object);
+		this.moveHead(typeOf);
+		this.queue.add(object);
 	}
 
 	/**
@@ -199,13 +199,13 @@ public final class OutgoingMessage extends Message {
 		Valid.checkBoolean(connection instanceof Server, "Connection must be ServerConnection");
 
 		if (((Server) connection).getInfo().getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server because it is empty.");
+			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server because it is empty.");
 
 			return;
 		}
 
-		((Server) connection).sendData(getChannel(), compileData());
-		Debugger.debug("bungee", "Sending data on " + getChannel() + " channel from " + getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
+		((Server) connection).sendData(this.getChannel(), this.compileData());
+		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
 	/**
@@ -216,13 +216,13 @@ public final class OutgoingMessage extends Message {
 	public void send(ServerInfo server) {
 
 		if (server.getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + getChannel() + " channel from " + getAction() + " to " + server.getName() + " server because it is empty.");
+			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + server.getName() + " server because it is empty.");
 
 			return;
 		}
 
-		server.sendData(getChannel(), compileData());
-		Debugger.debug("bungee", "Sending data on " + getChannel() + " channel from " + getAction() + " to " + server.getName() + " server.");
+		server.sendData(this.getChannel(), this.compileData());
+		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + server.getName() + " server.");
 	}
 
 	/**
@@ -234,7 +234,7 @@ public final class OutgoingMessage extends Message {
 	public byte[] compileData() {
 		final ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
-		for (final Object object : queue)
+		for (final Object object : this.queue)
 			if (object instanceof String)
 				out.writeUTF((String) object);
 
@@ -266,7 +266,7 @@ public final class OutgoingMessage extends Message {
 				out.writeUTF(object.toString());
 
 			else
-				throw new FoException("Unsupported write of " + object.getClass().getSimpleName() + " to channel " + getChannel() + " with action " + getAction().toString());
+				throw new FoException("Unsupported write of " + object.getClass().getSimpleName() + " to channel " + this.getChannel() + " with action " + this.getAction().toString());
 
 		return out.toByteArray();
 	}

@@ -147,15 +147,13 @@ public class AnimationUtil {
 	public static List<String> duplicate(List<String> frames, int amount) {
 		final List<String> result = new ArrayList<>();
 
-		for (int i = 0; i < frames.size(); i++) {
-
+		for (int i = 0; i < frames.size(); i++)
 			//duplicate j times;
 			for (int j = 0; j < amount; j++) {
 				final String duplicated = frames.get(i);
 
 				result.add(i, duplicated);
 			}
-		}
 		return result;
 	}
 
@@ -225,12 +223,12 @@ public class AnimationUtil {
 
 			@Override
 			public void run() {
-				Remain.sendBossbar(player, animatedFrames.get(frame), 1F);
+				Remain.sendBossbar(player, animatedFrames.get(this.frame), 1F);
 
-				frame++;
+				this.frame++;
 
-				if (frame == animatedFrames.size())
-					frame = 0;
+				if (this.frame == animatedFrames.size())
+					this.frame = 0;
 			}
 		}.runTaskTimerAsynchronously(SimplePlugin.getInstance(), delay, period);
 	}
@@ -250,11 +248,11 @@ public class AnimationUtil {
 
 			@Override
 			public void run() {
-				scoreboard.setTitle(animatedFrames.get(frame));
-				frame++;
+				scoreboard.setTitle(animatedFrames.get(this.frame));
+				this.frame++;
 
-				if (frame == animatedFrames.size())
-					frame = 0;
+				if (this.frame == animatedFrames.size())
+					this.frame = 0;
 			}
 		}.runTaskTimerAsynchronously(SimplePlugin.getInstance(), delay, period);
 	}
@@ -276,17 +274,17 @@ public class AnimationUtil {
 			@Override
 			public void run() {
 				if (titleFrames != null)
-					title = titleFrames.get(frame % titleFrames.size());
+					this.title = titleFrames.get(this.frame % titleFrames.size());
 				if (subtitleFrames != null)
-					subtitle = subtitleFrames.get(frame % subtitleFrames.size());
+					this.subtitle = subtitleFrames.get(this.frame % subtitleFrames.size());
 
-				Remain.sendTitle(who, 10, 70, 20, title, subtitle);
+				Remain.sendTitle(who, 10, 70, 20, this.title, this.subtitle);
 
-				frame++;
+				this.frame++;
 
-				if (frame == Math.max(titleFrames != null ? titleFrames.size() : 0,
+				if (this.frame == Math.max(titleFrames != null ? titleFrames.size() : 0,
 						subtitleFrames != null ? subtitleFrames.size() : 0) || SimplePlugin.isReloading())
-					cancel();
+					this.cancel();
 			}
 		}.runTaskTimer(SimplePlugin.getInstance(), 0, period);
 	}

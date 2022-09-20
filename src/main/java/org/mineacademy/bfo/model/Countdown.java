@@ -67,28 +67,28 @@ public abstract class Countdown implements Runnable {
 
 	@Override
 	public final void run() {
-		secondsSinceStart++;
+		this.secondsSinceStart++;
 
-		if (secondsSinceStart < countdownSeconds)
+		if (this.secondsSinceStart < this.countdownSeconds)
 			try {
-				onTick();
+				this.onTick();
 
 			} catch (final Throwable t) {
 				try {
-					onTickError(t);
+					this.onTickError(t);
 				} catch (final Throwable tt) {
 					Common.log("Unable to handle onTickError, got " + t + ": " + tt.getMessage());
 				}
 
 				Common.error(t,
 						"Error in countdown!",
-						"Seconds since start: " + secondsSinceStart,
-						"Counting till: " + countdownSeconds,
+						"Seconds since start: " + this.secondsSinceStart,
+						"Counting till: " + this.countdownSeconds,
 						"%error");
 			}
 		else {
-			cancel();
-			onEnd();
+			this.cancel();
+			this.onEnd();
 		}
 	}
 
@@ -122,29 +122,29 @@ public abstract class Countdown implements Runnable {
 	 * @return
 	 */
 	public int getTimeLeft() {
-		return countdownSeconds - secondsSinceStart;
+		return this.countdownSeconds - this.secondsSinceStart;
 	}
 
 	/**
 	 * Starts this countdown failing if it is already running
 	 */
 	public final void launch() {
-		Valid.checkBoolean(!isRunning(), "Task " + this + " already scheduled!");
+		Valid.checkBoolean(!this.isRunning(), "Task " + this + " already scheduled!");
 
 		final ScheduledTask task = ProxyServer.getInstance().getScheduler().schedule(SimplePlugin.getInstance(), this, START_DELAY * 50, TICK_PERIOD * 50, TimeUnit.MILLISECONDS);
-		taskId = task.getId();
+		this.taskId = task.getId();
 
-		onStart();
+		this.onStart();
 	}
 
 	/**
 	 * Cancels this countdown, failing if it is not scheduled (use {@link #isRunning()})
 	 */
 	public final void cancel() {
-		ProxyServer.getInstance().getScheduler().cancel(getTaskId());
+		ProxyServer.getInstance().getScheduler().cancel(this.getTaskId());
 
-		taskId = -1;
-		secondsSinceStart = 0;
+		this.taskId = -1;
+		this.secondsSinceStart = 0;
 	}
 
 	/**
@@ -153,7 +153,7 @@ public abstract class Countdown implements Runnable {
 	 * @return
 	 */
 	public final boolean isRunning() {
-		return taskId != -1;
+		return this.taskId != -1;
 	}
 
 	/**
@@ -162,13 +162,13 @@ public abstract class Countdown implements Runnable {
 	 * @return
 	 */
 	public final int getTaskId() {
-		Valid.checkBoolean(isRunning(), "Task " + this + " not scheduled yet");
+		Valid.checkBoolean(this.isRunning(), "Task " + this + " not scheduled yet");
 
-		return taskId;
+		return this.taskId;
 	}
 
 	@Override
 	public final String toString() {
-		return getClass().getSimpleName() + "{" + countdownSeconds + ", id=" + taskId + "}";
+		return this.getClass().getSimpleName() + "{" + this.countdownSeconds + ", id=" + this.taskId + "}";
 	}
 }

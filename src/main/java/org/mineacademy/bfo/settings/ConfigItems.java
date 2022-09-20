@@ -120,9 +120,9 @@ public final class ConfigItems<T extends YamlConfig> {
 	public void loadItems(@Nullable Function<File, T> loader) {
 
 		// Clear old items
-		loadedItemsMap.clear();
+		this.loadedItemsMap.clear();
 
-		if (singleFile) {
+		if (this.singleFile) {
 			final File file = FileUtil.extract(this.folder);
 
 			try {
@@ -130,7 +130,7 @@ public final class ConfigItems<T extends YamlConfig> {
 
 				if (config.contains(this.type))
 					for (final String name : config.getSection(this.type).getKeys())
-						loadOrCreateItem(name);
+						this.loadOrCreateItem(name);
 
 			} catch (final IOException ex) {
 				Remain.sneaky(ex);
@@ -139,22 +139,21 @@ public final class ConfigItems<T extends YamlConfig> {
 
 		else {
 			// Try copy items from our JAR
-			if (!FileUtil.getFile(folder).exists())
-				FileUtil.extractFolderFromJar(folder + "/", folder);
+			if (!FileUtil.getFile(this.folder).exists())
+				FileUtil.extractFolderFromJar(this.folder + "/", this.folder);
 
 			// Load items on our disk
-			final File[] files = FileUtil.getFiles(folder, "yml");
+			final File[] files = FileUtil.getFiles(this.folder, "yml");
 
-			for (final File file : files) {
+			for (final File file : files)
 				if (loader != null)
 					loader.apply(file);
 
 				else {
 					final String name = FileUtil.getFileName(file);
 
-					loadOrCreateItem(name);
+					this.loadOrCreateItem(name);
 				}
-			}
 		}
 	}
 
@@ -181,7 +180,7 @@ public final class ConfigItems<T extends YamlConfig> {
 	 * @return
 	 */
 	public T loadOrCreateItem(@NonNull final String name, @Nullable Supplier<T> instantiator) {
-		Valid.checkBoolean(!isItemLoaded(name), "Item " + (this.type == null ? "" : this.type + " ") + "named " + name + " already exists! Available: " + getItemNames());
+		Valid.checkBoolean(!this.isItemLoaded(name), "Item " + (this.type == null ? "" : this.type + " ") + "named " + name + " already exists! Available: " + this.getItemNames());
 
 		// Create a new instance of our item
 		T item = null;
@@ -196,14 +195,14 @@ public final class ConfigItems<T extends YamlConfig> {
 				boolean nameConstructor = true;
 
 				try {
-					constructor = prototypeClass.getDeclaredConstructor(String.class);
+					constructor = this.prototypeClass.getDeclaredConstructor(String.class);
 
 				} catch (final Exception e) {
-					constructor = prototypeClass.getDeclaredConstructor();
+					constructor = this.prototypeClass.getDeclaredConstructor();
 					nameConstructor = false;
 				}
 
-				Valid.checkBoolean(Modifier.isPrivate(constructor.getModifiers()), "Your class " + prototypeClass + " must have private constructor taking a String or nothing!");
+				Valid.checkBoolean(Modifier.isPrivate(constructor.getModifiers()), "Your class " + this.prototypeClass + " must have private constructor taking a String or nothing!");
 				constructor.setAccessible(true);
 
 				try {
@@ -213,18 +212,18 @@ public final class ConfigItems<T extends YamlConfig> {
 						item = constructor.newInstance();
 
 				} catch (final InstantiationException ex) {
-					Common.throwError(ex, "Failed to create new" + (type == null ? prototypeClass.getSimpleName() : " " + type) + " " + name + " from " + constructor);
+					Common.throwError(ex, "Failed to create new" + (this.type == null ? this.prototypeClass.getSimpleName() : " " + this.type) + " " + name + " from " + constructor);
 				}
 			}
 
 			// Register
-			loadedItemsMap.put(name, item);
+			this.loadedItemsMap.put(name, item);
 
 		} catch (final Throwable t) {
-			Common.throwError(t, "Failed to load" + (type == null ? prototypeClass.getSimpleName() : " " + type) + " " + name + (this.singleFile ? "" : " from " + folder));
+			Common.throwError(t, "Failed to load" + (this.type == null ? this.prototypeClass.getSimpleName() : " " + this.type) + " " + name + (this.singleFile ? "" : " from " + this.folder));
 		}
 
-		Valid.checkNotNull(item, "Failed to initiliaze" + (type == null ? prototypeClass.getSimpleName() : " " + type) + " " + name + " from " + folder);
+		Valid.checkNotNull(item, "Failed to initiliaze" + (this.type == null ? this.prototypeClass.getSimpleName() : " " + this.type) + " " + name + " from " + this.folder);
 		return item;
 	}
 
@@ -235,15 +234,14 @@ public final class ConfigItems<T extends YamlConfig> {
 	 */
 	public void removeItem(@NonNull final T item) {
 		final String name = item.getName();
-		Valid.checkBoolean(isItemLoaded(name), ChatUtil.capitalize(type) + " " + name + " not loaded. Available: " + getItemNames());
+		Valid.checkBoolean(this.isItemLoaded(name), ChatUtil.capitalize(this.type) + " " + name + " not loaded. Available: " + this.getItemNames());
 
-		if (this.singleFile) {
+		if (this.singleFile)
 			item.save("", null);
-
-		} else
+		else
 			item.deleteFile();
 
-		loadedItemsMap.remove(name);
+		this.loadedItemsMap.remove(name);
 	}
 
 	/**
@@ -253,7 +251,7 @@ public final class ConfigItems<T extends YamlConfig> {
 	 * @return
 	 */
 	public boolean isItemLoaded(final String name) {
-		return findItem(name) != null;
+		return this.findItem(name) != null;
 	}
 
 	/**
@@ -263,11 +261,11 @@ public final class ConfigItems<T extends YamlConfig> {
 	 * @return
 	 */
 	public T findItem(@NonNull final String name) {
-		final T item = loadedItemsMap.get(name);
+		final T item = this.loadedItemsMap.get(name);
 
 		// Fallback to case insensitive
 		if (item == null)
-			for (final Map.Entry<String, T> entry : loadedItemsMap.entrySet())
+			for (final Map.Entry<String, T> entry : this.loadedItemsMap.entrySet())
 				if (entry.getKey().equalsIgnoreCase(name))
 					return entry.getValue();
 
@@ -280,7 +278,7 @@ public final class ConfigItems<T extends YamlConfig> {
 	 * @return
 	 */
 	public Collection<T> getItems() {
-		return Collections.unmodifiableCollection(loadedItemsMap.values());
+		return Collections.unmodifiableCollection(this.loadedItemsMap.values());
 	}
 
 	/**
@@ -289,6 +287,6 @@ public final class ConfigItems<T extends YamlConfig> {
 	 * @return
 	 */
 	public Set<String> getItemNames() {
-		return loadedItemsMap.keySet();
+		return this.loadedItemsMap.keySet();
 	}
 }
