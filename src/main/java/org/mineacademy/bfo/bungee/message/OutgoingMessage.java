@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.bungee.BungeeMessageType;
@@ -15,6 +17,8 @@ import org.mineacademy.bfo.plugin.SimplePlugin;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
+import lombok.NonNull;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -223,6 +227,47 @@ public final class OutgoingMessage extends Message {
 
 		server.sendData(this.getChannel(), this.compileData());
 		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + server.getName() + " server.");
+	}
+
+	/**
+	 * Broadcasts the message to all servers except the one ignored
+	 *
+	 * @param ignoredServerName
+	 */
+	public void broadcastExcept(@NonNull String ignoredServerName) {
+		this.broadcast(ignoredServerName);
+	}
+
+	/**
+	 * Broadcasts the message to all servers
+	 */
+	public void broadcast() {
+		this.broadcast(null);
+	}
+
+	/*
+	 * Helper method to broadcast
+	 */
+	private void broadcast(@Nullable String ignoredServerName) {
+		String channel = this.getChannel();
+		byte[] data = this.compileData();
+
+		for (ServerInfo server : ProxyServer.getInstance().getServers().values()) {
+			if (server.getPlayers().isEmpty()) {
+				Debugger.debug("bungee", "NOT sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server because it is empty.");
+
+				continue;
+			}
+
+			if (ignoredServerName != null && server.getName().equalsIgnoreCase(ignoredServerName)) {
+				Debugger.debug("bungee", "NOT sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server because it is ignored.");
+
+				continue;
+			}
+
+			server.sendData(channel, data);
+			Debugger.debug("bungee", "Sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server.");
+		}
 	}
 
 	/**
