@@ -309,6 +309,13 @@ public final class SerializedMap extends StrictCollection implements Iterable<Ma
 	}
 
 	/**
+	 * Remove all data in the map
+	 */
+	public void clear() {
+		this.map.clear();
+	}
+
+	/**
 	 * Returns a string from the map, or null if does not exist
 	 *
 	 * @param key
