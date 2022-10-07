@@ -419,6 +419,9 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			if (!this.enabled)
 				return;
 
+			if (!this.getProxy().getChannels().contains("BungeeCord"))
+				this.getProxy().registerChannel("BungeeCord");
+
 			// Register classes
 			AutoRegisterScanner.scanAndRegister();
 

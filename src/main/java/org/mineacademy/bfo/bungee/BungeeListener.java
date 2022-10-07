@@ -1,5 +1,6 @@
 package org.mineacademy.bfo.bungee;
 
+import java.io.ByteArrayInputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -9,6 +10,9 @@ import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.message.IncomingMessage;
 import org.mineacademy.bfo.bungee.message.OutgoingMessage;
 import org.mineacademy.bfo.debug.Debugger;
+
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteStreams;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -153,24 +157,41 @@ public abstract class BungeeListener implements Listener {
 		 */
 		@EventHandler
 		public void onPluginMessage(PluginMessageEvent event) {
-			final String tag = event.getTag();
+
 			final Connection sender = event.getSender();
 			final Connection receiver = event.getReceiver();
+
+			if (!event.getTag().equals("BungeeCord"))
+				return;
 
 			if (!(sender instanceof Server))
 				return;
 
-			for (final BungeeListener listener : registeredListeners)
-				if (tag.equals(listener.getChannel())) {
+			final byte[] data = event.getData();
+			final ByteArrayDataInput is = ByteStreams.newDataInput(new ByteArrayInputStream(data));
+			final String channelName;
+
+			try {
+				channelName = is.readUTF();
+
+			} catch (Exception ex) {
+				// Foundation uses the BungeeCord channel and so do other plugins,
+				// we have to determine if our channel is set to check it.
+				return;
+			}
+
+			for (final BungeeListener listener : registeredListeners) {
+				final IncomingMessage message = new IncomingMessage(channelName, event.getData());
+
+				if (channelName.equals(listener.getChannel())) {
 					listener.sender = (Server) sender;
 					listener.receiver = receiver;
 					listener.data = event.getData();
 
-					final IncomingMessage message = new IncomingMessage(listener.data);
-
 					Debugger.debug("bungee", "Channel " + message.getChannel() + " received " + message.getAction() + " message from " + message.getServerName() + " server.");
 					listener.onMessageReceived(listener.sender, message);
 				}
+			}
 		}
 	}
 }

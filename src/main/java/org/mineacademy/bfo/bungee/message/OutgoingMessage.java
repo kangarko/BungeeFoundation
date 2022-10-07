@@ -76,6 +76,7 @@ public final class OutgoingMessage extends Message {
 		// first is the senders server name and the second is the action
 		// -----------------------------------------------------------------
 
+		this.queue.add(listener.getChannel());
 		this.queue.add(senderUid);
 		this.queue.add(this.getServerName());
 		this.queue.add(this.getAction().name());
@@ -208,7 +209,7 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		((Server) connection).sendData(this.getChannel(), this.compileData());
+		((Server) connection).sendData("BungeeCord", this.compileData());
 		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
@@ -225,7 +226,7 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		server.sendData(this.getChannel(), this.compileData());
+		server.sendData("BungeeCord", this.compileData());
 		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + server.getName() + " server.");
 	}
 
@@ -265,7 +266,7 @@ public final class OutgoingMessage extends Message {
 				continue;
 			}
 
-			server.sendData(channel, data);
+			server.sendData("BungeeCord", data);
 			Debugger.debug("bungee", "Sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server.");
 		}
 	}

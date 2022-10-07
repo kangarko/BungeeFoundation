@@ -30,7 +30,6 @@ import org.mineacademy.bfo.settings.SimpleSettings;
 import org.mineacademy.bfo.settings.YamlConfig;
 import org.mineacademy.bfo.settings.YamlStaticConfig;
 
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
@@ -229,7 +228,6 @@ final class AutoRegisterScanner {
 				plugin.setBungeeCord((BungeeListener) instance);
 			}
 
-			ProxyServer.getInstance().registerChannel(((BungeeListener) instance).getChannel());
 			plugin.registerEvents((BungeeListener) instance);
 
 			eventsRegistered = true;
