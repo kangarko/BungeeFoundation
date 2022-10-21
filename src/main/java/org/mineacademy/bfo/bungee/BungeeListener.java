@@ -181,9 +181,9 @@ public abstract class BungeeListener implements Listener {
 			}
 
 			for (final BungeeListener listener : registeredListeners) {
-				final IncomingMessage message = new IncomingMessage(channelName, event.getData());
 
 				if (channelName.equals(listener.getChannel())) {
+					final IncomingMessage message = new IncomingMessage(channelName, event.getData());
 					listener.sender = (Server) sender;
 					listener.receiver = receiver;
 					listener.data = event.getData();
