@@ -92,9 +92,6 @@ public final class IncomingMessage extends Message {
 		// first is the senders server name and the second is the action
 		// -----------------------------------------------------------------
 
-		// Read channel name and dispose, unused
-		this.input.readUTF();
-
 		// Read senders UUID
 		this.setSenderUid(this.input.readUTF());
 
@@ -263,7 +260,7 @@ public final class IncomingMessage extends Message {
 			return;
 		}
 
-		server.sendData("BungeeCord", this.data);
+		server.sendData(this.getChannel(), this.data);
 		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
@@ -299,7 +296,7 @@ public final class IncomingMessage extends Message {
 			return;
 		}
 
-		info.sendData("BungeeCord", this.data);
+		info.sendData(this.getChannel(), this.data);
 		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 }

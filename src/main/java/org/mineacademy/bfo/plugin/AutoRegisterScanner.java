@@ -228,7 +228,7 @@ final class AutoRegisterScanner {
 				plugin.setBungeeCord((BungeeListener) instance);
 			}
 
-			plugin.registerEvents((BungeeListener) instance);
+			plugin.registerBungeeCord((BungeeListener) instance);
 
 			eventsRegistered = true;
 		}

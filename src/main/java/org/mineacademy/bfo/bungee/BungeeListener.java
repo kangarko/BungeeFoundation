@@ -1,6 +1,5 @@
 package org.mineacademy.bfo.bungee;
 
-import java.io.ByteArrayInputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -10,9 +9,6 @@ import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.message.IncomingMessage;
 import org.mineacademy.bfo.bungee.message.OutgoingMessage;
 import org.mineacademy.bfo.debug.Debugger;
-
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteStreams;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -135,6 +131,14 @@ public abstract class BungeeListener implements Listener {
 	}
 
 	/**
+	 * @deprecated internal use only
+	 */
+	@Deprecated
+	public static void clearRegisteredListeners() {
+		registeredListeners.clear();
+	}
+
+	/**
 	 * Distributes received plugin message across all {@link BungeeListener} classes
 	 *
 	 * @deprecated internal use only
@@ -161,29 +165,15 @@ public abstract class BungeeListener implements Listener {
 			final Connection sender = event.getSender();
 			final Connection receiver = event.getReceiver();
 
-			if (!event.getTag().equals("BungeeCord"))
-				return;
+			final String channelName = event.getTag();
 
 			if (!(sender instanceof Server))
 				return;
 
-			final byte[] data = event.getData();
-			final ByteArrayDataInput is = ByteStreams.newDataInput(new ByteArrayInputStream(data));
-			final String channelName;
-
-			try {
-				channelName = is.readUTF();
-
-			} catch (Exception ex) {
-				// Foundation uses the BungeeCord channel and so do other plugins,
-				// we have to determine if our channel is set to check it.
-				return;
-			}
-
-			for (final BungeeListener listener : registeredListeners) {
-
+			for (final BungeeListener listener : registeredListeners)
 				if (channelName.equals(listener.getChannel())) {
-					final IncomingMessage message = new IncomingMessage(channelName, event.getData());
+					final IncomingMessage message = new IncomingMessage(listener, event.getData());
+
 					listener.sender = (Server) sender;
 					listener.receiver = receiver;
 					listener.data = event.getData();
@@ -191,7 +181,6 @@ public abstract class BungeeListener implements Listener {
 					Debugger.debug("bungee", "Channel " + message.getChannel() + " received " + message.getAction() + " message from " + message.getServerName() + " server.");
 					listener.onMessageReceived(listener.sender, message);
 				}
-			}
 		}
 	}
 }

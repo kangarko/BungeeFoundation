@@ -447,6 +447,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		SimpleLocalization.resetLocalizationCall();
 
 		FolderWatcher.stopThreads();
+		BungeeListener.clearRegisteredListeners();
 
 		this.getProxy().getScheduler().cancel(this);
 		this.mainCommand = null;
@@ -489,6 +490,18 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 			Debugger.debug("auto-register", "Skipping auto-registering events in " + pluginClass + " because it lacks at least one no arguments constructor");
 		}
+	}
+
+	/**
+	 * Convenience method for quickly registering bungecoord channel for this plugin
+	 *
+	 * @param listener
+	 */
+	protected final void registerBungeeCord(final BungeeListener listener) {
+		if (!this.getProxy().getChannels().contains(listener.getChannel()))
+			this.getProxy().registerChannel(listener.getChannel());
+
+		ProxyServer.getInstance().getPluginManager().registerListener(this, listener);
 	}
 
 	/**
