@@ -170,6 +170,8 @@ public abstract class BungeeListener implements Listener {
 			if (!(sender instanceof Server))
 				return;
 
+			boolean handled = false;
+
 			for (final BungeeListener listener : registeredListeners)
 				if (channelName.equals(listener.getChannel())) {
 					final IncomingMessage message = new IncomingMessage(listener, event.getData());
@@ -180,7 +182,12 @@ public abstract class BungeeListener implements Listener {
 
 					Debugger.debug("bungee", "Channel " + message.getChannel() + " received " + message.getAction() + " message from " + message.getServerName() + " server.");
 					listener.onMessageReceived(listener.sender, message);
+
+					handled = true;
 				}
+
+			if (handled)
+				event.setCancelled(true);
 		}
 	}
 }
