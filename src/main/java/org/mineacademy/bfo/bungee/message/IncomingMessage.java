@@ -282,4 +282,14 @@ public final class IncomingMessage extends Message {
 		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
 			this.sendToServer(server);
 	}
+
+	/**
+	 * @deprecated renamed to {@link #sendToServer(ServerInfo)}
+	 *
+	 * @param info
+	 */
+	@Deprecated
+	public void forward(ServerInfo info) {
+		this.sendToServer(info);
+	}
 }
