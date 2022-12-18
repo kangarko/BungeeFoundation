@@ -5,10 +5,12 @@ import java.util.UUID;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.bungee.BungeeMessageType;
+import org.mineacademy.bfo.debug.Debugger;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.md_5.bungee.api.config.ServerInfo;
 
 /**
  * Represents a in/out message with a given action and server name
@@ -134,5 +136,29 @@ abstract class Message {
 	 */
 	public String getChannel() {
 		return this.listener.getChannel();
+	}
+
+	/**
+	 * Return data of this message
+	 *
+	 * @return
+	 */
+	protected abstract byte[] getData();
+
+	/**
+	 * Forwards this message to another server
+	 *
+	 * @param info
+	 */
+	public final void sendToServer(ServerInfo info) {
+
+		if (info.getPlayers().isEmpty()) {
+			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server because it is empty.");
+
+			return;
+		}
+
+		info.sendData(this.getChannel(), this.getData());
+		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 }

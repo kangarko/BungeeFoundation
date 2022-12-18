@@ -268,35 +268,18 @@ public final class IncomingMessage extends Message {
 	 * Forwards this message to all other servers except the senders one
 	 *
 	 */
-	public void forwardToOthers() {
+	public void sendToOthers() {
 		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
 			if (!server.getName().equals(this.getServerName()))
-				this.forward(server);
+				this.sendToServer(server);
 	}
 
 	/**
 	 * Forwards this message to all other servers including the senders one
 	 *
 	 */
-	public void forwardToAll() {
+	public void sendToAll() {
 		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
-			this.forward(server);
-	}
-
-	/**
-	 * Forwards this message to another server
-	 *
-	 * @param info
-	 */
-	public void forward(ServerInfo info) {
-
-		if (info.getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server because it is empty.");
-
-			return;
-		}
-
-		info.sendData(this.getChannel(), this.data);
-		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
+			this.sendToServer(server);
 	}
 }

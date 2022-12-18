@@ -208,25 +208,8 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		((Server) connection).sendData(this.getChannel(), this.compileData());
+		((Server) connection).sendData(this.getChannel(), this.getData());
 		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
-	}
-
-	/**
-	 * Send this message with the current data for the given server info
-	 *
-	 * @param server
-	 */
-	public void send(ServerInfo server) {
-
-		if (server.getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + server.getName() + " server because it is empty.");
-
-			return;
-		}
-
-		server.sendData(this.getChannel(), this.compileData());
-		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + server.getName() + " server.");
 	}
 
 	/**
@@ -250,7 +233,7 @@ public final class OutgoingMessage extends Message {
 	 */
 	private void broadcast(@Nullable String ignoredServerName) {
 		String channel = this.getChannel();
-		byte[] data = this.compileData();
+		byte[] data = this.getData();
 
 		for (ServerInfo server : ProxyServer.getInstance().getServers().values()) {
 			if (server.getPlayers().isEmpty()) {
@@ -276,7 +259,8 @@ public final class OutgoingMessage extends Message {
 	 *
 	 * @return
 	 */
-	public byte[] compileData() {
+	@Override
+	public byte[] getData() {
 		final ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 		for (final Object object : this.queue)
@@ -315,4 +299,5 @@ public final class OutgoingMessage extends Message {
 
 		return out.toByteArray();
 	}
+
 }
