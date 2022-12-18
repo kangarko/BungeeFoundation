@@ -181,6 +181,9 @@ public abstract class BungeeListener implements Listener {
 					Debugger.debug("bungee", "Channel " + message.getChannel() + " received " + message.getAction() + " message from " + message.getServerName() + " server.");
 					listener.onMessageReceived(listener.sender, message);
 				}
+
+			//Handle for no "unknown packed" errors
+			event.setCancelled(true);
 		}
 	}
 }
