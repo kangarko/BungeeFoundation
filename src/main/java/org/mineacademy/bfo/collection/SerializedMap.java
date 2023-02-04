@@ -90,6 +90,7 @@ public final class SerializedMap extends StrictCollection implements Iterable<Ma
 	 * If the key already exist, it is ignored
 	 *
 	 * @param anotherMap
+	 * @return
 	 */
 	public SerializedMap mergeFrom(final SerializedMap anotherMap) {
 		for (final Map.Entry<String, Object> entry : anotherMap.entrySet()) {

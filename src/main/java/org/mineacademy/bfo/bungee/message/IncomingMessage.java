@@ -58,6 +58,7 @@ public final class IncomingMessage extends Message {
 	 * NB: This uses the standardized Foundation model where the first
 	 * string is the server name and the second string is the
 	 * {@link BungeeMessageType} by its name *read automatically*.
+	 * @param channel
 	 *
 	 * @param data
 	 */

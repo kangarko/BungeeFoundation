@@ -1355,6 +1355,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 
 	/**
 	 * Get description for this command
+	 * @return
 	 */
 	public final String getDescription() {
 		return this.description;
@@ -1379,6 +1380,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 
 	/**
 	 * Get the usage message of this command
+	 * @return
 	 */
 	public final String getUsage() {
 		final String bukkitUsage = this.usage;
@@ -1397,6 +1399,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 
 	/**
 	 * Get the most recent label for this command
+	 * @return
 	 */
 	public final String getLabel() {
 		return super.getName();

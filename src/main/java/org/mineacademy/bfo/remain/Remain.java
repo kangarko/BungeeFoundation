@@ -415,6 +415,7 @@ public final class Remain {
 	 * @param style
 	 *
 	 * return
+	 * @return
 	 */
 	public static BossBar sendBossbar(final ProxiedPlayer player, final String message, final float percent, final CompBarColor color, final CompBarStyle style) {
 		final BossBar bar = new BossBar(UUID.randomUUID(), 0);
