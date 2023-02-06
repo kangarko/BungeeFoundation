@@ -1,5 +1,6 @@
 package org.mineacademy.bfo.bungee;
 
+import java.io.ByteArrayInputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -7,8 +8,10 @@ import java.util.UUID;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.message.IncomingMessage;
-import org.mineacademy.bfo.bungee.message.OutgoingMessage;
 import org.mineacademy.bfo.debug.Debugger;
+
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteStreams;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -105,18 +108,6 @@ public abstract class BungeeListener implements Listener {
 	public abstract void onMessageReceived(Connection sender, IncomingMessage message);
 
 	/**
-	 * Creates a new outgoing message for the given action using the sender connection
-	 * and this listeners channel
-	 *
-	 * @param senderUid
-	 * @param messageType
-	 * @return
-	 */
-	protected final OutgoingMessage createOutgoingMessage(UUID senderUid, BungeeMessageType messageType) {
-		return new OutgoingMessage(senderUid, this.sender.getInfo().getName(), messageType);
-	}
-
-	/**
 	 * Shortcut for {@link ProxyServer#getInstance()}
 	 *
 	 * @return
@@ -164,23 +155,50 @@ public abstract class BungeeListener implements Listener {
 
 			final Connection sender = event.getSender();
 			final Connection receiver = event.getReceiver();
+			final byte[] data = event.getData();
 
-			final String channelName = event.getTag();
+			if (event.isCancelled())
+				return;
 
+			// Check if the message is for a server (ignore client messages)
+			if (!event.getTag().equals("BungeeCord"))
+				return;
+
+			// Check if a player is not trying to send us a fake message
 			if (!(sender instanceof Server))
 				return;
+
+			// Read the plugin message
+			final ByteArrayInputStream stream = new ByteArrayInputStream(data);
+			ByteArrayDataInput input;
+
+			try {
+				input = ByteStreams.newDataInput(stream);
+
+			} catch (final Throwable t) {
+				input = ByteStreams.newDataInput(data);
+			}
+
+			// read channel name
+			final String channelName = input.readUTF();
+			final UUID senderUid = UUID.fromString(input.readUTF());
+			final String serverName = input.readUTF();
+			final String actionName = input.readUTF();
 
 			boolean handled = false;
 
 			for (final BungeeListener listener : registeredListeners)
 				if (channelName.equals(listener.getChannel())) {
-					final IncomingMessage message = new IncomingMessage(listener, event.getData());
+					final BungeeMessageType action = BungeeMessageType.getByName(listener, actionName);
+					Valid.checkNotNull(action, "Unknown plugin action '" + actionName + "'. IF YOU UPDATED THE PLUGIN BY RELOADING, stop your entire network, ensure all servers were updated and start it again.");
+
+					final IncomingMessage message = new IncomingMessage(listener, senderUid, serverName, action, data, input, stream);
 
 					listener.sender = (Server) sender;
 					listener.receiver = receiver;
-					listener.data = event.getData();
+					listener.data = data;
 
-					Debugger.debug("bungee", "Channel " + message.getChannel() + " received " + message.getAction() + " message from " + message.getServerName() + " server.");
+					Debugger.debug("bungee", "Channel " + channelName + " received " + message.getAction() + " message from " + message.getServerName() + " server.");
 					listener.onMessageReceived(listener.sender, message);
 
 					handled = true;

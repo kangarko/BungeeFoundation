@@ -17,7 +17,6 @@ import org.mineacademy.bfo.plugin.SimplePlugin;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
-import lombok.NonNull;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.Connection;
@@ -37,48 +36,22 @@ public final class OutgoingMessage extends Message {
 	private final List<Object> queue = new ArrayList<>();
 
 	/**
-	 * Construct a new outgoing packet with null UUID and empty server name
+	 * Create a new outgoing message, see header of this class
 	 *
 	 * @param action
 	 */
 	public OutgoingMessage(BungeeMessageType action) {
-		this(UUID.fromString("00000000-0000-0000-0000-000000000000"), "", action);
-	}
-
-	/**
-	 * Create a new outgoing message, see header of this class
-	 *
-	 * @param senderUid
-	 * @param server
-	 * @param action
-	 */
-	public OutgoingMessage(UUID senderUid, String server, BungeeMessageType action) {
-		this(SimplePlugin.getInstance().getBungeeCord(), server, senderUid, action);
+		this(SimplePlugin.getInstance().getBungeeCord(), action);
 	}
 
 	/**
 	 * Create a new outgoing message, see header of this class
 	 *
 	 * @param listener
-	 * @param server
-	 * @param senderUid
 	 * @param action
 	 */
-	public OutgoingMessage(BungeeListener listener, String server, UUID senderUid, BungeeMessageType action) {
-		super(listener);
-
-		this.setSenderUid(senderUid.toString());
-		this.setServerName(server);
-		this.setAction(action);
-
-		// -----------------------------------------------------------------
-		// We are automatically writing the first two strings assuming the
-		// first is the senders server name and the second is the action
-		// -----------------------------------------------------------------
-
-		this.queue.add(senderUid);
-		this.queue.add(this.getServerName());
-		this.queue.add(this.getAction().name());
+	public OutgoingMessage(BungeeListener listener, BungeeMessageType action) {
+		super(listener, action);
 	}
 
 	/**
@@ -190,78 +163,24 @@ public final class OutgoingMessage extends Message {
 	}
 
 	/**
-	 * Send this message with the current data for the given connection
-	 * The connection must be a {@link Server} or {@link ProxiedPlayer}!
-	 *
-	 * @param connection
-	 */
-	public void send(Connection connection) {
-
-		if (connection instanceof ProxiedPlayer)
-			connection = ((ProxiedPlayer) connection).getServer();
-
-		Valid.checkBoolean(connection instanceof Server, "Connection must be ServerConnection");
-
-		if (((Server) connection).getInfo().getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server because it is empty.");
-
-			return;
-		}
-
-		((Server) connection).sendData(this.getChannel(), this.getData());
-		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
-	}
-
-	/**
-	 * Broadcasts the message to all servers except the one ignored
-	 *
-	 * @param ignoredServerName
-	 */
-	public void broadcastExcept(@NonNull String ignoredServerName) {
-		this.broadcast(ignoredServerName);
-	}
-
-	/**
-	 * Broadcasts the message to all servers
-	 */
-	public void broadcast() {
-		this.broadcast(null);
-	}
-
-	/*
-	 * Helper method to broadcast
-	 */
-	private void broadcast(@Nullable String ignoredServerName) {
-		String channel = this.getChannel();
-		byte[] data = this.getData();
-
-		for (ServerInfo server : ProxyServer.getInstance().getServers().values()) {
-			if (server.getPlayers().isEmpty()) {
-				Debugger.debug("bungee", "NOT sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server because it is empty.");
-
-				continue;
-			}
-
-			if (ignoredServerName != null && server.getName().equalsIgnoreCase(ignoredServerName)) {
-				Debugger.debug("bungee", "NOT sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server because it is ignored.");
-
-				continue;
-			}
-
-			server.sendData(this.getChannel(), data);
-			Debugger.debug("bungee", "Sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server.");
-		}
-	}
-
-	/**
 	 * Delegate write methods for the byte array data output
 	 * based on the queue
 	 *
+	 * @param serverName
 	 * @return
 	 */
-	@Override
-	public byte[] getData() {
+	public byte[] getData(String serverName) {
 		final ByteArrayDataOutput out = ByteStreams.newDataOutput();
+
+		// -----------------------------------------------------------------
+		// We are automatically writing the first two strings assuming the
+		// first is the senders server name and the second is the action
+		// -----------------------------------------------------------------
+
+		out.writeUTF(this.getListener().getChannel());
+		out.writeUTF(UUID.fromString("00000000-0000-0000-0000-000000000000").toString());
+		out.writeUTF(serverName);
+		out.writeUTF(this.getAction().name());
 
 		for (final Object object : this.queue)
 			if (object instanceof String)
@@ -300,4 +219,88 @@ public final class OutgoingMessage extends Message {
 		return out.toByteArray();
 	}
 
+	/**
+	 * Forwards this message to another server
+	 *
+	 * @param fromServer
+	 * @param info
+	 */
+	public void sendToServer(String fromServer, ServerInfo info) {
+
+		if (info.getPlayers().isEmpty()) {
+			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server because it is empty.");
+
+			return;
+		}
+
+		info.sendData("BungeeCord", this.getData(fromServer));
+		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
+	}
+
+	/**
+	 * Send this message with the current data for the given connection
+	 * The connection must be a {@link Server} or {@link ProxiedPlayer}!
+	 *
+	 * @param fromServer
+	 * @param connection
+	 */
+	public void send(String fromServer, Connection connection) {
+
+		if (connection instanceof ProxiedPlayer)
+			connection = ((ProxiedPlayer) connection).getServer();
+
+		Valid.checkBoolean(connection instanceof Server, "Connection must be ServerConnection");
+
+		if (((Server) connection).getInfo().getPlayers().isEmpty()) {
+			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server because it is empty.");
+
+			return;
+		}
+
+		((Server) connection).sendData("BungeeCord", this.getData(fromServer));
+		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
+	}
+
+	/**
+	 * Broadcasts the message to all servers
+	 *
+	 */
+	public void broadcast() {
+		this.broadcastExcept(null);
+	}
+
+	/**
+	 * Broadcasts the message to all servers except the one ignored
+	 *
+	 * @param ignoredServerName
+	 */
+	public void broadcastExcept(@Nullable String ignoredServerName) {
+		String channel = this.getChannel();
+		byte[] data = this.getData("");
+
+		for (ServerInfo server : ProxyServer.getInstance().getServers().values()) {
+			if (server.getPlayers().isEmpty()) {
+				Debugger.debug("bungee", "NOT sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server because it is empty.");
+
+				continue;
+			}
+
+			if (ignoredServerName != null && server.getName().equalsIgnoreCase(ignoredServerName)) {
+				Debugger.debug("bungee", "NOT sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server because it is ignored.");
+
+				continue;
+			}
+
+			server.sendData("BungeeCord", data);
+			Debugger.debug("bungee", "Sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server.");
+		}
+	}
+
+	/**
+	 *
+	 * @return
+	 */
+	protected String getChannel() {
+		return this.getListener().getChannel();
+	}
 }

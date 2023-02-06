@@ -5,20 +5,15 @@ import java.io.IOException;
 import java.util.UUID;
 
 import org.mineacademy.bfo.ReflectionUtil;
-import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.bungee.BungeeMessageType;
 import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.debug.Debugger;
-import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteStreams;
 
 import lombok.Getter;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
-import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.Server;
 
 /**
@@ -37,9 +32,21 @@ public final class IncomingMessage extends Message {
 	private final byte[] data;
 
 	/**
+	 * The sender UUID
+	 */
+	@Getter
+	private final UUID senderUid;
+
+	/**
+	 * The serverName
+	 */
+	@Getter
+	private final String serverName;
+
+	/**
 	 * The input we use to read our data array
 	 */
-	private final ByteArrayDataInput input;
+	private ByteArrayDataInput input;
 
 	/**
 	 * The internal stream
@@ -47,60 +54,31 @@ public final class IncomingMessage extends Message {
 	private final ByteArrayInputStream stream;
 
 	/**
-	 * The channel name
-	 */
-	@Getter
-	private final String channel;
-
-	/**
 	 * Create a new incoming message from the given array
-	 * <p>
-	 * NB: This uses the standardized Foundation model where the first
-	 * string is the server name and the second string is the
-	 * {@link BungeeMessageType} by its name *read automatically*.
-	 * @param channel
 	 *
-	 * @param data
-	 */
-	public IncomingMessage(String channel, byte[] data) {
-		this(SimplePlugin.getInstance().getBungeeCord(), channel, data);
-	}
-
-	/**
-	 * Create a new incoming message from the given array
-	 * <p>
-	 * NB: This uses the standardized Foundation model where the first
-	 * string is the server name and the second string is the
-	 * {@link BungeeMessageType} by its name *read automatically*.
+	 * NB: This uses the standardized Foundation header:
+	 *
+	 * 1. Channel name (string) (because we broadcast on BungeeCord channel)
+	 * 2. Sender UUID (string)
+	 * 3. Server name (string)
+	 * 4  Action (String converted to enum of {@link BungeeMessageType})
 	 *
 	 * @param listener
+	 * @param senderUid
+	 * @param serverName
+	 * @param type
 	 * @param data
+	 * @param input
+	 * @param stream
 	 */
-	public IncomingMessage(BungeeListener listener, byte[] data) {
-		this(listener, listener.getChannel(), data);
-	}
+	public IncomingMessage(BungeeListener listener, UUID senderUid, String serverName, BungeeMessageType type, byte[] data, ByteArrayDataInput input, ByteArrayInputStream stream) {
+		super(listener, type);
 
-	private IncomingMessage(BungeeListener listener, String channel, byte[] data) {
-		super(listener);
-
-		this.channel = channel;
 		this.data = data;
-		this.stream = new ByteArrayInputStream(data);
-		this.input = ByteStreams.newDataInput(this.stream);
-
-		// -----------------------------------------------------------------
-		// We are automatically reading the first two strings assuming the
-		// first is the senders server name and the second is the action
-		// -----------------------------------------------------------------
-
-		// Read senders UUID
-		this.setSenderUid(this.input.readUTF());
-
-		// Read server name
-		this.setServerName(this.input.readUTF());
-
-		// Read action
-		this.setAction(this.input.readUTF());
+		this.senderUid = senderUid;
+		this.serverName = serverName;
+		this.input = input;
+		this.stream = stream;
 	}
 
 	/**
@@ -247,50 +225,27 @@ public final class IncomingMessage extends Message {
 	}
 
 	/**
+	 *
+	 * @return
+	 */
+	public String getChannel() {
+		return this.getListener().getChannel();
+	}
+
+	/**
 	 * Forwards this message to another server, must be {@link Server}
 	 *
-	 * @param connection
+	 * @param info
 	 */
-	public void forward(Connection connection) {
-		Valid.checkBoolean(connection instanceof Server, "Connection must be Server");
-		final Server server = (Server) connection;
+	public void forward(ServerInfo info) {
 
-		if (server.getInfo().getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + server.getInfo().getName() + " server because it is empty.");
+		if (info.getPlayers().isEmpty()) {
+			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server because it is empty.");
 
 			return;
 		}
 
-		server.sendData(this.getChannel(), this.data);
-		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
-	}
-
-	/**
-	 * Forwards this message to all other servers except the senders one
-	 *
-	 */
-	public void sendToOthers() {
-		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
-			if (!server.getName().equals(this.getServerName()))
-				this.sendToServer(server);
-	}
-
-	/**
-	 * Forwards this message to all other servers including the senders one
-	 *
-	 */
-	public void sendToAll() {
-		for (final ServerInfo server : ProxyServer.getInstance().getServers().values())
-			this.sendToServer(server);
-	}
-
-	/**
-	 * @deprecated renamed to {@link #sendToServer(ServerInfo)}
-	 *
-	 * @param info
-	 */
-	@Deprecated
-	public void forward(ServerInfo info) {
-		this.sendToServer(info);
+		info.sendData("BungeeCord", this.data);
+		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 }
