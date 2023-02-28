@@ -233,7 +233,7 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		info.sendData("BungeeCord", this.getData(fromServer));
+		info.sendData(this.getChannel(), this.getData(fromServer));
 		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 
@@ -257,7 +257,7 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		((Server) connection).sendData("BungeeCord", this.getData(fromServer));
+		((Server) connection).sendData(this.getChannel(), this.getData(fromServer));
 		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
@@ -291,7 +291,7 @@ public final class OutgoingMessage extends Message {
 				continue;
 			}
 
-			server.sendData("BungeeCord", data);
+			server.sendData(this.getChannel(), data);
 			Debugger.debug("bungee", "Sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server.");
 		}
 	}

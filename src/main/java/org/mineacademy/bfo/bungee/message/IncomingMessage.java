@@ -245,7 +245,7 @@ public final class IncomingMessage extends Message {
 			return;
 		}
 
-		info.sendData("BungeeCord", this.data);
+		info.sendData(this.getChannel(), this.data);
 		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 }

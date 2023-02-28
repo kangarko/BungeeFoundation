@@ -498,8 +498,11 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * @param listener
 	 */
 	protected final void registerBungeeCord(final BungeeListener listener) {
-		if (!this.getProxy().getChannels().contains(listener.getChannel()))
+		if (!this.getProxy().getChannels().contains(listener.getChannel())) {
 			this.getProxy().registerChannel(listener.getChannel());
+
+			System.out.println("** " + getNamed() + " registered channel " + listener.getChannel());
+		}
 
 		ProxyServer.getInstance().getPluginManager().registerListener(this, listener);
 	}
