@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.bungee.BungeeMessageType;
@@ -241,6 +242,12 @@ public final class IncomingMessage extends Message {
 
 		if (info.getPlayers().isEmpty()) {
 			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server because it is empty.");
+
+			return;
+		}
+
+		if (this.data.length > 30_000) { // Safety margin
+			Common.log("Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + this.data.length + " bytes.");
 
 			return;
 		}

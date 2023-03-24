@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
+import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.bungee.BungeeMessageType;
@@ -233,7 +234,15 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		info.sendData(this.getChannel(), this.getData(fromServer));
+		byte[] data = this.getData(fromServer);
+
+		if (data.length > 30_000) { // Safety margin
+			Common.log("Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
+
+			return;
+		}
+
+		info.sendData(this.getChannel(), data);
 		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 
@@ -257,7 +266,15 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		((Server) connection).sendData(this.getChannel(), this.getData(fromServer));
+		byte[] data = this.getData(fromServer);
+
+		if (data.length > 30_000) { // Safety margin
+			Common.log("Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
+
+			return;
+		}
+
+		((Server) connection).sendData(this.getChannel(), data);
 		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
@@ -277,6 +294,12 @@ public final class OutgoingMessage extends Message {
 	public void broadcastExcept(@Nullable String ignoredServerName) {
 		String channel = this.getChannel();
 		byte[] data = this.getData("");
+
+		if (data.length > 30_000) { // Safety margin
+			Common.log("Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
+
+			return;
+		}
 
 		for (ServerInfo server : ProxyServer.getInstance().getServers().values()) {
 			if (server.getPlayers().isEmpty()) {
