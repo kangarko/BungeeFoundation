@@ -12,7 +12,6 @@ import java.util.logging.Level;
 import javax.annotation.Nullable;
 
 import org.mineacademy.bfo.FileUtil;
-import org.mineacademy.bfo.ReflectionUtil;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -46,34 +45,20 @@ public class YamlConfig extends FileConfig {
 	 * Create a new instance (do not load it, use {@link #load(File)} to load)
 	 */
 	protected YamlConfig() {
-		final YamlConstructor constructor = new YamlConstructor();
-		final YamlRepresenter representer = new YamlRepresenter();
-		representer.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 
 		final DumperOptions dumperOptions = new DumperOptions();
 		dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 		dumperOptions.setIndent(2);
 		dumperOptions.setWidth(4096); // Do not wrap long lines
 
-		// Load options only if available
-		if (ReflectionUtil.isClassAvailable("org.yaml.snakeyaml.LoaderOptions")) {
-			Yaml yaml;
+		final LoaderOptions loaderOptions = new LoaderOptions();
+		loaderOptions.setMaxAliasesForCollections(Integer.MAX_VALUE);
 
-			try {
-				final LoaderOptions loaderOptions = new LoaderOptions();
-				loaderOptions.setMaxAliasesForCollections(Integer.MAX_VALUE);
+		final YamlConstructor constructor = new YamlConstructor(loaderOptions);
+		final YamlRepresenter representer = new YamlRepresenter(dumperOptions);
+		representer.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 
-				yaml = new Yaml(constructor, representer, dumperOptions, loaderOptions);
-
-			} catch (final NoSuchMethodError ex) {
-				yaml = new Yaml(constructor, representer, dumperOptions);
-			}
-
-			this.yaml = yaml;
-		}
-
-		else
-			this.yaml = new Yaml(constructor, representer, dumperOptions);
+		this.yaml = new Yaml(constructor, representer, dumperOptions, loaderOptions);
 	}
 
 	/**
@@ -402,7 +387,9 @@ public class YamlConfig extends FileConfig {
 	 */
 	private final static class YamlConstructor extends SafeConstructor {
 
-		public YamlConstructor() {
+		public YamlConstructor(LoaderOptions options) {
+			super(options);
+
 			this.yamlConstructors.put(Tag.MAP, new ConstructCustomObject());
 		}
 
@@ -430,7 +417,9 @@ public class YamlConfig extends FileConfig {
 	 */
 	private final static class YamlRepresenter extends Representer {
 
-		public YamlRepresenter() {
+		public YamlRepresenter(DumperOptions options) {
+			super(options);
+
 			this.multiRepresenters.put(ConfigSection.class, new RepresentConfigurationSection());
 			this.multiRepresenters.remove(Enum.class);
 		}
