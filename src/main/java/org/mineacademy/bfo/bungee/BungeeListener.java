@@ -122,14 +122,6 @@ public abstract class BungeeListener implements Listener {
 	}
 
 	/**
-	 * @deprecated internal use only
-	 */
-	@Deprecated
-	public static void clearRegisteredListeners() {
-		registeredListeners.clear();
-	}
-
-	/**
 	 * Distributes received plugin message across all {@link BungeeListener} classes
 	 *
 	 * @deprecated internal use only

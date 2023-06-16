@@ -447,7 +447,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		SimpleLocalization.resetLocalizationCall();
 
 		FolderWatcher.stopThreads();
-		BungeeListener.clearRegisteredListeners();
 
 		this.getProxy().getScheduler().cancel(this);
 		this.mainCommand = null;
