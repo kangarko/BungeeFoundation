@@ -15,6 +15,7 @@ import javax.script.ScriptException;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.ReflectionUtil;
+import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.bfo.exception.EventHandledException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
@@ -151,6 +152,9 @@ public final class JavaScriptExecutor {
 			if (sender != null)
 				engine.put("player", sender);
 
+			else
+				Valid.checkBoolean(!javascript.contains("player."), "Not running script because it uses 'player' but player was null! Script: " + javascript);
+
 			if (event != null)
 				engine.put("event", event);
 
@@ -186,7 +190,7 @@ public final class JavaScriptExecutor {
 				throw new EventHandledException(true);
 			}
 
-			throw new RuntimeException(error + " '" + javascript + "'", ex);
+			throw new RuntimeException(error + " '" + javascript + "', sender: " + (sender == null ? "null" : sender.getClass() + ": " + sender), ex);
 		}
 	}
 
