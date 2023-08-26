@@ -1,11 +1,8 @@
 package org.mineacademy.bfo.model;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -16,14 +13,12 @@ import javax.script.ScriptException;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.Valid;
-import org.mineacademy.bfo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.bfo.exception.EventHandledException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.remain.Remain;
 
 import lombok.NonNull;
 import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Event;
 
 /**
@@ -38,13 +33,6 @@ public final class JavaScriptExecutor {
 	 * The engine singleton
 	 */
 	private static final ScriptEngine engine;
-
-	/**
-	 * Cache scripts for 1 second per player for highest performance
-	 * <p>
-	 * Player -> Map of scripts and their results
-	 */
-	private static final Map<UUID, Map<String, Object>> resultCache = ExpiringMap.builder().expiration(1, TimeUnit.SECONDS).build();
 
 	// Load the engine
 	static {
@@ -128,69 +116,50 @@ public final class JavaScriptExecutor {
 	 * @return
 	 */
 	public static Object run(@NonNull String javascript, final CommandSender sender, final Event event) {
+		synchronized (engine) {
+			if (engine == null) {
+				Common.warning("Not running script" + (sender == null ? "" : " for " + sender.getName()) + " because JavaScript library is missing "
+						+ "(install Oracle Java 8, 11 or 16 and download mineacademy.org/nashorn): " + javascript);
 
-		// Cache for highest performance
-		Map<String, Object> cached = sender instanceof ProxiedPlayer ? resultCache.get(((ProxiedPlayer) sender).getUniqueId()) : null;
-
-		if (cached != null) {
-			final Object result = cached.get(javascript);
-
-			if (result != null)
-				return result;
-		}
-
-		if (engine == null) {
-			Common.warning("Not running script" + (sender == null ? "" : " for " + sender.getName()) + " because JavaScript library is missing "
-					+ "(install Oracle Java 8, 11 or 16 and download mineacademy.org/nashorn): " + javascript);
-
-			return null;
-		}
-
-		try {
-			engine.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-
-			if (sender != null)
-				engine.put("player", sender);
-
-			else
-				Valid.checkBoolean(!javascript.contains("player."), "Not running script because it uses 'player' but player was null! Script: " + javascript);
-
-			if (event != null)
-				engine.put("event", event);
-
-			final Object result = engine.eval(javascript);
-
-			if (sender instanceof ProxiedPlayer) {
-				if (cached == null)
-					cached = new HashMap<>();
-
-				cached.put(javascript, result);
-				resultCache.put(((ProxiedPlayer) sender).getUniqueId(), cached);
+				return null;
 			}
 
-			return result;
+			try {
+				engine.getBindings(ScriptContext.ENGINE_SCOPE).clear();
 
-		} catch (final Throwable ex) {
-			final String message = ex.toString();
-			String error = "Script execution failed for";
+				if (sender != null)
+					engine.put("player", sender);
 
-			if (message.contains("ReferenceError:") && message.contains("is not defined"))
-				error = "Found invalid or unparsed variable in";
+				else
+					Valid.checkBoolean(!javascript.contains("player."), "Not running script because it uses 'player' but player was null! Script: " + javascript);
 
-			// Special support for throwing exceptions in the JS code so that users
-			// can send messages to player directly if upstream supports that
-			final String cause = ex.getCause().toString();
+				if (event != null)
+					engine.put("event", event);
 
-			if (ex.getCause() != null && cause.contains("event handled")) {
-				final String[] errorMessageSplit = cause.contains("event handled: ") ? cause.split("event handled\\: ") : new String[0];
+				return engine.eval(javascript);
 
-				if (errorMessageSplit.length == 2)
-					Common.tellNoPrefix(sender, errorMessageSplit[1]);
+			} catch (final Throwable ex) {
+				final String message = ex.toString();
+				String error = "Script execution failed for";
 
-				throw new EventHandledException(true);
+				if (message.contains("ReferenceError:") && message.contains("is not defined"))
+					error = "Found invalid or unparsed variable in";
+
+				// Special support for throwing exceptions in the JS code so that users
+				// can send messages to player directly if upstream supports that
+				final String cause = ex.getCause().toString();
+
+				if (ex.getCause() != null && cause.contains("event handled")) {
+					final String[] errorMessageSplit = cause.contains("event handled: ") ? cause.split("event handled\\: ") : new String[0];
+
+					if (errorMessageSplit.length == 2)
+						Common.tellNoPrefix(sender, errorMessageSplit[1]);
+
+					throw new EventHandledException(true);
+				}
+
+				throw new RuntimeException(error + " '" + javascript + "', sender: " + (sender == null ? "null" : sender.getClass() + ": " + sender), ex);
 			}
-
-			throw new RuntimeException(error + " '" + javascript + "', sender: " + (sender == null ? "null" : sender.getClass() + ": " + sender), ex);
 		}
 	}
 
