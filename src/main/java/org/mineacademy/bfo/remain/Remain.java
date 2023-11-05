@@ -420,7 +420,7 @@ public final class Remain {
 	public static BossBar sendBossbar(final ProxiedPlayer player, final String message, final float percent, final CompBarColor color, final CompBarStyle style) {
 		final BossBar bar = new BossBar(UUID.randomUUID(), 0);
 
-		bar.setTitle(toJson(Variables.replace(message, player)));
+		bar.setTitle(TextComponent.fromLegacy(Variables.replace(message, player)));
 		bar.setHealth(percent);
 		bar.setColor(color.ordinal());
 		bar.setDivision(style.ordinal());
