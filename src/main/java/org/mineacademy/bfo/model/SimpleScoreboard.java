@@ -11,6 +11,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.Connection.Unsafe;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.protocol.Either;
+import net.md_5.bungee.protocol.NumberFormat;
 import net.md_5.bungee.protocol.packet.ScoreboardDisplay;
 import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardObjective.HealthDisplay;
@@ -88,14 +89,14 @@ public class SimpleScoreboard {
 		final String titleMessage = this.prepareMessage(player, this.title);
 
 		// Clear old objective
-		unsafe.sendPacket(new ScoreboardObjective(idString, Either.right(TextComponent.fromLegacy(titleMessage)), HealthDisplay.INTEGER, (byte) 1));
+		unsafe.sendPacket(new ScoreboardObjective(idString, Either.right(TextComponent.fromLegacy(titleMessage)), HealthDisplay.INTEGER, (byte) 1, new NumberFormat(NumberFormat.Type.FIXED, 1)));
 
 		// Send objective
-		unsafe.sendPacket(new ScoreboardObjective(idString, Either.right(TextComponent.fromLegacy(titleMessage)), HealthDisplay.INTEGER, (byte) 0));
+		unsafe.sendPacket(new ScoreboardObjective(idString, Either.right(TextComponent.fromLegacy(titleMessage)), HealthDisplay.INTEGER, (byte) 0, new NumberFormat(NumberFormat.Type.FIXED, 1)));
 
 		// Send lines
 		for (int i = 0; i < this.lines.size(); i++)
-			unsafe.sendPacket(new ScoreboardScore(this.prepareMessage(player, this.lines.get(i)), (byte) 0, idString, this.lines.size() - i));
+			unsafe.sendPacket(new ScoreboardScore(this.prepareMessage(player, this.lines.get(i)), (byte) 0, idString, this.lines.size() - i, TextComponent.fromLegacy(""), new NumberFormat(NumberFormat.Type.FIXED, 0)));
 
 		// Display
 		unsafe.sendPacket(new ScoreboardDisplay((byte) 1, idString));
