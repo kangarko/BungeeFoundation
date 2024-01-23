@@ -89,14 +89,17 @@ public class SimpleScoreboard {
 		final String titleMessage = this.prepareMessage(player, this.title);
 
 		// Clear old objective
-		unsafe.sendPacket(new ScoreboardObjective(idString, Either.right(TextComponent.fromLegacy(titleMessage)), HealthDisplay.INTEGER, (byte) 1, new NumberFormat(NumberFormat.Type.FIXED, 1)));
+		unsafe.sendPacket(new ScoreboardObjective(idString, Either.left(titleMessage), HealthDisplay.INTEGER, (byte) 1, new NumberFormat(NumberFormat.Type.FIXED, 1)));
 
 		// Send objective
-		unsafe.sendPacket(new ScoreboardObjective(idString, Either.right(TextComponent.fromLegacy(titleMessage)), HealthDisplay.INTEGER, (byte) 0, new NumberFormat(NumberFormat.Type.FIXED, 1)));
+		unsafe.sendPacket(new ScoreboardObjective(idString, Either.right(TextComponent.fromLegacy(titleMessage)), HealthDisplay.INTEGER, (byte) 0, new NumberFormat(NumberFormat.Type.BLANK, 1)));
 
 		// Send lines
-		for (int i = 0; i < this.lines.size(); i++)
-			unsafe.sendPacket(new ScoreboardScore(this.prepareMessage(player, this.lines.get(i)), (byte) 0, idString, this.lines.size() - i, TextComponent.fromLegacy(""), new NumberFormat(NumberFormat.Type.FIXED, 0)));
+		for (int i = 0; i < this.lines.size(); i++) {
+			final String value = this.prepareMessage(player, this.lines.get(i));
+
+			unsafe.sendPacket(new ScoreboardScore(value, (byte) 0, idString, this.lines.size() - i, TextComponent.fromLegacy(value), new NumberFormat(NumberFormat.Type.BLANK, 0)));
+		}
 
 		// Display
 		unsafe.sendPacket(new ScoreboardDisplay((byte) 1, idString));
