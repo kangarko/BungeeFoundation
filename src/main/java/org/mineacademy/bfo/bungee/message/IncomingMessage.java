@@ -47,7 +47,7 @@ public final class IncomingMessage extends Message {
 	/**
 	 * The input we use to read our data array
 	 */
-	private ByteArrayDataInput input;
+	private final ByteArrayDataInput input;
 
 	/**
 	 * The internal stream
@@ -247,7 +247,7 @@ public final class IncomingMessage extends Message {
 		}
 
 		if (this.data.length > 30_000) { // Safety margin
-			Common.log("Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + this.data.length + " bytes.");
+			Common.log("[incoming] Outgoing bungee message was oversized, not sending to " + info.getName() + ". Max length: 32766 bytes, got " + this.data.length + " bytes.");
 
 			return;
 		}

@@ -234,10 +234,10 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		byte[] data = this.getData(fromServer);
+		final byte[] data = this.getData(fromServer);
 
 		if (data.length > 30_000) { // Safety margin
-			Common.log("Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
+			Common.log("[outgoing-sendToServer] Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
 
 			return;
 		}
@@ -266,10 +266,10 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		byte[] data = this.getData(fromServer);
+		final byte[] data = this.getData(fromServer);
 
 		if (data.length > 30_000) { // Safety margin
-			Common.log("Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
+			Common.log("[outgoing-send] Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
 
 			return;
 		}
@@ -292,16 +292,16 @@ public final class OutgoingMessage extends Message {
 	 * @param ignoredServerName
 	 */
 	public void broadcastExcept(@Nullable String ignoredServerName) {
-		String channel = this.getChannel();
-		byte[] data = this.getData("");
+		final String channel = this.getChannel();
+		final byte[] data = this.getData("");
 
 		if (data.length > 30_000) { // Safety margin
-			Common.log("Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
+			Common.log("[outgoing-broadcastExcept] Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
 
 			return;
 		}
 
-		for (ServerInfo server : ProxyServer.getInstance().getServers().values()) {
+		for (final ServerInfo server : ProxyServer.getInstance().getServers().values()) {
 			if (server.getPlayers().isEmpty()) {
 				Debugger.debug("bungee", "NOT sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server because it is empty.");
 
