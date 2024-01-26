@@ -236,7 +236,7 @@ public final class OutgoingMessage extends Message {
 
 		final byte[] data = this.getData(fromServer);
 
-		if (data.length > 30_000) { // Safety margin
+		if (data.length > 32_000) { // Safety margin
 			Common.log("[outgoing-sendToServer] Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
 
 			return;
@@ -268,7 +268,7 @@ public final class OutgoingMessage extends Message {
 
 		final byte[] data = this.getData(fromServer);
 
-		if (data.length > 30_000) { // Safety margin
+		if (data.length > 32_000) { // Safety margin
 			Common.log("[outgoing-send] Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
 
 			return;
@@ -295,8 +295,9 @@ public final class OutgoingMessage extends Message {
 		final String channel = this.getChannel();
 		final byte[] data = this.getData("");
 
-		if (data.length > 30_000) { // Safety margin
-			Common.log("[outgoing-broadcastExcept] Outgoing bungee message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes.");
+		if (data.length > 32_000) { // Safety margin
+			Common.log("[outgoing-broadcastExcept] Outgoing message was oversized, not sending. Max length: 32766 bytes, got " + data.length + " bytes. Channel: " + this.getListener().getChannel()
+					+ ", action: " + this.getAction().name() + ", queue: " + queue);
 
 			return;
 		}

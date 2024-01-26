@@ -246,7 +246,7 @@ public final class IncomingMessage extends Message {
 			return;
 		}
 
-		if (this.data.length > 30_000) { // Safety margin
+		if (this.data.length > 32_000) { // Safety margin
 			Common.log("[incoming] Outgoing bungee message was oversized, not sending to " + info.getName() + ". Max length: 32766 bytes, got " + this.data.length + " bytes.");
 
 			return;
