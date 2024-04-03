@@ -145,7 +145,7 @@ public abstract class FileConfig {
 	}
 
 	/**
-	 * Returns a value at the given path. Path prefix is added automatically, see {@link #setPathPrefix(String)}.
+	 * Returns a value at the given path. Path prefix is added automatically, see setPathPrefix(String).
 	 * If default config exists within your JAR, we copy the value and save the file if it does not exist.
 	 * Specify the type to automatically convert the value into. If you are getting a value that is a custom class,
 	 * and your deserialize method has custom parameters in it, pass it here. Example: your custom class
@@ -163,7 +163,7 @@ public abstract class FileConfig {
 	}
 
 	/**
-	 * Returns a value at the given path. Path prefix is added automatically, see {@link #setPathPrefix(String)}.
+	 * Returns a value at the given path. Path prefix is added automatically, see setPathPrefix(String).
 	 * If default config exists within your JAR, we copy the value and save the file if it does not exist.
 	 * Specify the type to automatically convert the value into. If you are getting a value that is a custom class,
 	 * and your deserialize method has custom parameters in it, pass it here. Example: your custom class
@@ -930,7 +930,7 @@ public abstract class FileConfig {
 	 * Sets the given value to the given path (set the value to null to remove it)
 	 * and then saves the file immediately.
 	 *
-	 * Path prefix is added automatically, see {@link #getPathPrefix()}
+	 * Path prefix is added automatically, see getPathPrefix()
 	 * The value is serialized using {@link SerializeUtil}
 	 *
 	 * @param path
@@ -945,7 +945,7 @@ public abstract class FileConfig {
 	/**
 	 * Sets the given value to the given path (set the value to null to remove it).
 	 *
-	 * Path prefix is added automatically, see {@link #getPathPrefix()}
+	 * Path prefix is added automatically, see getPathPrefix()
 	 * The value is serialized using {@link SerializeUtil}
 	 *
 	 * @param path
@@ -962,7 +962,7 @@ public abstract class FileConfig {
 	/**
 	 * Returns true if the given path contains a non-null value
 	 *
-	 * Path prefix is added automatically, see {@link #getPathPrefix()}
+	 * Path prefix is added automatically, see getPathPrefix()
 	 *
 	 * @param path
 	 * @return
@@ -977,7 +977,7 @@ public abstract class FileConfig {
 	 * Returns true if defaults are set and contain a non-null value
 	 * at the given path
 	 *
-	 * Path prefix is added automatically, see {@link #getPathPrefix()}
+	 * Path prefix is added automatically, see getPathPrefix()
 	 *
 	 * @param path
 	 * @return
@@ -1193,7 +1193,7 @@ public abstract class FileConfig {
 	abstract String saveToString();
 
 	/**
-	 * Override to implement custom saving mechanism, used automatically in {@link #onSave()}
+	 * Override to implement custom saving mechanism, used automatically in onSave()
 	 * you can return only the data you actually want to save here.
 	 *
 	 * Returns null by default!

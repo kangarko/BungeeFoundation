@@ -26,7 +26,7 @@ import net.md_5.bungee.api.ProxyServer;
 
 /**
  * The core settings class. Fully compatible with Minecraft 1.7.10 to the
- * latest one, including comments support (default file required, see {@link #saveComments()})
+ * latest one, including comments support (default file required, see saveComments())
  * and automatic config upgrading if we request a value that only exist in the default file.
  */
 public class YamlConfig extends FileConfig {
@@ -85,7 +85,7 @@ public class YamlConfig extends FileConfig {
 	}
 
 	/**
-	 * (Requires no default file or {@link #saveComments()} on false)
+	 * (Requires no default file or saveComments() on false)
 	 * Set if we should remove empty lists or sections when saving.
 	 * Defaults to true, that means that empty sections will be saved.
 	 *
@@ -156,7 +156,7 @@ public class YamlConfig extends FileConfig {
 	}
 
 	/**
-	 * Loads the configuration from the internal path WITHOUT calling {@link #onLoad()},
+	 * Loads the configuration from the internal path WITHOUT calling onLoad(),
 	 * without setting defaults and without extracting the file.
 	 *
 	 * @param internalPath
