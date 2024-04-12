@@ -47,7 +47,7 @@ public class SimpleDatabase {
 	 * The established connection, or null if none
 	 */
 	@Getter(value = AccessLevel.PROTECTED)
-	private volatile Connection connection;
+	private Connection connection;
 
 	/**
 	 * The last credentials from the connect function, or null if never called

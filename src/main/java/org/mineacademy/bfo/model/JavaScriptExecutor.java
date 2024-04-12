@@ -116,50 +116,48 @@ public final class JavaScriptExecutor {
 	 * @return
 	 */
 	public static Object run(@NonNull String javascript, final CommandSender sender, final Event event) {
-		synchronized (engine) {
-			if (engine == null) {
-				Common.warning("Not running script" + (sender == null ? "" : " for " + sender.getName()) + " because JavaScript library is missing "
-						+ "(install Oracle Java 8, 11 or 16 and download mineacademy.org/nashorn): " + javascript);
+		if (engine == null) {
+			Common.warning("Not running script" + (sender == null ? "" : " for " + sender.getName()) + " because JavaScript library is missing "
+					+ "(install Oracle Java 8, 11 or 16 and download mineacademy.org/nashorn): " + javascript);
 
-				return null;
+			return null;
+		}
+
+		try {
+			engine.getBindings(ScriptContext.ENGINE_SCOPE).clear();
+
+			if (sender != null)
+				engine.put("player", sender);
+
+			else
+				Valid.checkBoolean(!javascript.contains("player."), "Not running script because it uses 'player' but player was null! Script: " + javascript);
+
+			if (event != null)
+				engine.put("event", event);
+
+			return engine.eval(javascript);
+
+		} catch (final Throwable ex) {
+			final String message = ex.toString();
+			String error = "Script execution failed for";
+
+			if (message.contains("ReferenceError:") && message.contains("is not defined"))
+				error = "Found invalid or unparsed variable in";
+
+			// Special support for throwing exceptions in the JS code so that users
+			// can send messages to player directly if upstream supports that
+			final String cause = ex.getCause().toString();
+
+			if (ex.getCause() != null && cause.contains("event handled")) {
+				final String[] errorMessageSplit = cause.contains("event handled: ") ? cause.split("event handled\\: ") : new String[0];
+
+				if (errorMessageSplit.length == 2)
+					Common.tellNoPrefix(sender, errorMessageSplit[1]);
+
+				throw new EventHandledException(true);
 			}
 
-			try {
-				engine.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-
-				if (sender != null)
-					engine.put("player", sender);
-
-				else
-					Valid.checkBoolean(!javascript.contains("player."), "Not running script because it uses 'player' but player was null! Script: " + javascript);
-
-				if (event != null)
-					engine.put("event", event);
-
-				return engine.eval(javascript);
-
-			} catch (final Throwable ex) {
-				final String message = ex.toString();
-				String error = "Script execution failed for";
-
-				if (message.contains("ReferenceError:") && message.contains("is not defined"))
-					error = "Found invalid or unparsed variable in";
-
-				// Special support for throwing exceptions in the JS code so that users
-				// can send messages to player directly if upstream supports that
-				final String cause = ex.getCause().toString();
-
-				if (ex.getCause() != null && cause.contains("event handled")) {
-					final String[] errorMessageSplit = cause.contains("event handled: ") ? cause.split("event handled\\: ") : new String[0];
-
-					if (errorMessageSplit.length == 2)
-						Common.tellNoPrefix(sender, errorMessageSplit[1]);
-
-					throw new EventHandledException(true);
-				}
-
-				throw new RuntimeException(error + " '" + javascript + "', sender: " + (sender == null ? "null" : sender.getClass() + ": " + sender), ex);
-			}
+			throw new RuntimeException(error + " '" + javascript + "', sender: " + (sender == null ? "null" : sender.getClass() + ": " + sender), ex);
 		}
 	}
 

@@ -24,7 +24,7 @@ public final class Lang extends YamlConfig {
 	/**
 	 * The instance of this class
 	 */
-	private static volatile Lang instance;
+	private static Lang instance;
 
 	/*
 	 * Create a new instance and load the given file
@@ -76,11 +76,10 @@ public final class Lang extends YamlConfig {
 	 */
 	@Deprecated
 	public static void reloadLang() {
-		if (instance != null)
-			synchronized (instance) {
-				instance.reload();
-				instance.save();
-			}
+		if (instance != null) {
+			instance.reload();
+			instance.save();
+		}
 	}
 
 	/**
@@ -90,28 +89,27 @@ public final class Lang extends YamlConfig {
 	 */
 	@Deprecated
 	public static void loadPrefixes() {
-		if (instance != null)
-			synchronized (instance) {
-				if (instance.isSet("Prefix.Announce"))
-					Messenger.setAnnouncePrefix(Lang.of("Prefix.Announce"));
+		if (instance != null) {
+			if (instance.isSet("Prefix.Announce"))
+				Messenger.setAnnouncePrefix(Lang.of("Prefix.Announce"));
 
-				if (instance.isSet("Prefix.Error"))
-					Messenger.setErrorPrefix(Lang.of("Prefix.Error"));
+			if (instance.isSet("Prefix.Error"))
+				Messenger.setErrorPrefix(Lang.of("Prefix.Error"));
 
-				if (instance.isSet("Prefix.Info"))
-					Messenger.setInfoPrefix(Lang.of("Prefix.Info"));
+			if (instance.isSet("Prefix.Info"))
+				Messenger.setInfoPrefix(Lang.of("Prefix.Info"));
 
-				if (instance.isSet("Prefix.Question"))
-					Messenger.setQuestionPrefix(Lang.of("Prefix.Question"));
+			if (instance.isSet("Prefix.Question"))
+				Messenger.setQuestionPrefix(Lang.of("Prefix.Question"));
 
-				if (instance.isSet("Prefix.Success"))
-					Messenger.setSuccessPrefix(Lang.of("Prefix.Success"));
+			if (instance.isSet("Prefix.Success"))
+				Messenger.setSuccessPrefix(Lang.of("Prefix.Success"));
 
-				if (instance.isSet("Prefix.Warn"))
-					Messenger.setWarnPrefix(Lang.of("Prefix.Warn"));
+			if (instance.isSet("Prefix.Warn"))
+				Messenger.setWarnPrefix(Lang.of("Prefix.Warn"));
 
-				instance.save();
-			}
+			instance.save();
+		}
 	}
 
 	// ------------------------------------------------------------------------------------------------------------
@@ -127,9 +125,7 @@ public final class Lang extends YamlConfig {
 	public static boolean getOption(String path) {
 		checkInit();
 
-		synchronized (instance) {
-			return instance.getBoolean(path);
-		}
+		return instance.getBoolean(path);
 	}
 
 	/**
@@ -247,14 +243,12 @@ public final class Lang extends YamlConfig {
 	public static String of(String path, Object... variables) {
 		checkInit();
 
-		synchronized (instance) {
-			String key = instance.getStringStrict(path);
+		String key = instance.getStringStrict(path);
 
-			key = Messenger.replacePrefixes(key);
-			key = translate(key, variables);
+		key = Messenger.replacePrefixes(key);
+		key = translate(key, variables);
 
-			return key;
-		}
+		return key;
 	}
 
 	/*
