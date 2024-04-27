@@ -32,6 +32,7 @@ import org.mineacademy.bfo.exception.RegexTimeoutException;
 import org.mineacademy.bfo.model.BukkitRunnable;
 import org.mineacademy.bfo.model.Replacer;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.CompChatColor;
 import org.mineacademy.bfo.remain.Remain;
 import org.mineacademy.bfo.settings.ConfigSection;
 import org.mineacademy.bfo.settings.SimpleLocalization;
@@ -529,11 +530,11 @@ public final class Common {
 		if (message == null || message.isEmpty())
 			return "";
 
-		String result = ChatColor.translateAlternateColorCodes('&', message
+		String result = CompChatColor.translateColorCodes(message)
 				.replace("{prefix}", message.startsWith(tellPrefix) ? "" : removeSurroundingSpaces(tellPrefix.trim()))
 				.replace("{server}", SimpleLocalization.SERVER_PREFIX)
 				.replace("{plugin_name}", SimplePlugin.getNamed())
-				.replace("{plugin_version}", SimplePlugin.getVersion()));
+				.replace("{plugin_version}", SimplePlugin.getVersion());
 
 		// RGB colors - return the closest color for legacy MC versions
 		final Matcher match = HEX_COLOR_REGEX.matcher(result);
