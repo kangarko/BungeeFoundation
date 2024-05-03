@@ -495,12 +495,15 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * Convenience method for quickly registering bungecoord channel for this plugin
 	 *
 	 * @param listener
+	 * @deprecated no longer needed
 	 */
+	@Deprecated
 	protected final void registerBungeeCord(final BungeeListener listener) {
-		if (!this.getProxy().getChannels().contains(listener.getChannel()))
-			this.getProxy().registerChannel(listener.getChannel());
-
-		ProxyServer.getInstance().getPluginManager().registerListener(this, listener);
+		//if (!this.getProxy().getChannels().contains(listener.getChannel()))
+		//	this.getProxy().registerChannel(listener.getChannel());
+		//
+		//ProxyServer.getInstance().getPluginManager().registerListener(this, listener);
+		Common.warning("Calling registerBungeeCord(" + listener.getClass().getSimpleName() + ") is no longer needed since we use BungeeCord channel and write/read your channel as the first string automatically");
 	}
 
 	/**

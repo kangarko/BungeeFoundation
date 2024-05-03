@@ -252,7 +252,7 @@ public final class IncomingMessage extends Message {
 			return;
 		}
 
-		info.sendData(this.getChannel(), this.data);
+		info.sendData(BungeeListener.DEFAULT_CHANNEL, this.data);
 		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 }

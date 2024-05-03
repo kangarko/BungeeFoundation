@@ -242,7 +242,7 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		info.sendData(this.getChannel(), data);
+		info.sendData(BungeeListener.DEFAULT_CHANNEL, data);
 		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 
@@ -274,7 +274,7 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		((Server) connection).sendData(this.getChannel(), data);
+		((Server) connection).sendData(BungeeListener.DEFAULT_CHANNEL, data);
 		Debugger.debug("bungee", "Sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + ((Server) connection).getInfo().getName() + " server.");
 	}
 
@@ -315,7 +315,7 @@ public final class OutgoingMessage extends Message {
 				continue;
 			}
 
-			server.sendData(this.getChannel(), data);
+			server.sendData(BungeeListener.DEFAULT_CHANNEL, data);
 			Debugger.debug("bungee", "Sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server.");
 		}
 	}

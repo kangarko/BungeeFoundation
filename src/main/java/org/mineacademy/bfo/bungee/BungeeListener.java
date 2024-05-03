@@ -32,6 +32,11 @@ import net.md_5.bungee.event.EventHandler;
 public abstract class BungeeListener implements Listener {
 
 	/**
+	 * The default channel
+	 */
+	public static final String DEFAULT_CHANNEL = "BungeeCord";
+
+	/**
 	 * Holds registered bungee listeners
 	 */
 	private static final Set<BungeeListener> registeredListeners = new HashSet<>();
@@ -144,61 +149,62 @@ public abstract class BungeeListener implements Listener {
 		 */
 		@EventHandler
 		public void onPluginMessage(PluginMessageEvent event) {
+			synchronized (registeredListeners) {
+				final Connection sender = event.getSender();
+				final Connection receiver = event.getReceiver();
+				final byte[] data = event.getData();
 
-			final Connection sender = event.getSender();
-			final Connection receiver = event.getReceiver();
-			final byte[] data = event.getData();
+				if (event.isCancelled())
+					return;
 
-			if (event.isCancelled())
-				return;
+				// Check if the message is for a server (ignore client messages)
+				if (!event.getTag().equals("BungeeCord"))
+					return;
 
-			// Check if the message is for a server (ignore client messages)
-			//if (!event.getTag().equals("BungeeCord"))
-			//	return;
+				// Check if a player is not trying to send us a fake message
+				if (!(sender instanceof Server))
+					return;
 
-			// Check if a player is not trying to send us a fake message
-			if (!(sender instanceof Server))
-				return;
+				// Read the plugin message
+				final ByteArrayInputStream stream = new ByteArrayInputStream(data);
+				ByteArrayDataInput input;
 
-			String channelName = event.getTag();
-			boolean handled = false;
+				try {
+					input = ByteStreams.newDataInput(stream);
 
-			for (final BungeeListener listener : registeredListeners)
-				if (channelName.equals(listener.getChannel())) {
-
-					// Read the plugin message
-					final ByteArrayInputStream stream = new ByteArrayInputStream(data);
-					ByteArrayDataInput input;
-
-					try {
-						input = ByteStreams.newDataInput(stream);
-
-					} catch (final Throwable t) {
-						input = ByteStreams.newDataInput(data);
-					}
-
-					input.readUTF(); // unused channel name
-					final UUID senderUid = UUID.fromString(input.readUTF());
-					final String serverName = input.readUTF();
-					final String actionName = input.readUTF();
-
-					final BungeeMessageType action = BungeeMessageType.getByName(listener, actionName);
-					Valid.checkNotNull(action, "Unknown plugin action '" + actionName + "'. IF YOU UPDATED THE PLUGIN BY RELOADING, stop your entire network, ensure all servers were updated and start it again.");
-
-					final IncomingMessage message = new IncomingMessage(listener, senderUid, serverName, action, data, input, stream);
-
-					listener.sender = (Server) sender;
-					listener.receiver = receiver;
-					listener.data = data;
-
-					Debugger.debug("bungee-all", "Channel " + channelName + " received " + message.getAction() + " message from " + message.getServerName() + " server.");
-					listener.onMessageReceived(listener.sender, message);
-
-					handled = true;
+				} catch (final Throwable t) {
+					input = ByteStreams.newDataInput(data);
 				}
 
-			if (handled)
-				event.setCancelled(true);
+				String channelName = input.readUTF();
+
+				boolean handled = false;
+
+				for (final BungeeListener listener : registeredListeners)
+					if (channelName.equals(listener.getChannel())) {
+
+						final UUID senderUid = UUID.fromString(input.readUTF());
+						final String serverName = input.readUTF();
+						final String actionName = input.readUTF();
+
+						final BungeeMessageType action = BungeeMessageType.getByName(listener, actionName);
+						Valid.checkNotNull(action, "Unknown plugin action '" + actionName + "'. IF YOU UPDATED THE PLUGIN BY RELOADING, stop your entire network, ensure all servers were updated and start it again.");
+
+						final IncomingMessage message = new IncomingMessage(listener, senderUid, serverName, action, data, input, stream);
+
+						listener.sender = (Server) sender;
+						listener.receiver = receiver;
+						listener.data = data;
+
+						Debugger.debug("bungee-all", "Channel " + channelName + " received " + message.getAction() + " message from " + message.getServerName() + " server.");
+						listener.onMessageReceived(listener.sender, message);
+
+						handled = true;
+					}
+
+				if (handled)
+					event.setCancelled(true);
+			}
 		}
 	}
 }
