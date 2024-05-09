@@ -10,7 +10,6 @@ import java.util.Map;
 
 import org.mineacademy.bfo.ChatUtil;
 import org.mineacademy.bfo.Common;
-import org.mineacademy.bfo.command.PermsCommand;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.settings.SimpleLocalization;
 

@@ -3,10 +3,6 @@ package org.mineacademy.bfo.settings;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.Valid;
-import org.mineacademy.bfo.command.DebugCommand;
-import org.mineacademy.bfo.command.PermsCommand;
-import org.mineacademy.bfo.command.ReloadCommand;
-import org.mineacademy.bfo.model.ChatPaginator;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import net.md_5.bungee.api.ChatColor;

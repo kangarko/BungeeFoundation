@@ -2,8 +2,6 @@ package org.mineacademy.bfo.model;
 
 import java.io.File;
 
-import org.mineacademy.bfo.Common;
-
 public interface Rule {
 
 	/**

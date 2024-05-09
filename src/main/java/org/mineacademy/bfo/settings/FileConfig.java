@@ -29,8 +29,6 @@ import org.mineacademy.bfo.SerializeUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.collection.StrictList;
-import org.mineacademy.bfo.command.SimpleCommand;
-import org.mineacademy.bfo.command.SimpleCommandGroup;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.model.BoxedMessage;
 import org.mineacademy.bfo.model.ConfigSerializable;

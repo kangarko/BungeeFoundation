@@ -15,7 +15,6 @@ import com.google.common.io.ByteArrayDataInput;
 
 import lombok.Getter;
 import net.md_5.bungee.api.config.ServerInfo;
-import net.md_5.bungee.api.connection.Server;
 
 /**
  * Represents an incoming plugin message.
