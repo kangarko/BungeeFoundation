@@ -375,9 +375,9 @@ public final class Variables {
 		}
 
 		switch (variable) {
-			case "timestamp":
-				return SimpleSettings.TIMESTAMP_FORMAT.format(System.currentTimeMillis());
-			case "timestamp_short":
+			case "date":
+				return SimpleSettings.DATE_FORMAT.format(System.currentTimeMillis());
+			case "date_short":
 				return TimeUtil.getFormattedDateShort();
 			case "chat_line":
 				return Common.chatLine();

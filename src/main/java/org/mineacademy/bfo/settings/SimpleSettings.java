@@ -90,7 +90,7 @@ public class SimpleSettings extends YamlStaticConfig {
 	/**
 	 * The {timestamp} format.
 	 */
-	public static DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+	public static DateFormat DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
 	/**
 	 * The {location} format.
@@ -161,12 +161,12 @@ public class SimpleSettings extends YamlStaticConfig {
 		setPathPrefix(null);
 		upgradeOldSettings();
 
-		if (isSetDefault("Timestamp_Format"))
+		if (isSetDefault("Date_Format"))
 			try {
-				TIMESTAMP_FORMAT = new SimpleDateFormat(getString("Timestamp_Format"));
+				DATE_FORMAT = new SimpleDateFormat(getString("Date_Format"));
 
 			} catch (final IllegalArgumentException ex) {
-				Common.throwError(ex, "Wrong 'Timestamp_Format '" + getString("Timestamp_Format") + "', see https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html for examples'");
+				Common.throwError(ex, "Wrong 'Date_Format '" + getString("Date_Format") + "', see https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html for examples'");
 			}
 
 		if (isSetDefault("Location_Format"))
