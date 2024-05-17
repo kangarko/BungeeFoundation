@@ -9,6 +9,60 @@
 
 BungeeFoundation is a library for bootstrapping BungeeCord plugins.
 
+## Using
+
+1. Install BungeeFoundation as a dependency from our [JitPack](https://jitpack.io/#kangarko/bungeefoundation/):
+```xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+```
+```xml
+<dependency>
+  <groupId>com.github.kangarko</groupId>
+  <artifactId>BungeeFoundation</artifactId>
+  <version>REPLACE_WITH_VERSION</version>
+</dependency>
+```
+2. Relocate BungeeControl when shading. Here is a snippet for Maven to place inside <plugins> section. You need to change the shadedPattern to match your own package name.
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-shade-plugin</artifactId>
+  <version>3.2.4</version>
+  <executions>
+    <execution>
+      <phase>package</phase>
+      <goals>
+        <goal>shade</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <createDependencyReducedPom>false</createDependencyReducedPom>
+    <artifactSet>
+      <includes>
+        <include>org.mineacademy:BungeeFoundation*</include>
+      </includes>
+    </artifactSet>
+    <relocations>
+      <relocation>
+        <pattern>org.mineacademy</pattern>
+        <shadedPattern>your.package.name.lib</shadedPattern>
+        <excludes>
+          <exclude>your.package.name.*</exclude>
+        </excludes>
+      </relocation>
+    </relocations>
+  </configuration>
+</plugin>
+```
+3. Make your main class extend SimplePlugin from Foundation. [See this sample implementation](https://bitbucket.org/kangarko/bungeecontrol/src/master/src/main/java/org/mineacademy/bungeecontrol/BungeeControl.java) for how it works.
+
+ 
 ### Important Licencing Information
 
 © MineAcademy.org
