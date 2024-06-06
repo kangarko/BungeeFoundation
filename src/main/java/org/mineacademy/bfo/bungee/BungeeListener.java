@@ -149,7 +149,7 @@ public abstract class BungeeListener implements Listener {
 		 */
 		@EventHandler
 		public void onPluginMessage(PluginMessageEvent event) {
-			synchronized (registeredListeners) {
+			synchronized (DEFAULT_CHANNEL) {
 				final Connection sender = event.getSender();
 				final Connection receiver = event.getReceiver();
 				final byte[] data = event.getData();
@@ -176,7 +176,7 @@ public abstract class BungeeListener implements Listener {
 					input = ByteStreams.newDataInput(data);
 				}
 
-				String channelName = input.readUTF();
+				final String channelName = input.readUTF();
 
 				boolean handled = false;
 
