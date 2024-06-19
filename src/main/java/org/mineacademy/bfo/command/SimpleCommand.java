@@ -30,6 +30,7 @@ import org.mineacademy.bfo.model.Replacer;
 import org.mineacademy.bfo.model.SimpleComponent;
 import org.mineacademy.bfo.model.SimpleTime;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.Remain;
 import org.mineacademy.bfo.settings.SimpleLocalization;
 
 import lombok.Getter;
@@ -1175,7 +1176,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected List<String> completeLastWordServerNames() {
-		return TabUtil.complete(this.getLastArg(), ProxyServer.getInstance().getServers().keySet());
+		return TabUtil.complete(this.getLastArg(), Remain.getServers());
 	}
 
 	/**

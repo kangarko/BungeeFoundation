@@ -35,6 +35,7 @@ import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.config.Configuration;
 
 /**
@@ -86,6 +87,9 @@ public final class SerializeUtil {
 
 		else if (object instanceof ChatColor)
 			return ((ChatColor) object).name();
+
+		else if (object instanceof ServerInfo)
+			return ((ServerInfo) object).getName();
 
 		else if (object instanceof net.md_5.bungee.api.ChatColor) {
 			final net.md_5.bungee.api.ChatColor color = (net.md_5.bungee.api.ChatColor) object;

@@ -14,11 +14,11 @@ import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.Remain;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -302,7 +302,7 @@ public final class OutgoingMessage extends Message {
 			return;
 		}
 
-		for (final ServerInfo server : ProxyServer.getInstance().getServers().values()) {
+		for (final ServerInfo server : Remain.getServers()) {
 			if (server.getPlayers().isEmpty()) {
 				Debugger.debug("bungee", "NOT sending data on " + channel + " channel from " + this.getAction() + " to " + server.getName() + " server because it is empty.");
 

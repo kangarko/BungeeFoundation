@@ -1,10 +1,12 @@
 package org.mineacademy.bfo.remain;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,12 +19,14 @@ import org.mineacademy.bfo.model.Variables;
 
 import com.google.gson.Gson;
 
+import lombok.Setter;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.protocol.DefinedPacket;
@@ -92,12 +96,60 @@ public final class Remain {
 	// ----------------------------------------------------------------------------------------------------
 
 	/**
+	 * The server getter, used to change for Redis compatibility
+	 */
+	@Setter
+	private static Supplier<Collection<ServerInfo>> serverGetter = () -> ProxyServer.getInstance().getServers().values();
+
+	/**
+	 * Returns all servers
+	 *
+	 * @return
+	 */
+	public static Collection<ServerInfo> getServers() {
+		return serverGetter.get();
+	}
+
+	/**
 	 * Returns all online players
 	 *
 	 * @return the online players
 	 */
-	public static Collection<? extends ProxiedPlayer> getOnlinePlayers() {
-		return ProxyServer.getInstance().getPlayers();
+	public static Collection<ProxiedPlayer> getOnlinePlayers() {
+		final Collection<ProxiedPlayer> players = new ArrayList<>();
+
+		for (final ServerInfo serverInfo : getServers())
+			players.addAll(serverInfo.getPlayers());
+
+		return players;
+	}
+
+	/**
+	 * Get the player or null if he is not online
+	 *
+	 * @param name
+	 * @return
+	 */
+	public static ProxiedPlayer getPlayer(String name) {
+		for (final ProxiedPlayer player : getOnlinePlayers())
+			if (player.getName().equalsIgnoreCase(name))
+				return player;
+
+		return null;
+	}
+
+	/**
+	 * Get the player or null if he is not online
+	 *
+	 * @param uuid
+	 * @return
+	 */
+	public static ProxiedPlayer getPlayer(UUID uuid) {
+		for (final ProxiedPlayer player : getOnlinePlayers())
+			if (player.getUniqueId().equals(uuid))
+				return player;
+
+		return null;
 	}
 
 	/**

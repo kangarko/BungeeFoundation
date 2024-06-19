@@ -29,6 +29,8 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import org.mineacademy.bfo.remain.Remain;
+
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -155,8 +157,8 @@ public class Metrics {
 	}
 
 	private void appendPlatformData(JsonObjectBuilder builder) {
-		builder.appendField("playerAmount", this.plugin.getProxy().getOnlineCount());
-		builder.appendField("managedServers", this.plugin.getProxy().getServers().size());
+		builder.appendField("playerAmount", Remain.getOnlinePlayers().size());
+		builder.appendField("managedServers", Remain.getServers().size());
 		builder.appendField("onlineMode", this.plugin.getProxy().getConfig().isOnlineMode() ? 1 : 0);
 		builder.appendField("bungeecordVersion", this.plugin.getProxy().getVersion());
 		builder.appendField("javaVersion", System.getProperty("java.version"));

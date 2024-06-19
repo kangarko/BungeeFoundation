@@ -1734,7 +1734,7 @@ public final class Common {
 	 * @return
 	 */
 	public static List<String> getServerNames() {
-		return new ArrayList<>(ProxyServer.getInstance().getServers().keySet());
+		return Common.convert(Remain.getServers(), server -> server.getName());
 	}
 
 	/**
