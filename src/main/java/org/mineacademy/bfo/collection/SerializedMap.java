@@ -54,11 +54,6 @@ public final class SerializedMap extends StrictCollection implements Iterable<Ma
 	}
 
 	/**
-	 * A fallback Json parser
-	 */
-	private final static JSONParser jsonSimple = new JSONParser();
-
-	/**
 	 * The internal map with values
 	 */
 	private final StrictMap<String, Object> map = new StrictMap<>();
@@ -1051,7 +1046,7 @@ public final class SerializedMap extends StrictCollection implements Iterable<Ma
 
 		// Fallback to simple
 		try {
-			final Object parsed = jsonSimple.parse(json);
+			final Object parsed = JSONParser.deserialize(json);
 
 			if (parsed instanceof JSONObject)
 				return SerializedMap.of(parsed);
