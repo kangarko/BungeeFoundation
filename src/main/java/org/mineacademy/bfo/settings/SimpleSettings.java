@@ -8,6 +8,8 @@ import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.constants.FoConstants;
+import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.debug.LagCatcher;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 
 /**

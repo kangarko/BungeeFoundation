@@ -702,7 +702,7 @@ public abstract class FileConfig {
 	 * This is a basic string list, however we enforce at least one value (the first -> the
 	 * main command label) and we remove the initial / from each item.
 	 *
-	 * Usable in {@link SimpleCommandGroup} or {@link SimpleCommand}
+	 * Usable in SimpleCommandGroup or SimpleCommand
 	 *
 	 * @param path
 	 * @return

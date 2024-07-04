@@ -233,7 +233,7 @@ public final class IncomingMessage extends Message {
 	}
 
 	/**
-	 * Forwards this message to another server, must be {@link Server}
+	 * Forwards this message to another server info
 	 *
 	 * @param info
 	 */
