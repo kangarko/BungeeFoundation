@@ -857,7 +857,9 @@ public abstract class FileConfig {
 		}
 
 		// Load key-value pairs from config to our map
-		if (exists)
+		final Object savedKeys = this.section.retrieve(path);
+
+		if (savedKeys != null)
 			for (final Map.Entry<String, Object> entry : SerializedMap.of(this.section.retrieve(path))) {
 				final Key key = SerializeUtil.deserialize(keyType, entry.getKey());
 				final Value value = SerializeUtil.deserialize(valueType, entry.getValue(), valueDeserializeParams);
