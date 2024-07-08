@@ -109,6 +109,13 @@ public final class NetworkUtil {
 	 * @return A string containing the response, or an empty string if the request fails.
 	 */
 	public static String get(String endpoint, SerializedMap params) {
+
+		if (params == null)
+			params = new SerializedMap();
+
+		// Bust the cache
+		params.put("t", System.currentTimeMillis());
+
 		try {
 			if (params != null && !params.isEmpty()) {
 				final StringBuilder endpointBuilder = new StringBuilder(endpoint).append("?");
@@ -122,6 +129,7 @@ public final class NetworkUtil {
 			final URL url = new URL(endpoint);
 			final URLConnection connection = url.openConnection();
 
+			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
 			connection.setConnectTimeout(3000);
 			connection.setReadTimeout(3000);
 
@@ -160,6 +168,13 @@ public final class NetworkUtil {
 	 * @return A string containing the response, or an empty string if the request fails.
 	 */
 	public static String post(String endpoint, SerializedMap params) {
+
+		if (params == null)
+			params = new SerializedMap();
+
+		// Bust the cache
+		params.put("t", System.currentTimeMillis());
+
 		try {
 			final URL url = new URL(endpoint);
 			final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -169,6 +184,7 @@ public final class NetworkUtil {
 			connection.setConnectTimeout(3000);
 			connection.setReadTimeout(3000);
 			connection.setRequestProperty("Content-Type", "application/json");
+			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
 
 			if (params != null && !params.isEmpty()) {
 				final byte[] postDataBytes = params.toJson().getBytes("UTF-8");
