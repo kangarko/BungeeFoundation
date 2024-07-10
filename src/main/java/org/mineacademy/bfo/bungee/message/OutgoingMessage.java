@@ -13,6 +13,7 @@ import org.mineacademy.bfo.bungee.BungeeMessageType;
 import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
+import org.mineacademy.bfo.model.ConfigSerializable;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.remain.Remain;
 
@@ -53,6 +54,15 @@ public final class OutgoingMessage extends Message {
 	 */
 	public OutgoingMessage(BungeeListener listener, BungeeMessageType action) {
 		super(listener, action);
+	}
+
+	/**
+	 * Write a compatible object into the message
+	 *
+	 * @param map
+	 */
+	public void write(ConfigSerializable map) {
+		this.write(map.serialize().toJson(), String.class);
 	}
 
 	/**
