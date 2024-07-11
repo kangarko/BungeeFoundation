@@ -29,6 +29,8 @@ import org.mineacademy.bfo.command.SimpleCommandGroup;
 import org.mineacademy.bfo.command.SimpleSubCommand;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
+import org.mineacademy.bfo.library.BungeeLibraryManager;
+import org.mineacademy.bfo.library.LibraryManager;
 import org.mineacademy.bfo.metrics.Metrics;
 import org.mineacademy.bfo.model.FolderWatcher;
 import org.mineacademy.bfo.model.JavaScriptExecutor;
@@ -137,6 +139,11 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 */
 	private boolean enabled = true;
 
+	/**
+	 * The library manager
+	 */
+	private LibraryManager libraryManager;
+
 	// ----------------------------------------------------------------------------------------
 	// Main methods
 	// ----------------------------------------------------------------------------------------
@@ -157,6 +164,9 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		named = instance.getDataFolder().getName();
 		source = instance.getFile();
 		data = instance.getDataFolder();
+
+		if (getJavaVersion() >= 11)
+			this.loadLibrary("org.openjdk.nashorn", "nashorn-core", "15.4");
 
 		// Call parent
 		this.onPluginLoad();
@@ -750,5 +760,56 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	@Deprecated
 	public final void setBungeeCord(BungeeListener bungeeListener) {
 		this.bungeeListener = bungeeListener;
+	}
+
+	/**
+	 * Loads a library jar into the classloader classpath. If the library jar
+	 * doesn't exist locally, it will be downloaded.
+	 * <p>
+	 * If the provided library has any relocations, they will be applied to
+	 * create a relocated jar and the relocated jar will be loaded instead.
+	 *
+	 * @param groupId
+	 * @param artifactId
+	 * @param version
+	 */
+	public void loadLibrary(String groupId, String artifactId, String version) {
+		this.getLibraryManager().loadLibrary(groupId, artifactId, version);
+	}
+
+	/**
+	 * Get the Libby library manager
+	 *
+	 * @return
+	 */
+	public final LibraryManager getLibraryManager() {
+		if (this.libraryManager == null)
+			this.libraryManager = new BungeeLibraryManager(this);
+
+		return this.libraryManager;
+	}
+
+	/**
+	 * Return the corresponding major Java version such as 8 for Java 1.8, or 11 for Java 11.
+	 *
+	 * @return
+	 */
+	public static int getJavaVersion() {
+		String version = System.getProperty("java.version");
+
+		if (version.startsWith("1."))
+			version = version.substring(2, 3);
+
+		else {
+			final int dot = version.indexOf(".");
+
+			if (dot != -1)
+				version = version.substring(0, dot);
+		}
+
+		if (version.contains("-"))
+			version = version.split("\\-")[0];
+
+		return Integer.parseInt(version);
 	}
 }
