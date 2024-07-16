@@ -39,6 +39,26 @@
             <artifactId>bungeecord-api</artifactId>
             <version>1.21-R0.1-SNAPSHOT</version>
         </dependency>
+        
+        <!-- Adventure -->
+		 <dependency>
+		    <groupId>net.kyori</groupId>
+		    <artifactId>adventure-api</artifactId>
+		    <version>4.17.0</version>
+		 </dependency>
+		<dependency>
+		    <groupId>net.kyori</groupId>
+		    <artifactId>adventure-text-serializer-plain</artifactId>
+		    <version>4.17.0</version>
+		    <scope>provided</scope>
+		</dependency>
+	 	<dependency>
+		    <groupId>net.kyori</groupId>
+		    <artifactId>adventure-platform-bungeecord</artifactId>
+		    <version>4.3.3</version>
+		    <scope>provided</scope>
+		</dependency>
+        
 		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>

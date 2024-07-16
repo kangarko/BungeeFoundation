@@ -1,9 +1,11 @@
 package org.mineacademy.bfo.library;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Plugin;
 
 /**
@@ -24,7 +26,7 @@ public class BungeeLibraryManager extends LibraryManager {
 	 * @param plugin the plugin to manage
 	 */
 	public BungeeLibraryManager(Plugin plugin) {
-		super(plugin.getDataFolder().toPath());
+		super(new File(ProxyServer.getInstance().getPluginsFolder().getParentFile(), "libraries").toPath());
 
 		this.classLoader = new URLClassLoaderHelper((URLClassLoader) plugin.getClass().getClassLoader(), this);
 		this.plugin = plugin;

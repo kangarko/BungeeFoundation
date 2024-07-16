@@ -20,7 +20,6 @@ import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.bfo.command.SimpleCommandGroup.MainCommand;
-import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.debug.LagCatcher;
 import org.mineacademy.bfo.exception.CommandException;
 import org.mineacademy.bfo.exception.EventHandledException;
@@ -227,11 +226,8 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 		final PluginManager pluginManager = ProxyServer.getInstance().getPluginManager();
 		final Command oldCommand = this.findExistingCommand(this.getLabel());
 
-		if (oldCommand != null) {
-			Debugger.debug("command", "Command /" + this.getLabel() + " already registered, re-registering for plugin " + SimplePlugin.getNamed());
-
+		if (oldCommand != null)
 			pluginManager.unregisterCommand(oldCommand);
-		}
 
 		pluginManager.registerCommand(SimplePlugin.getInstance(), this);
 		this.registered = true;

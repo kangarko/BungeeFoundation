@@ -1,4 +1,4 @@
-package org.mineacademy.bfo.bungee.message;
+package org.mineacademy.bfo.proxy.message;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -6,14 +6,17 @@ import java.util.UUID;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.ReflectionUtil;
-import org.mineacademy.bfo.bungee.BungeeListener;
-import org.mineacademy.bfo.bungee.BungeeMessageType;
 import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.debug.Debugger;
+import org.mineacademy.bfo.model.SimpleComponent;
+import org.mineacademy.bfo.proxy.ProxyListener;
+import org.mineacademy.bfo.proxy.ProxyMessage;
+import org.mineacademy.bfo.remain.Remain;
 
 import com.google.common.io.ByteArrayDataInput;
 
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.config.ServerInfo;
 
 /**
@@ -21,7 +24,7 @@ import net.md_5.bungee.api.config.ServerInfo;
  * <p>
  * NB: This uses the standardized Foundation model where the first
  * string is the server name and the second string is the
- * {@link BungeeMessageType} by its name *read automatically*.
+ * {@link ProxyMessage} by its name *read automatically*.
  */
 public final class IncomingMessage extends Message {
 
@@ -61,7 +64,7 @@ public final class IncomingMessage extends Message {
 	 * 1. Channel name (string) (because we broadcast on BungeeCord channel)
 	 * 2. Sender UUID (string)
 	 * 3. Server name (string)
-	 * 4  Action (String converted to enum of {@link BungeeMessageType})
+	 * 4  Action (String converted to enum of {@link ProxyMessage})
 	 *
 	 * @param listener
 	 * @param senderUid
@@ -71,7 +74,7 @@ public final class IncomingMessage extends Message {
 	 * @param input
 	 * @param stream
 	 */
-	public IncomingMessage(BungeeListener listener, UUID senderUid, String serverName, BungeeMessageType type, byte[] data, ByteArrayDataInput input, ByteArrayInputStream stream) {
+	public IncomingMessage(ProxyListener listener, UUID senderUid, String serverName, ProxyMessage type, byte[] data, ByteArrayDataInput input, ByteArrayInputStream stream) {
 		super(listener, type);
 
 		this.data = data;
@@ -89,7 +92,40 @@ public final class IncomingMessage extends Message {
 	public String readString() {
 		this.moveHead(String.class);
 
-		return this.input.readUTF();
+		return this.readCompressedString();
+	}
+
+	/**
+	 * Read a component from the string data if json
+	 *
+	 * @return
+	 */
+	public Component readComponent() {
+		this.moveHead(Component.class);
+
+		return Remain.convertJsonToAdventure(this.readCompressedString());
+	}
+
+	/**
+	 * Read a simple component from the string data if json
+	 *
+	 * @return
+	 */
+	public SimpleComponent readSimpleComponent() {
+		this.moveHead(SimpleComponent.class);
+
+		return SimpleComponent.fromJson(this.readCompressedString());
+	}
+
+	/**
+	 * Read a map from the string data if json
+	 *
+	 * @return
+	 */
+	public SerializedMap readMap() {
+		this.moveHead(String.class);
+
+		return SerializedMap.fromJson(this.readCompressedString());
 	}
 
 	/**
@@ -101,17 +137,6 @@ public final class IncomingMessage extends Message {
 		this.moveHead(UUID.class);
 
 		return UUID.fromString(this.input.readUTF());
-	}
-
-	/**
-	 * Read a map from the string data if json
-	 *
-	 * @return
-	 */
-	public SerializedMap readMap() {
-		this.moveHead(String.class);
-
-		return SerializedMap.fromJson(this.input.readUTF());
 	}
 
 	/**
@@ -224,6 +249,18 @@ public final class IncomingMessage extends Message {
 		return this.input.readShort();
 	}
 
+	/*
+	 * Helper util to read the next compressed string
+	 */
+	private String readCompressedString() {
+		final int length = this.input.readInt();
+		final byte[] compressed = new byte[length];
+
+		this.input.readFully(compressed);
+
+		return Common.decompress(compressed);
+	}
+
 	/**
 	 *
 	 * @return
@@ -233,25 +270,26 @@ public final class IncomingMessage extends Message {
 	}
 
 	/**
-	 * Forwards this message to another server info
+	 * Forwards this message to another server
 	 *
 	 * @param info
 	 */
 	public void forward(ServerInfo info) {
+		synchronized (ProxyListener.DEFAULT_CHANNEL) {
+			if (info.getPlayers().isEmpty()) {
+				Debugger.debug("proxy", "NOT sending data on " + this.getChannel() + " channel from " + this.getMessage() + " to " + info.getName() + " server because it is empty.");
 
-		if (info.getPlayers().isEmpty()) {
-			Debugger.debug("bungee", "NOT sending data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server because it is empty.");
+				return;
+			}
 
-			return;
+			if (this.data.length > 32_700) { // Safety margin
+				Common.log("[incoming] Outgoing proxy message was oversized, not sending to " + info.getName() + ". Max length: 32766 bytes, got " + this.data.length + " bytes.");
+
+				return;
+			}
+
+			info.sendData(ProxyListener.DEFAULT_CHANNEL, this.data);
+			Debugger.debug("proxy", "Forwarding data on " + this.getChannel() + " channel from " + this.getMessage() + " to " + info.getName() + " server.");
 		}
-
-		if (this.data.length > 32_000) { // Safety margin
-			Common.log("[incoming] Outgoing bungee message was oversized, not sending to " + info.getName() + ". Max length: 32766 bytes, got " + this.data.length + " bytes.");
-
-			return;
-		}
-
-		info.sendData(BungeeListener.DEFAULT_CHANNEL, this.data);
-		Debugger.debug("bungee", "Forwarding data on " + this.getChannel() + " channel from " + this.getAction() + " to " + info.getName() + " server.");
 	}
 }

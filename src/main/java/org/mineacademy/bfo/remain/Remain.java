@@ -1,38 +1,39 @@
 package org.mineacademy.bfo.remain;
 
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.ReflectionUtil.ReflectionException;
-import org.mineacademy.bfo.collection.SerializedMap;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.model.Variables;
+import org.mineacademy.bfo.plugin.SimplePlugin;
 
 import com.google.gson.Gson;
 
+import lombok.NonNull;
 import lombok.Setter;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ChatMessageType;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.platform.bungeecord.BungeeAudiences;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.title.Title;
+import net.kyori.adventure.title.Title.Times;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.packet.BossBar;
-import net.md_5.bungee.protocol.packet.Title;
-import net.md_5.bungee.protocol.packet.Title.Action;
 
 /**
  * Our main cross-version compatibility class.
@@ -43,14 +44,14 @@ import net.md_5.bungee.protocol.packet.Title.Action;
 public final class Remain {
 
 	/**
-	 * Pattern used to match encoded HEX colors &x&F&F&F&F&F&F
-	 */
-	private static final Pattern RGB_HEX_ENCODED_REGEX = Pattern.compile("(?i)(§x)((§[0-9A-F]){6})");
-
-	/**
 	 * The Google Json instance
 	 */
 	private final static Gson gson = new Gson();
+
+	/**
+	 * The Adventure platform
+	 */
+	private static BungeeAudiences adventure;
 
 	// ----------------------------------------------------------------------------------------------------
 	// Flags below
@@ -153,56 +154,6 @@ public final class Remain {
 	}
 
 	/**
-	 * Converts json string into legacy colored text
-	 *
-	 * @param json
-	 * @return
-	 * @throws InteractiveTextFoundException
-	 */
-	public static String toLegacyText(final String json) throws InteractiveTextFoundException {
-		return toLegacyText(json, true);
-	}
-
-	/**
-	 * Converts chat message in JSON (IChatBaseComponent) to one lined old style
-	 * message with color codes. e.g. {text:"Hello world",color="red"} converts to
-	 * &cHello world
-	 * @param json
-	 *
-	 * @param denyEvents if an exception should be thrown if hover/click event is
-	 *                   found.
-	 * @return
-	 * @throws InteractiveTextFoundException if click/hover event are found. Such
-	 *                                       events would be removed, and therefore
-	 *                                       message containing them shall not be
-	 *                                       unpacked
-	 */
-	public static String toLegacyText(final String json, final boolean denyEvents) throws InteractiveTextFoundException {
-		final StringBuilder text = new StringBuilder();
-
-		// Translate options does not want to work well with ChatControl
-		if (json.contains("\"translate\""))
-			return text.append("").toString();
-
-		try {
-			for (final BaseComponent comp : ComponentSerializer.parse(json)) {
-				if ((comp.getHoverEvent() != null || comp.getClickEvent() != null) && denyEvents)
-					throw new InteractiveTextFoundException();
-
-				text.append(comp.toLegacyText());
-			}
-
-		} catch (final Throwable throwable) {
-
-			// Do not catch our own exception
-			if (throwable instanceof InteractiveTextFoundException)
-				throw throwable;
-		}
-
-		return text.toString();
-	}
-
-	/**
 	 * Return the given list as JSON
 	 *
 	 * @param list
@@ -223,127 +174,100 @@ public final class Remain {
 	}
 
 	/**
+	 * Converts a base component to json
+	 *
+	 * @param base
+	 * @return
+	 */
+	public static String convertBaseComponentToJson(BaseComponent... base) {
+		return convertAdventureToJson(convertBaseComponentToAdventure(base));
+	}
+
+	/**
+	 * Converts a base component to Adventure component
+	 *
+	 * @param base
+	 * @return
+	 */
+	public static Component convertBaseComponentToAdventure(BaseComponent... base) {
+		return BungeeComponentSerializer.get().deserialize(base);
+	}
+
+	/**
+	 * Converts a component to JSON
+	 *
+	 * @param component
+	 * @return
+	 */
+	public static String convertAdventureToJson(Component component) {
+		return GsonComponentSerializer.gson().serialize(component);
+	}
+
+	/**
+	 * Serializes the component into legacy text
+	 *
+	 * @param component
+	 * @return
+	 */
+	public static String convertAdventureToLegacy(Component component) {
+		return LegacyComponentSerializer.legacySection().serialize(component);
+	}
+
+	/**
+	 * Serializes the component into plain text
+	 *
+	 * @param component
+	 * @return
+	 */
+	public static String convertAdventureToPlain(Component component) {
+		return PlainTextComponentSerializer.plainText().serialize(component);
+	}
+
+	/**
+	 * Converts a json string to Adventure component
+	 *
+	 * @param json
+	 * @return
+	 */
+	public static Component convertJsonToAdventure(String json) {
+		return GsonComponentSerializer.gson().deserialize(json);
+	}
+
+	/**
+	 *
+	 * @param componentJson
+	 * @return
+	 */
+	public static String convertJsonToLegacy(String componentJson) {
+		return convertAdventureToLegacy(convertJsonToAdventure(componentJson));
+	}
+
+	public static BaseComponent[] convertJsonToBaseComponent(String json) {
+		final Component adventure = GsonComponentSerializer.gson().deserialize(json);
+		final BaseComponent[] bungee = BungeeComponentSerializer.get().serialize(adventure);
+
+		return bungee;
+	}
+
+	/**
+	 * Creates a new adventure component from legacy text with {@link CompChatColor#COLOR_CHAR} colors replaced
+	 *
+	 * @param legacyText
+	 * @return
+	 */
+	public static Component convertLegacyToAdventure(String legacyText) {
+		return LegacyComponentSerializer.legacySection().deserialize(legacyText);
+	}
+
+	/**
 	 * Converts chat message with color codes to Json chat components e.g. &6Hello
 	 * world converts to {text:"Hello world",color="gold"}
+	 *
 	 * @param message
 	 * @return
 	 */
-	public static String toJson(final String message) {
-		return toJson(TextComponent.fromLegacyText(message));
-	}
-
-	/**
-	 * Converts base components into json
-	 *
-	 * @param comps
-	 * @return
-	 */
-	public static String toJson(final BaseComponent... comps) {
-		String json;
-
-		try {
-			json = ComponentSerializer.toString(comps);
-
-		} catch (final Throwable t) {
-			json = new Gson().toJson(new TextComponent(comps).toLegacyText());
-		}
-
-		return json;
-	}
-
-	/**
-	 * Converts legacy text into an array of components
-	 *
-	 * @param text
-	 * @return
-	 */
-	public static BaseComponent[] toComponentLegacy(final String text) {
-		return TextComponent.fromLegacyText(Common.colorize(text));
-	}
-
-	/**
-	 * Converts json into base component array
-	 *
-	 * @param json
-	 * @return
-	 */
-	public static BaseComponent[] toComponent(final String json) {
-		try {
-			return ComponentSerializer.parse(json);
-
-		} catch (final Throwable t) {
-			Common.throwError(t,
-					"Failed to call toComponent!",
-					"Json: " + json,
-					"Error: %error%");
-
-			return null;
-		}
-	}
-
-	/**
-	 * Sends JSON component to sender
-	 *
-	 * @param sender
-	 * @param json
-	 * @param placeholders
-	 */
-	public static void sendJson(final CommandSender sender, final String json, final SerializedMap placeholders) {
-		try {
-			final BaseComponent[] components = ComponentSerializer.parse(json);
-
-			replaceHexPlaceholders(Arrays.asList(components), placeholders);
-
-			sender.sendMessage(components);
-
-		} catch (final RuntimeException ex) {
-			Common.error(ex, "Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json);
-		}
-	}
-
-	/*
-	 * A helper Method for MC 1.16+ to partially solve the issue of HEX colors in JSON
-	 *
-	 * BaseComponent does not support colors when in text, they must be set at the color level
-	 */
-	private static void replaceHexPlaceholders(final List<BaseComponent> components, final SerializedMap placeholders) {
-
-		for (final BaseComponent component : components) {
-			if (component instanceof TextComponent) {
-				final TextComponent textComponent = (TextComponent) component;
-				String text = textComponent.getText();
-
-				for (final Map.Entry<String, Object> entry : placeholders.entrySet()) {
-					String key = entry.getKey();
-					String value = Common.simplify(entry.getValue());
-
-					// Detect HEX in placeholder
-					final Matcher match = RGB_HEX_ENCODED_REGEX.matcher(text);
-
-					while (match.find()) {
-
-						// Find the color
-						final String color = "#" + match.group(2).replace(ChatColor.COLOR_CHAR + "", "");
-
-						// Remove it from chat and bind it to TextComponent instead
-						value = match.replaceAll("");
-						textComponent.setColor(net.md_5.bungee.api.ChatColor.of(color));
-					}
-
-					key = key.charAt(0) != '{' ? "{" + key : key;
-					key = key.charAt(key.length() - 1) != '}' ? key + "}" : key;
-
-					text = text.replace(key, value);
-					textComponent.setText(text);
-				}
-			}
-
-			if (component.getExtra() != null)
-				replaceHexPlaceholders(component.getExtra(), placeholders);
-
-			if (component.getHoverEvent() != null)
-				replaceHexPlaceholders(Arrays.asList(component.getHoverEvent().getValue()), placeholders);
-		}
+	public static String convertLegacyToJson(final String message) {
+		return GsonComponentSerializer.gson().serialize(convertLegacyToAdventure(message));
 	}
 
 	/**
@@ -353,8 +277,18 @@ public final class Remain {
 	 * @param json
 	 */
 	public static void sendJson(final CommandSender sender, final String json) {
+		sendJson(getAdventure().sender(sender), json);
+	}
+
+	/**
+	 * Sends JSON component to sender
+	 *
+	 * @param sender
+	 * @param json
+	 */
+	public static void sendJson(final Audience sender, final String json) {
 		try {
-			sender.sendMessage(ComponentSerializer.parse(json));
+			sender.sendMessage(convertJsonToAdventure(json));
 
 		} catch (final Throwable t) {
 
@@ -362,8 +296,53 @@ public final class Remain {
 			if (t.toString().contains("missing 'text' property"))
 				return;
 
-			throw new RuntimeException("Malformed JSON when sending message to " + sender.getName() + " with JSON: " + json, t);
+			throw new RuntimeException("Malformed JSON when sending message to " + sender + " with JSON: " + json, t);
 		}
+	}
+
+	/**
+	 * Sends a message to the player
+	 *
+	 * @param sender
+	 * @param component
+	 */
+	public static void tell(CommandSender sender, Component component) {
+		tell(getAdventure().sender(sender), component);
+	}
+
+	/**
+	 * Send the sender a component, ignoring it if it is empty
+	 *
+	 * @param sender
+	 * @param component
+	 */
+	public static void tell(Audience sender, Component component) {
+		tell(sender, component, true);
+	}
+
+	/**
+	 * Send the sender a component, ignoring it if it is empty
+	 *
+	 * @param sender
+	 * @param component
+	 * @param skipEmpty
+	 */
+	public static void tell(@NonNull CommandSender sender, Component component, boolean skipEmpty) {
+		tell(getAdventure().sender(sender), component, skipEmpty);
+	}
+
+	/**
+	 * Send the sender a component, ignoring it if it is empty
+	 *
+	 * @param sender
+	 * @param component
+	 * @param skipEmpty
+	 */
+	public static void tell(@NonNull Audience sender, Component component, boolean skipEmpty) {
+		if (Remain.convertAdventureToPlain(component).trim().isEmpty() && skipEmpty)
+			return;
+
+		sender.sendMessage(component);
 	}
 
 	/**
@@ -388,13 +367,10 @@ public final class Remain {
 	 * @param subtitle the subtitle, will be colorized
 	 */
 	public static void sendTitle(final ProxiedPlayer player, final int fadeIn, final int stay, final int fadeOut, final String title, final String subtitle) {
-		ProxyServer.getInstance().createTitle()
-				.fadeIn(fadeIn)
-				.fadeOut(fadeOut)
-				.stay(stay)
-				.title(TextComponent.fromLegacyText(Common.colorize(Variables.replace(title, player))))
-				.subTitle(TextComponent.fromLegacyText(Common.colorize(Variables.replace(subtitle, player))))
-				.send(player);
+		getAdventure().player(player).showTitle(Title.title(
+				convertLegacyToAdventure(Variables.replace(title, player)),
+				convertLegacyToAdventure(Variables.replace(subtitle, player)),
+				Times.times(Duration.ofMillis(fadeIn * 50), Duration.ofMillis(stay * 50), Duration.ofMillis(fadeOut * 50))));
 	}
 
 	/**
@@ -403,9 +379,7 @@ public final class Remain {
 	 * @param player the player
 	 */
 	public static void resetTitle(final ProxiedPlayer player) {
-		final Title title = new Title(Action.RESET);
-
-		sendPacket(player, title);
+		getAdventure().player(player).clearTitle();
 	}
 
 	/**
@@ -417,7 +391,10 @@ public final class Remain {
 	 * @param footer the footer
 	 */
 	public static void sendTablist(final ProxiedPlayer player, final String header, final String footer) {
-		player.setTabHeader(toComponentLegacy(Variables.replace(header, player)), toComponentLegacy(Variables.replace(footer, player)));
+		getAdventure().player(player).sendPlayerListHeaderAndFooter(
+				convertLegacyToAdventure(Variables.replace(header, player)),
+				convertLegacyToAdventure(Variables.replace(footer, player)));
+
 	}
 
 	/**
@@ -428,7 +405,7 @@ public final class Remain {
 	 * @param text   the text
 	 */
 	public static void sendActionBar(final ProxiedPlayer player, final String text) {
-		player.sendMessage(ChatMessageType.ACTION_BAR, toComponentLegacy(Variables.replace(text, player)));
+		getAdventure().player(player).sendActionBar(convertLegacyToAdventure(Variables.replace(text, player)));
 	}
 
 	/**
@@ -439,9 +416,9 @@ public final class Remain {
 	 * @param secondsToShow
 	 */
 	public static void sendBossbarTimed(ProxiedPlayer player, String message, int secondsToShow) {
-		final BossBar bar = sendBossbar(player, Variables.replace(message, player), 1.0F);
+		final BossBar bar = sendBossbar(player, message, 1.0F);
 
-		Common.runLaterAsync(secondsToShow * 20, (Runnable) () -> removeBossBar(player, bar.getUuid()));
+		Common.runLaterAsync(secondsToShow * 20, (Runnable) () -> removeBossBar(player, bar));
 	}
 
 	/**
@@ -464,34 +441,26 @@ public final class Remain {
 	 * @param message
 	 * @param percent from 0.0 to 1.0
 	 * @param color
-	 * @param style
+	 * @param overlay
 	 *
 	 * return
 	 * @return
 	 */
-	public static BossBar sendBossbar(final ProxiedPlayer player, final String message, final float percent, final CompBarColor color, final CompBarStyle style) {
-		final BossBar bar = new BossBar(UUID.randomUUID(), 0);
-
-		bar.setTitle(TextComponent.fromLegacy(Variables.replace(message, player)));
-		bar.setHealth(percent);
-		bar.setColor(color.ordinal());
-		bar.setDivision(style.ordinal());
-
-		sendPacket(player, bar);
+	public static BossBar sendBossbar(final ProxiedPlayer player, final String message, final float percent, final BossBar.Color color, final BossBar.Overlay overlay) {
+		final BossBar bar = BossBar.bossBar(convertLegacyToAdventure(Variables.replace(message, player)), percent, color, overlay);
+		getAdventure().player(player).showBossBar(bar);
 
 		return bar;
 	}
 
 	/**
-	 * Attempts to remove a boss bar of the given UUID from player.
+	 * Attempts to remove a boss bar from player.
 	 *
 	 * @param player
-	 * @param id
+	 * @param bar
 	 */
-	public static void removeBossBar(final ProxiedPlayer player, UUID id) {
-		final BossBar bar = new BossBar(id, 1);
-
-		sendPacket(player, bar);
+	public static void removeBossBar(final ProxiedPlayer player, BossBar bar) {
+		getAdventure().player(player).hideBossBar(bar);
 	}
 
 	/**
@@ -558,21 +527,14 @@ public final class Remain {
 		return obj != null && sectionPathDataClass == obj.getClass();
 	}
 
-	// ----------------------------------------------------------------------------------------------------
-	// Classes
-	// ----------------------------------------------------------------------------------------------------
-
-	/**
-	 * Thrown when message contains hover or click events which would otherwise got
-	 * removed.
-	 * <p>
-	 * Such message is not checked.
+	/*
+	 * Return the Adventure platform
 	 */
-	public static class InteractiveTextFoundException extends RuntimeException {
-		private static final long serialVersionUID = 1L;
+	private static BungeeAudiences getAdventure() {
+		if (adventure == null)
+			adventure = BungeeAudiences.create(SimplePlugin.getInstance());
 
-		private InteractiveTextFoundException() {
-		}
+		return adventure;
 	}
 }
 

@@ -7,7 +7,6 @@ import java.util.List;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.collection.StrictList;
-import org.mineacademy.bfo.constants.FoConstants;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.debug.LagCatcher;
 import org.mineacademy.bfo.plugin.SimplePlugin;
@@ -45,7 +44,7 @@ public class SimpleSettings extends YamlStaticConfig {
 	 * @return
 	 */
 	protected String getSettingsFileName() {
-		return FoConstants.File.SETTINGS;
+		return "settings.yml";
 	}
 
 	// --------------------------------------------------------------------

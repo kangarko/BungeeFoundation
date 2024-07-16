@@ -1,6 +1,5 @@
 package org.mineacademy.bfo.debug;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,13 +9,11 @@ import java.util.Map;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.FileUtil;
 import org.mineacademy.bfo.TimeUtil;
-import org.mineacademy.bfo.constants.FoConstants;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.plugin.SimplePlugin;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import net.md_5.bungee.api.ProxyServer;
@@ -33,25 +30,6 @@ public final class Debugger {
 	 * and printed.
 	 */
 	private static final Map<String, ArrayList<String>> pendingMessages = new HashMap<>();
-
-	/**
-	 * The debug mode is automatically detected when the debug.lock file is present in the plugin folder
-	 */
-	@Getter
-	private static boolean debugModeEnabled = false;
-
-	/**
-	 * Loads debug mode, called automatically in {@link SimplePlugin}
-	 */
-	public static void detectDebugMode() {
-		if (new File(SimplePlugin.getData(), "debug.lock").exists()) {
-			debugModeEnabled = true;
-
-			Common.warning("Detected debug.lock file, debug features enabled!");
-
-		} else
-			debugModeEnabled = false;
-	}
 
 	/**
 	 * Prints a debug messages to the console if the given section is being debugged
@@ -79,7 +57,7 @@ public final class Debugger {
 		if (!isDebugged(section))
 			return;
 
-		final ArrayList<String> list = pendingMessages.getOrDefault(section, new ArrayList<String>());
+		final ArrayList<String> list = pendingMessages.getOrDefault(section, new ArrayList<>());
 		list.add(message);
 
 		pendingMessages.put(section, list);
@@ -205,7 +183,7 @@ public final class Debugger {
 		Common.log(header + "! Please check your error.log and report this issue with the information in that file.");
 
 		// Finally, save the error file
-		FileUtil.write(FoConstants.File.ERRORS, lines);
+		FileUtil.write("error.log", lines);
 	}
 
 	private static void fill(List<String> list, String... messages) {

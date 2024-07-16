@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -43,34 +42,25 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import lombok.NonNull;
+import net.md_5.bungee.api.ProxyServer;
 
 /**
  * A runtime dependency manager for java applications.
  * <p>
  * The library manager can resolve a dependency jar through the configured
- * Maven repositories, download it into a local cache and then
+ * Maven repositories, download it into a local cache, relocate it and then
  * load it into the classloader classpath.
  * <p>
  * Transitive dependencies for a library aren't downloaded automatically and
  * must be explicitly loaded like every other library.
  * <p>
- *
- * @author https://github.com/jonesdevelopment/libby
+ * It's recommended that libraries are relocated to prevent any namespace
+ * conflicts with different versions of the same library bundled with other
+ * java applications or maybe even bundled with the server itself.
  *
  * @see Library
  */
 public abstract class LibraryManager {
-
-	/**
-	 * Sonatype OSS repository URL.
-	 */
-	public static final String REPO_SONATYPE = "https://oss.sonatype.org/content/groups/public/";
-
-	/**
-	 * JitPack repository URL.
-	 */
-	public static final String REPO_JITPACK = "https://jitpack.io/";
 
 	/**
 	 * Directory where downloaded library jars are saved to
@@ -81,6 +71,12 @@ public abstract class LibraryManager {
 	 * Maven repositories used to resolve artifacts
 	 */
 	protected final Set<String> repositories = new LinkedHashSet<>();
+
+	/**
+	 * Lazily-initialized relocation helper that uses reflection to call into
+	 * Luck's Jar Relocator
+	 */
+	protected RelocationHelper relocator;
 
 	/**
 	 * Lazily-initialized helper for transitive dependencies resolution
@@ -101,12 +97,13 @@ public abstract class LibraryManager {
 	 * Creates a new library manager.
 	 *
 	 * @param logAdapter    logging adapter
+	 * @param saveDirectory data directory
 	 * @param directoryName download directory name
 	 */
-	protected LibraryManager(@NonNull Path dataDirectory) {
-		this.saveDirectory = dataDirectory.toAbsolutePath().resolve("lib");
+	protected LibraryManager(Path saveDirectory) {
+		this.saveDirectory = saveDirectory;
 
-		this.addRepository("https://repo1.maven.org/maven2/");
+		this.addMavenCentral();
 	}
 
 	/**
@@ -115,6 +112,22 @@ public abstract class LibraryManager {
 	 * @param file the file to add
 	 */
 	protected abstract void addToClasspath(Path file);
+
+	/**
+	 * Adds a file to the isolated class loader
+	 *
+	 * @param library the library to add
+	 * @param file    the file to add
+	 */
+	protected void addToIsolatedClasspath(Library library, Path file) {
+		IsolatedClassLoader classLoader;
+		final String loaderId = library.getLoaderId();
+		if (loaderId != null)
+			classLoader = this.isolatedLibraries.computeIfAbsent(loaderId, s -> new IsolatedClassLoader());
+		else
+			classLoader = this.globalIsolatedClassLoader;
+		classLoader.addPath(file);
+	}
 
 	/**
 	 * Get the global isolated class loader for libraries
@@ -132,7 +145,7 @@ public abstract class LibraryManager {
 	 * @param loaderId the id of the loader
 	 * @return the isolated class loader associated with the provided id
 	 */
-	@Nullable
+
 	public IsolatedClassLoader getIsolatedClassLoaderById(String loaderId) {
 		return this.isolatedLibraries.get(loaderId);
 	}
@@ -178,17 +191,31 @@ public abstract class LibraryManager {
 	}
 
 	/**
+	 * Adds the Maven Central repository.
+	 */
+	public void addMavenCentral() {
+		this.addRepository(Repositories.MAVEN_CENTRAL);
+	}
+
+	/**
 	 * Adds the Sonatype OSS repository.
 	 */
 	public void addSonatype() {
-		this.addRepository(REPO_SONATYPE);
+		this.addRepository(Repositories.SONATYPE);
+	}
+
+	/**
+	 * Adds the Bintray JCenter repository.
+	 */
+	public void addJCenter() {
+		this.addRepository(Repositories.JCENTER);
 	}
 
 	/**
 	 * Adds the JitPack repository.
 	 */
 	public void addJitPack() {
-		this.addRepository(REPO_JITPACK);
+		this.addRepository(Repositories.JITPACK);
 	}
 
 	/**
@@ -199,9 +226,13 @@ public abstract class LibraryManager {
 	 * @param library the library to resolve
 	 * @return download URLs
 	 */
-
 	public Collection<String> resolveLibrary(Library library) {
-		final Set<String> urls = new LinkedHashSet<>(requireNonNull(library, "library").getUrls());
+
+		// MineAcademy edit: Skip resolve if direct links are provided
+		if (!library.getUrls().isEmpty())
+			return library.getUrls();
+
+		final Set<String> urls = new LinkedHashSet<>();
 		final boolean snapshot = library.isSnapshot();
 		final Collection<String> repos = this.resolveRepositories(library);
 
@@ -225,9 +256,8 @@ public abstract class LibraryManager {
 	public Collection<String> resolveRepositories(Library library) {
 		return Stream.of(
 				library.getRepositories(),
-				this.getRepositories())
-				.flatMap(Collection::stream)
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+				this.getRepositories(),
+				library.getFallbackRepositories()).flatMap(Collection::stream).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	/**
@@ -238,7 +268,6 @@ public abstract class LibraryManager {
 	 * @return The URl of the artifact of a snapshot library or null if no information could be gathered from the
 	 * provided repository
 	 */
-	@Nullable
 	protected String resolveSnapshot(String repository, Library library) {
 		final String mavenMetadata = repository.startsWith("file") ? "maven-metadata-local.xml" : "maven-metadata.xml";
 		final String url = requireNonNull(repository, "repository") + requireNonNull(library, "library").getPartialPath() + mavenMetadata;
@@ -254,17 +283,26 @@ public abstract class LibraryManager {
 			}
 		} catch (final MalformedURLException e) {
 			throw new IllegalArgumentException(e);
-
 		} catch (final IOException ex) {
-			if (ex instanceof FileNotFoundException)
-				Common.error(ex, "File not found: " + url);
-			else if (ex instanceof SocketTimeoutException)
-				Common.error(ex, "Connect timed out: " + url);
-			else if (ex instanceof UnknownHostException)
-				Common.error(ex, "Unknown host: " + url);
-			else
-				Common.error(ex, "Unexpected IOException");
+			if (ex instanceof FileNotFoundException) {
+				ProxyServer.getInstance().getLogger().severe("File not found: " + url);
 
+				ex.printStackTrace();
+
+			} else if (ex instanceof SocketTimeoutException) {
+				ProxyServer.getInstance().getLogger().severe("Connect timed out: " + url);
+
+				ex.printStackTrace();
+			} else if (ex instanceof UnknownHostException) {
+				ProxyServer.getInstance().getLogger().severe("Unknown host: " + url);
+
+				ex.printStackTrace();
+
+			} else {
+				ProxyServer.getInstance().getLogger().severe("Unexpected IOException");
+
+				ex.printStackTrace();
+			}
 			return null;
 		}
 	}
@@ -279,7 +317,7 @@ public abstract class LibraryManager {
 	 * provided inputStream
 	 * @throws IOException If any IO errors occur
 	 */
-	@Nullable
+
 	protected String getURLFromMetadata(InputStream inputStream, Library library) throws IOException {
 		requireNonNull(inputStream, "inputStream");
 		requireNonNull(library, "library");
@@ -330,12 +368,11 @@ public abstract class LibraryManager {
 
 				version = version + '-' + timestamp + '-' + buildNumber;
 			}
-		} catch (ParserConfigurationException | SAXException ex) {
-			Common.error(ex, "Invalid maven-metadata.xml");
-
+		} catch (ParserConfigurationException | SAXException e) {
+			Common.error(e, "Invalid maven-metadata.xml");
 			return null;
 		}
-		return Library.craftPath(library.getPartialPath(), library.getArtifactId(), version, library.getClassifier());
+		return Util.craftPath(library.getPartialPath(), library.getArtifactId(), version, library.getClassifier());
 	}
 
 	/**
@@ -346,7 +383,7 @@ public abstract class LibraryManager {
 	 */
 	protected byte[] downloadLibrary(String url) {
 		try {
-			//Common.log("Downloading library " + url);
+			System.out.println("Downloading library " + url);
 
 			final URLConnection connection = new URL(requireNonNull(url, "url")).openConnection();
 
@@ -362,8 +399,8 @@ public abstract class LibraryManager {
 				try {
 					while ((len = in.read(buf)) != -1)
 						out.write(buf, 0, len);
-				} catch (final SocketTimeoutException ex) {
-					Common.error(ex, "Download timed out: " + connection.getURL());
+				} catch (final SocketTimeoutException e) {
+					Common.error(e, "Download timed out: " + connection.getURL());
 					return null;
 				}
 
@@ -372,14 +409,25 @@ public abstract class LibraryManager {
 		} catch (final MalformedURLException e) {
 			throw new IllegalArgumentException(e);
 		} catch (final IOException ex) {
-			if (ex instanceof FileNotFoundException)
-				Common.error(ex, "File not found: " + url);
-			else if (ex instanceof SocketTimeoutException)
-				Common.error(ex, "Connect timed out: " + url);
-			else if (ex instanceof UnknownHostException)
-				Common.error(ex, "Unknown host: " + url);
-			else
-				Common.error(ex, "Unexpected IOException");
+			if (ex instanceof FileNotFoundException) {
+				ProxyServer.getInstance().getLogger().severe("File not found: " + url);
+
+				ex.printStackTrace();
+
+			} else if (ex instanceof SocketTimeoutException) {
+				ProxyServer.getInstance().getLogger().severe("Connect timed out: " + url);
+
+				ex.printStackTrace();
+
+			} else if (ex instanceof UnknownHostException) {
+				ProxyServer.getInstance().getLogger().severe("Unknown host: " + url);
+
+				ex.printStackTrace();
+			} else {
+				ProxyServer.getInstance().getLogger().severe("Unexpected IOException");
+
+				ex.printStackTrace();
+			}
 
 			return null;
 		}
@@ -398,7 +446,7 @@ public abstract class LibraryManager {
 	 * Checksum comparison is ignored if the library doesn't have a checksum
 	 * or if the library jar already exists in the save directory.
 	 * <p>
-	 * Most of the time it is advised to use loadLibrary(Library)
+	 * Most of the time it is advised to use {@link #loadLibrary(Library)}
 	 * instead of this method because this one is only concerned with
 	 * downloading the jar and returning the local path. It's usually more
 	 * desirable to download the jar and add it to the classloader's classpath in
@@ -409,14 +457,22 @@ public abstract class LibraryManager {
 	 *
 	 * @param library the library to download
 	 * @return local file path to library
+	 * @see #loadLibrary(Library)
+	 * @see #relocate(Path, String, Collection)
 	 */
 
 	public Path downloadLibrary(Library library) {
-		final Path file = this.saveDirectory.resolve(requireNonNull(library, "library").getPath());
+		Path file = this.saveDirectory.resolve(requireNonNull(library, "library").getPath());
+
 		if (Files.exists(file)) {
 			// Early return only if library isn't a snapshot, since snapshot libraries are always re-downloaded
-			if (!library.isSnapshot())
+			if (!library.isSnapshot()) {
+				// Relocate the file
+				if (library.hasRelocations())
+					file = this.relocate(file, library.getRelocatedPath(), library.getRelocations());
+
 				return file;
+			}
 
 			// Delete the file since the Files.move call down below will fail if it exists
 			try {
@@ -452,17 +508,22 @@ public abstract class LibraryManager {
 				if (md != null) {
 					final byte[] checksum = md.digest(bytes);
 					if (!Arrays.equals(checksum, library.getChecksum())) {
-						Common.logFramed(
-								"*** INVALID CHECKSUM ***",
-								" Library :  " + library, "URL :  " + url,
-								" Expected :  " + Base64.getEncoder().encodeToString(library.getChecksum()),
-								" Actual :  " + Base64.getEncoder().encodeToString(checksum));
+						ProxyServer.getInstance().getLogger().severe("*** INVALID CHECKSUM ***");
+						ProxyServer.getInstance().getLogger().severe("Library :  " + library);
+						ProxyServer.getInstance().getLogger().severe("URL :  " + url);
+						ProxyServer.getInstance().getLogger().severe("Expected :  " + Base64.getEncoder().encodeToString(library.getChecksum()));
+						ProxyServer.getInstance().getLogger().severe("Actual :  " + Base64.getEncoder().encodeToString(checksum));
+
 						continue;
 					}
 				}
 
 				Files.write(out, bytes);
 				Files.move(out, file);
+
+				// Relocate the file
+				if (library.hasRelocations())
+					file = this.relocate(file, library.getRelocatedPath(), library.getRelocations());
 
 				return file;
 			}
@@ -476,6 +537,63 @@ public abstract class LibraryManager {
 		}
 
 		throw new RuntimeException("Failed to download library '" + library + "'");
+	}
+
+	/**
+	 * Processes the input jar and generates an output jar with the provided
+	 * relocation rules applied, then returns the path to the relocated jar.
+	 *
+	 * @param in          input jar
+	 * @param out         output jar
+	 * @param relocations relocations to apply
+	 * @return the relocated file
+	 */
+
+	public Path relocate(Path in, String out, Collection<Relocation> relocations) {
+		return this.relocate(in, this.saveDirectory.resolve(out), relocations);
+	}
+
+	/**
+	 * Processes the input jar and generates an output jar with the provided
+	 * relocation rules applied, then returns the path to the relocated jar.
+	 *
+	 * @param in          input jar
+	 * @param file         output jar
+	 * @param relocations relocations to apply
+	 * @return the relocated file
+	 */
+
+	public Path relocate(Path in, Path file, Collection<Relocation> relocations) {
+		requireNonNull(in, "in");
+		requireNonNull(file, "file");
+		requireNonNull(relocations, "relocations");
+
+		if (Files.exists(file))
+			return file;
+
+		final Path tmpOut = file.resolveSibling(file.getFileName() + ".tmp");
+		tmpOut.toFile().deleteOnExit();
+
+		synchronized (this) {
+			if (this.relocator == null)
+				this.relocator = new RelocationHelper(this);
+		}
+
+		try {
+			this.relocator.relocate(in, tmpOut, relocations);
+			Files.move(tmpOut, file);
+
+			System.out.println("Relocations applied to " + in.getFileName());
+
+			return file;
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		} finally {
+			try {
+				Files.deleteIfExists(tmpOut);
+			} catch (final IOException ignored) {
+			}
+		}
 	}
 
 	/**
@@ -495,45 +613,41 @@ public abstract class LibraryManager {
 		}
 
 		for (final Library transitiveLibrary : this.transitiveDependencyHelper.findTransitiveLibraries(library))
-			this.loadLibrary(transitiveLibrary, true);
+			this.loadLibrary(transitiveLibrary);
 	}
 
 	/**
 	 * Loads a library jar into the classloader classpath. If the library jar
 	 * doesn't exist locally, it will be downloaded.
+	 * <p>
+	 * If the provided library has any relocations, they will be applied to
+	 * create a relocated jar and the relocated jar will be loaded instead.
 	 *
-	 * @param groupId
-	 * @param artifactId
-	 * @param version
-	 */
-	public void loadLibrary(String groupId, String artifactId, String version) {
-		this.loadLibrary(new Library(groupId, artifactId, version, true), false);
-	}
-
-	/**
-	 * Loads a library jar into the classloader classpath. If the library jar
-	 * doesn't exist locally, it will be downloaded.
-	 *
-	 * @param library
+	 * @param library the library to load
+	 * @see #downloadLibrary(Library)
 	 */
 	public void loadLibrary(Library library) {
-		this.loadLibrary(library, false);
-	}
-
-	/*
-	 * Loads the library instantly.
-	 */
-	private void loadLibrary(Library library, boolean isTransitiveNow) {
-
-		//if (!isTransitiveNow)
-		//	Common.log("Loading library " + library);
-
 		final Path file = this.downloadLibrary(requireNonNull(library, "library"));
 
-		if (library.isResolveTransitiveDependencies())
+		if (library.resolveTransitiveDependencies())
 			this.resolveTransitiveLibraries(library);
 
-		this.addToClasspath(file);
+		if (library.isIsolatedLoad())
+			this.addToIsolatedClasspath(library, file);
+
+		else
+			this.addToClasspath(file);
+	}
+
+	/**
+	 * Loads multiple libraries into the classloader classpath.
+	 *
+	 * @param libraries the libraries to load
+	 * @see #loadLibrary(Library)
+	 */
+	public void loadLibraries(Library... libraries) {
+		for (final Library library : libraries)
+			this.loadLibrary(library);
 	}
 
 	/**
@@ -542,7 +656,7 @@ public abstract class LibraryManager {
 	 * @param path the path to the resource
 	 * @return input stream for the resource
 	 */
-	@Nullable
+
 	protected InputStream getResourceAsStream(String path) {
 		return this.getClass().getClassLoader().getResourceAsStream(path);
 	}

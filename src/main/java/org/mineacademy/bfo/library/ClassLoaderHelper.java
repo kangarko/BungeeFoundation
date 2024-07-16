@@ -15,14 +15,11 @@ import java.util.function.Consumer;
 
 import org.mineacademy.bfo.Common;
 
-import lombok.NonNull;
 import sun.misc.Unsafe;
 
 /**
  * An abstract class for reflection-based wrappers around class loaders for adding
  * URLs to the classpath.
- *
- * @author https://github.com/jonesdevelopment/libby
  */
 @SuppressWarnings("restriction")
 abstract class ClassLoaderHelper {
@@ -49,7 +46,7 @@ abstract class ClassLoaderHelper {
 	/**
 	 * net.bytebuddy.agent.ByteBuddyAgent class name for reflections
 	 */
-	private static final String BYTE_BUDDY_AGENT_CLASS = "net.bytebuddy.agent.ByteBuddyAgent";
+	private static final String BYTE_BUDDY_AGENT_CLASS = Util.replaceWithDots("net{}bytebuddy{}agent{}ByteBuddyAgent");
 
 	/**
 	 * java.lang.Module methods since we build against Java 8
@@ -115,14 +112,14 @@ abstract class ClassLoaderHelper {
 	 *
 	 * @param url the URL to add
 	 */
-	public abstract void addToClasspath(@NonNull URL url);
+	public abstract void addToClasspath(URL url);
 
 	/**
 	 * Adds a path to the class loader's classpath.
 	 *
 	 * @param path the path to add
 	 */
-	public void addToClasspath(@NonNull Path path) {
+	public void addToClasspath(Path path) {
 		try {
 			this.addToClasspath(requireNonNull(path, "path").toUri().toURL());
 		} catch (final MalformedURLException e) {
@@ -154,8 +151,8 @@ abstract class ClassLoaderHelper {
 			// In Java 8 calling setAccessible(true) is enough
 			method.setAccessible(true);
 			return;
-		} catch (final Exception ex) {
-			this.handleInaccessibleObjectException(ex, methodSignature);
+		} catch (final Exception e) {
+			this.handleInaccessibleObjectException(e, methodSignature);
 		}
 
 		Exception unsafeException = null; // Used below in error messages handling
@@ -186,16 +183,23 @@ abstract class ClassLoaderHelper {
 				// instrumentationConsumer might try to set the method accessible
 				instrumentationConsumer.accept(instrumentation);
 				return;
-			} catch (final Exception ex) {
-				this.handleInaccessibleObjectException(ex, methodSignature);
+			} catch (final Exception e) {
+				this.handleInaccessibleObjectException(e, methodSignature);
 			}
 		}
 
 		// Couldn't init, print errors and throw a RuntimeException
-		if (unsafeException != null)
-			Common.error(unsafeException, "Cannot set accessible " + methodSignature + " using unsafe");
-		if (javaAgentException != null)
-			Common.error(unsafeException, "Cannot set accessible " + methodSignature + " using java agent");
+		if (unsafeException != null) {
+			System.out.println("Cannot set accessible " + methodSignature + " using unsafe");
+
+			unsafeException.printStackTrace();
+		}
+
+		if (javaAgentException != null) {
+			System.out.println("Cannot set accessible " + methodSignature + " using Java agent");
+
+			javaAgentException.printStackTrace();
+		}
 
 		final String packageName = method.getDeclaringClass().getPackage().getName();
 		String moduleName = null;
@@ -293,11 +297,14 @@ abstract class ClassLoaderHelper {
 		// Download ByteBuddy's agent and load it through an IsolatedClassLoader
 		final IsolatedClassLoader isolatedClassLoader = new IsolatedClassLoader();
 		try {
-			final Library byteBuddy = new Library("net.bytebuddy", "byte-buddy-agent", "1.12.1");
-
-			byteBuddy.setChecksumFromBase64("mcCtBT9cljUEniB5ESpPDYZMfVxEs1JRPllOiWTP+bM=");
-
-			isolatedClassLoader.addPath(libraryManager.downloadLibrary(byteBuddy));
+			isolatedClassLoader.addPath(libraryManager.downloadLibrary(
+					Library.builder()
+							.groupId("net{}bytebuddy")
+							.artifactId("byte-buddy-agent")
+							.version("1.12.1")
+							.checksumFromBase64("mcCtBT9cljUEniB5ESpPDYZMfVxEs1JRPllOiWTP+bM=")
+							.fallbackRepository(Repositories.MAVEN_CENTRAL)
+							.build()));
 
 			final Class<?> byteBuddyAgent = isolatedClassLoader.loadClass(BYTE_BUDDY_AGENT_CLASS);
 

@@ -30,11 +30,13 @@ import org.mineacademy.bfo.settings.ConfigSection;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.config.Configuration;
 
@@ -123,11 +125,14 @@ public final class SerializeUtil {
 		else if (object instanceof RangedSimpleTime)
 			return ((RangedSimpleTime) object).toLine();
 
+		else if (object instanceof Component)
+			return Remain.convertAdventureToJson((Component) object);
+
 		else if (object instanceof BaseComponent)
-			return Remain.toJson((BaseComponent) object);
+			return Remain.convertBaseComponentToJson((BaseComponent) object);
 
 		else if (object instanceof BaseComponent[])
-			return Remain.toJson((BaseComponent[]) object);
+			return Remain.convertBaseComponentToJson((BaseComponent[]) object);
 
 		else if (object instanceof HoverEvent) {
 			final HoverEvent event = (HoverEvent) object;
@@ -261,14 +266,14 @@ public final class SerializeUtil {
 		else if (classOf == UUID.class)
 			object = UUID.fromString(object.toString());
 
-		else if (classOf == BaseComponent.class) {
-			final BaseComponent[] deserialized = Remain.toComponent(object.toString());
-			Valid.checkBoolean(deserialized.length == 1, "Failed to deserialize into singular BaseComponent: " + object);
+		else if (classOf == Component.class)
+			object = Remain.convertJsonToAdventure(object.toString());
 
-			object = deserialized[0];
+		else if (classOf == BaseComponent.class) {
+			object = new TextComponent(Remain.convertJsonToBaseComponent(object.toString()));
 
 		} else if (classOf == BaseComponent[].class)
-			object = Remain.toComponent(object.toString());
+			object = Remain.convertJsonToBaseComponent(object.toString());
 
 		else if (classOf == HoverEvent.class) {
 			final SerializedMap serialized = SerializedMap.of(object);

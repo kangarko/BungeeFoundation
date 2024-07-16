@@ -22,7 +22,6 @@ import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.annotation.AutoRegister;
-import org.mineacademy.bfo.bungee.BungeeListener;
 import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.command.SimpleCommand;
 import org.mineacademy.bfo.command.SimpleCommandGroup;
@@ -30,10 +29,12 @@ import org.mineacademy.bfo.command.SimpleSubCommand;
 import org.mineacademy.bfo.debug.Debugger;
 import org.mineacademy.bfo.exception.FoException;
 import org.mineacademy.bfo.library.BungeeLibraryManager;
+import org.mineacademy.bfo.library.Library;
 import org.mineacademy.bfo.library.LibraryManager;
 import org.mineacademy.bfo.metrics.Metrics;
-import org.mineacademy.bfo.model.FolderWatcher;
 import org.mineacademy.bfo.model.JavaScriptExecutor;
+import org.mineacademy.bfo.proxy.ProxyListener;
+import org.mineacademy.bfo.proxy.message.OutgoingMessage;
 import org.mineacademy.bfo.remain.Remain;
 import org.mineacademy.bfo.settings.FileConfig;
 import org.mineacademy.bfo.settings.Lang;
@@ -123,10 +124,9 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	private final StrictList<Listener> listeners = new StrictList<>();
 
 	/**
-	 * A temporary bungee listener, see {@link #setBungeeCord(BungeeListener)}
-	 * set automatically by us.
+	 * The default proxy listener, see {@link #setProxy(ProxyListener)}
 	 */
-	private BungeeListener bungeeListener;
+	private ProxyListener proxyListener;
 
 	/**
 	 * A temporary main command to be set in {@link #setMainCommand(SimpleCommandGroup)}
@@ -168,6 +168,10 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		if (getJavaVersion() >= 11)
 			this.loadLibrary("org.openjdk.nashorn", "nashorn-core", "15.4");
 
+		this.loadLibrary("net.kyori", "adventure-api", "4.17.0");
+		this.loadLibrary("net.kyori", "adventure-text-serializer-plain", "4.17.0");
+		this.loadLibrary("net.kyori", "adventure-platform-bungeecord", "4.3.3");
+
 		// Call parent
 		this.onPluginLoad();
 	}
@@ -181,9 +185,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 		// Before all, check if necessary libraries and the minimum required MC version
 		if (!this.enabled)
 			return;
-
-		// Load debug mode early
-		Debugger.detectDebugMode();
 
 		// Print startup logo early before onPluginPreStart
 		// Disable logging prefix if logo is set
@@ -205,10 +206,10 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			// Call the main start method
 			// --------------------------------------------
 
-			Common.registerEvents(new BungeeListener.BungeeListenerImpl());
+			Common.registerEvents(new ProxyListener.ProxyListenerImpl());
 
-			if (!this.getProxy().getChannels().contains("BungeeCord"))
-				this.getProxy().registerChannel("BungeeCord");
+			if (!this.getProxy().getChannels().contains(ProxyListener.DEFAULT_CHANNEL))
+				this.getProxy().registerChannel(ProxyListener.DEFAULT_CHANNEL);
 
 			// Hide plugin name before console messages
 			final String oldLogPrefix = Common.getLogPrefix();
@@ -414,8 +415,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 
 			this.listeners.clear();
 
-			Debugger.detectDebugMode();
-
 			this.unregisterReloadables();
 
 			FileConfig.clearLoadedSections();
@@ -429,8 +428,8 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			if (!this.enabled)
 				return;
 
-			if (!this.getProxy().getChannels().contains("BungeeCord"))
-				this.getProxy().registerChannel("BungeeCord");
+			if (!this.getProxy().getChannels().contains(ProxyListener.DEFAULT_CHANNEL))
+				this.getProxy().registerChannel(ProxyListener.DEFAULT_CHANNEL);
 
 			// Register classes
 			AutoRegisterScanner.scanAndRegister();
@@ -455,8 +454,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	private void unregisterReloadables() {
 		SimpleSettings.resetSettingsCall();
 		SimpleLocalization.resetLocalizationCall();
-
-		FolderWatcher.stopThreads();
 
 		this.getProxy().getScheduler().cancel(this);
 		this.mainCommand = null;
@@ -491,27 +488,11 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 				if (con.getParameterCount() == 0) {
 					final T instance = (T) ReflectionUtil.instantiate(con);
 
-					Debugger.debug("auto-register", "Auto-registering events in " + pluginClass);
 					this.registerEvents(instance);
 
 					continue classLookup;
 				}
-
-			Debugger.debug("auto-register", "Skipping auto-registering events in " + pluginClass + " because it lacks at least one no arguments constructor");
 		}
-	}
-
-	/**
-	 * Convenience method for quickly registering BungeeCord channel for this plugin
-	 *
-	 * @param listener
-	 */
-	@Deprecated
-	protected final void registerBungeeCord(final BungeeListener listener) {
-		//if (!this.getProxy().getChannels().contains(listener.getChannel()))
-		//	this.getProxy().registerChannel(listener.getChannel());
-		//
-		ProxyServer.getInstance().getPluginManager().registerListener(this, listener);
 	}
 
 	/**
@@ -545,18 +526,13 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			if (pluginClass.isAnnotationPresent(AutoRegister.class))
 				continue;
 
-			if (SimpleSubCommand.class.isAssignableFrom(pluginClass)) {
-				Debugger.debug("auto-register", "Skipping auto-registering command " + pluginClass + " because sub-commands cannot be registered");
-
+			if (SimpleSubCommand.class.isAssignableFrom(pluginClass))
 				continue;
-			}
 
 			try {
 				for (final Constructor<?> con : pluginClass.getConstructors())
 					if (con.getParameterCount() == 0) {
 						final T instance = (T) ReflectionUtil.instantiate(con);
-
-						Debugger.debug("auto-register", "Auto-registering command " + pluginClass);
 
 						if (instance instanceof SimpleCommand)
 							this.registerCommand(instance);
@@ -570,8 +546,6 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 			} catch (final LinkageError ex) {
 				Common.log("Unable to register commands in '" + pluginClass.getSimpleName() + "' due to error: " + ex);
 			}
-
-			Debugger.debug("auto-register", "Skipping auto-registering command " + pluginClass + " because it lacks at least one no arguments constructor");
 		}
 	}
 
@@ -740,26 +714,25 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	}
 
 	/**
-	 * Returns the default or "main" bungee listener you use. This is checked so that you won't
-	 * have to pass in channel name each time and we use channel name from this listener instead.
+	 * Returns the "default" proxy listener you use. This is used in {@link OutgoingMessage} when no channel is provided.
 	 *
-	 * @deprecated only returns the first found bungee listener, if you have multiple, do not use, order not guaranteed
+	 * @deprecated only returns the first listener, if you have multiple, do not use, order not guaranteed
 	 * @return
 	 */
 	@Deprecated
-	public final BungeeListener getBungeeCord() {
-		return this.bungeeListener;
+	public final ProxyListener getProxyListener() {
+		return this.proxyListener;
 	}
 
 	/**
-	 * Sets the first valid bungee listener
+	 * Sets a proxy listener to use in {@link OutgoingMessage} when no listener is provided
 	 *
-	 * @deprecated INTERNAL USE ONLY, DO NOT USE! can only set one bungee listener, if you have multiple, order not guaranteed
-	 * @param bungeeListener
+	 * @deprecated INTERNAL USE ONLY
+	 * @param listener
 	 */
 	@Deprecated
-	public final void setBungeeCord(BungeeListener bungeeListener) {
-		this.bungeeListener = bungeeListener;
+	public final void setProxy(ProxyListener listener) {
+		this.proxyListener = listener;
 	}
 
 	/**
@@ -774,7 +747,7 @@ public abstract class SimplePlugin extends Plugin implements Listener {
 	 * @param version
 	 */
 	public void loadLibrary(String groupId, String artifactId, String version) {
-		this.getLibraryManager().loadLibrary(groupId, artifactId, version);
+		this.getLibraryManager().loadLibrary(Library.builder().groupId(groupId).artifactId(artifactId).version(version).resolveTransitiveDependencies(true).build());
 	}
 
 	/**
