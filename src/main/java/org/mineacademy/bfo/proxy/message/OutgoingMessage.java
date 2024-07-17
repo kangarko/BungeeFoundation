@@ -233,7 +233,7 @@ public final class OutgoingMessage extends Message {
 					OutgoingMessage.writeCompressedString(out, ((SimpleComponent) data).serialize().toJson());
 
 				} else if (data instanceof SerializedMap) {
-					checkData(head, String.class);
+					checkData(head, SerializedMap.class);
 
 					OutgoingMessage.writeCompressedString(out, ((SerializedMap) data).toJson());
 
