@@ -659,12 +659,6 @@ public class SimpleLocalization extends YamlStaticConfig {
 	public static String NO_PERMISSION = "&cInsufficient permission ({permission}).";
 
 	/**
-	 * The server prefix. Example: you have to use it manually if you are sending messages
-	 * from the console to players
-	 */
-	public static String SERVER_PREFIX = "[Server]";
-
-	/**
 	 * The console localized name. Example: Console
 	 */
 	public static String CONSOLE_NAME = "Console";
@@ -684,9 +678,6 @@ public class SimpleLocalization extends YamlStaticConfig {
 
 		if (isSetDefault("No_Permission"))
 			NO_PERMISSION = getString("No_Permission");
-
-		if (isSetDefault("Server_Prefix"))
-			SERVER_PREFIX = getString("Server_Prefix");
 
 		if (isSetDefault("Console_Name"))
 			CONSOLE_NAME = getString("Console_Name");

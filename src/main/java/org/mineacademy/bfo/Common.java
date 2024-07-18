@@ -524,7 +524,7 @@ public final class Common {
 	/**
 	 * Replace the & letter with the {@link ChatColor#COLOR_CHAR} in the message.
 	 * <p>
-	 * Also replaces {prefix} with {@link #getTellPrefix()} and {server} with {@link SimpleLocalization#SERVER_PREFIX}
+	 * Also replaces {prefix} with {@link #getTellPrefix()}
 	 *
 	 * @param message the message to replace color codes with '&'
 	 * @return the colored message
@@ -535,7 +535,6 @@ public final class Common {
 
 		String result = CompChatColor.translateColorCodes(message)
 				.replace("{prefix}", message.startsWith(tellPrefix) ? "" : removeSurroundingSpaces(tellPrefix.trim()))
-				.replace("{server}", SimpleLocalization.SERVER_PREFIX)
 				.replace("{plugin_name}", SimplePlugin.getNamed())
 				.replace("{plugin_version}", SimplePlugin.getVersion());
 
