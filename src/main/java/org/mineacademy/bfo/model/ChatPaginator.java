@@ -12,11 +12,11 @@ import org.mineacademy.bfo.ChatUtil;
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.command.PermsCommand;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.CompChatColor;
 import org.mineacademy.bfo.settings.SimpleLocalization;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 
 /**
@@ -44,7 +44,7 @@ public final class ChatPaginator {
 	/**
 	 * The color used in header and footer
 	 */
-	private final ChatColor themeColor;
+	private final CompChatColor themeColor;
 
 	/**
 	 * The header included on every page.
@@ -78,7 +78,7 @@ public final class ChatPaginator {
 	 *
 	 * @param themeColor
 	 */
-	public ChatPaginator(ChatColor themeColor) {
+	public ChatPaginator(CompChatColor themeColor) {
 		this(FOUNDATION_HEIGHT, themeColor);
 	}
 

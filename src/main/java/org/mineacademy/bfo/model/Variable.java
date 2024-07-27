@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.mineacademy.bfo.Common;
-import org.mineacademy.bfo.PlayerUtil;
 import org.mineacademy.bfo.Valid;
 import org.mineacademy.bfo.settings.ConfigItems;
 import org.mineacademy.bfo.settings.YamlConfig;
@@ -228,7 +227,7 @@ public final class Variable extends YamlConfig {
 	 */
 	public SimpleComponent build(CommandSender sender, SimpleComponent existingComponent, Map<String, Object> replacements) {
 
-		if (this.senderPermission != null && !this.senderPermission.isEmpty() && !PlayerUtil.hasPerm(sender, this.senderPermission))
+		if (this.senderPermission != null && !this.senderPermission.isEmpty() && !sender.hasPermission(this.senderPermission))
 			return SimpleComponent.of("");
 
 		if (this.senderCondition != null && !this.senderCondition.isEmpty()) {

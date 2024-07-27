@@ -21,11 +21,11 @@ import org.mineacademy.bfo.model.ChatPaginator;
 import org.mineacademy.bfo.model.Replacer;
 import org.mineacademy.bfo.model.SimpleComponent;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.CompChatColor;
 import org.mineacademy.bfo.settings.SimpleLocalization;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
 import lombok.Getter;
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 
 /**
@@ -359,7 +359,7 @@ public abstract class SimpleCommandGroup {
 	 * @return
 	 */
 	protected String getHeaderPrefix() {
-		return this.getTheme() + "" + ChatColor.BOLD;
+		return this.getTheme() + "" + CompChatColor.BOLD;
 	}
 
 	/**
@@ -367,8 +367,8 @@ public abstract class SimpleCommandGroup {
 	 *
 	 * @return
 	 */
-	protected ChatColor getTheme() {
-		return ChatColor.GOLD;
+	protected CompChatColor getTheme() {
+		return CompChatColor.GOLD;
 	}
 
 	/**
@@ -520,7 +520,7 @@ public abstract class SimpleCommandGroup {
 					}
 
 				if (!lines.isEmpty()) {
-					final ChatPaginator pages = new ChatPaginator(MathUtil.range(0, lines.size(), SimpleCommandGroup.this.getCommandsPerPage()), ChatColor.DARK_GRAY);
+					final ChatPaginator pages = new ChatPaginator(MathUtil.range(0, lines.size(), SimpleCommandGroup.this.getCommandsPerPage()), CompChatColor.DARK_GRAY);
 
 					if (SimpleCommandGroup.this.getHelpHeader() != null)
 						pages.setHeader(SimpleCommandGroup.this.getHelpHeader());

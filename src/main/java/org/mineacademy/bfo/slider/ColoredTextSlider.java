@@ -2,11 +2,12 @@ package org.mineacademy.bfo.slider;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.MathUtil;
+import org.mineacademy.bfo.Valid;
+import org.mineacademy.bfo.remain.CompChatColor;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.api.ChatColor;
 
 /**
  * A colored text slider takes in a string and then applies
@@ -32,12 +33,12 @@ public final class ColoredTextSlider implements Slider<String> {
 	/**
 	 * The primary text color. Defaults to black.
 	 */
-	private String primaryColor = ChatColor.BLACK.toString();
+	private String primaryPrefix = CompChatColor.BLACK.toString();
 
 	/**
 	 * The colorized text color. Defaults to dark red.
 	 */
-	private String secondaryColor = ChatColor.DARK_RED.toString();
+	private String secondaryPrefix = CompChatColor.DARK_RED.toString();
 
 	/*
 	 * The current head in the slider.
@@ -60,11 +61,21 @@ public final class ColoredTextSlider implements Slider<String> {
 	/**
 	 * Set the primary color for the text.
 	 *
-	 * @param primaryColor
+	 * @param primaryPrefix
 	 * @return
 	 */
-	public ColoredTextSlider primaryColor(String primaryColor) {
-		this.primaryColor = primaryColor;
+	public ColoredTextSlider primaryPrefix(CompChatColor primaryPrefix) {
+		return this.primaryPrefix(primaryPrefix.toString());
+	}
+
+	/**
+	 * Set the primary color for the text.
+	 *
+	 * @param primaryPrefix
+	 * @return
+	 */
+	public ColoredTextSlider primaryPrefix(String primaryPrefix) {
+		this.primaryPrefix = primaryPrefix;
 
 		return this;
 	}
@@ -73,17 +84,28 @@ public final class ColoredTextSlider implements Slider<String> {
 	 * Set the secondary color to apply for the given X amount of letters
 	 * in the text.
 	 *
-	 * @param secondaryColor
+	 * @param secondaryPrefix
 	 * @return
 	 */
-	public ColoredTextSlider secondaryColor(String secondaryColor) {
-		this.secondaryColor = secondaryColor;
+	public ColoredTextSlider secondaryPrefix(CompChatColor secondaryPrefix) {
+		return this.secondaryPrefix(secondaryPrefix.toString());
+	}
+
+	/**
+	 * Set the secondary color to apply for the given X amount of letters
+	 * in the text.
+	 *
+	 * @param secondaryPrefix
+	 * @return
+	 */
+	public ColoredTextSlider secondaryPrefix(String secondaryPrefix) {
+		this.secondaryPrefix = secondaryPrefix;
 
 		return this;
 	}
 
 	/**
-	 * @see org.mineacademy.bfo.slider.Slider#next()
+	 * @see org.mineacademy.fo.slider.Slider#next()
 	 */
 	@Override
 	public String next() {
@@ -94,9 +116,9 @@ public final class ColoredTextSlider implements Slider<String> {
 		final int from = MathUtil.range(this.currentPointer, 0, this.text.length());
 		final int to = MathUtil.range(this.currentPointer + this.width, 0, this.text.length());
 
-		final String before = Common.colorize(this.primaryColor + this.text.substring(0, from));
-		final String part = Common.colorize(this.secondaryColor + this.text.substring(from, to));
-		final String after = Common.colorize(this.primaryColor + this.text.substring(to));
+		final String before = Common.colorize(this.primaryPrefix + this.text.substring(0, from));
+		final String part = Common.colorize(this.secondaryPrefix + this.text.substring(from, to));
+		final String after = Common.colorize(this.primaryPrefix + this.text.substring(to));
 
 		this.currentPointer++;
 
@@ -110,6 +132,8 @@ public final class ColoredTextSlider implements Slider<String> {
 	 * @return
 	 */
 	public static ColoredTextSlider from(String text) {
+		Valid.checkBoolean(!Common.hasColors(text), "Text in a slider may not contain colors: " + text + ", instead, use primaryColor() and secondaryColor()");
+
 		return new ColoredTextSlider(text);
 	}
 }

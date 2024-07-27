@@ -10,10 +10,10 @@ import java.util.regex.Matcher;
 
 import org.mineacademy.bfo.model.Whiteblacklist;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.CompChatColor;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.md_5.bungee.api.ChatColor;
 
 /**
  * Utility class for managing in-game chat.
@@ -85,7 +85,7 @@ public final class ChatUtil {
 
 		for (final char c : message.toCharArray())
 
-			if (c == '&' || c == ChatColor.COLOR_CHAR) {
+			if (c == '&' || c == CompChatColor.COLOR_CHAR) {
 				previousCode = true;
 
 				continue;
@@ -512,36 +512,36 @@ public final class ChatUtil {
 	 * @param to
 	 * @return
 	 */
-	public static String generateGradient(String message, ChatColor from, ChatColor to) {
+	public static String generateGradient(String message, CompChatColor from, CompChatColor to) {
 		final Color color1 = from.getColor();
 		final Color color2 = to.getColor();
 
 		final char[] letters = message.toCharArray();
 		String gradient = "";
 
-		ChatColor lastDecoration = null;
+		CompChatColor lastDecoration = null;
 
 		for (int i = 0; i < letters.length; i++) {
 			final char letter = letters[i];
 
 			// Support color decoration and insert it manually after each character
-			if (letter == ChatColor.COLOR_CHAR && i + 1 < letters.length) {
+			if (letter == CompChatColor.COLOR_CHAR && i + 1 < letters.length) {
 				final char decoration = letters[i + 1];
 
 				if (decoration == 'k')
-					lastDecoration = ChatColor.MAGIC;
+					lastDecoration = CompChatColor.MAGIC;
 
 				else if (decoration == 'l')
-					lastDecoration = ChatColor.BOLD;
+					lastDecoration = CompChatColor.BOLD;
 
 				else if (decoration == 'm')
-					lastDecoration = ChatColor.STRIKETHROUGH;
+					lastDecoration = CompChatColor.STRIKETHROUGH;
 
 				else if (decoration == 'n')
-					lastDecoration = ChatColor.UNDERLINE;
+					lastDecoration = CompChatColor.UNDERLINE;
 
 				else if (decoration == 'o')
-					lastDecoration = ChatColor.ITALIC;
+					lastDecoration = CompChatColor.ITALIC;
 
 				else if (decoration == 'r')
 					lastDecoration = null;
@@ -558,7 +558,7 @@ public final class ChatUtil {
 
 			final Color stepColor = new Color(red, green, blue);
 
-			gradient += ChatColor.of(stepColor).toString() + (lastDecoration == null ? "" : lastDecoration.toString()) + letters[i];
+			gradient += CompChatColor.of(stepColor).toString() + (lastDecoration == null ? "" : lastDecoration.toString()) + letters[i];
 		}
 
 		return gradient;

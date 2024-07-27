@@ -6,9 +6,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 
+import org.mineacademy.bfo.remain.CompChatColor;
+
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.md_5.bungee.api.ChatColor;
 
 /**
  * Utility class for generating random numbers.
@@ -125,10 +126,10 @@ public final class RandomUtil {
 	 *
 	 * @return
 	 */
-	public static ChatColor nextChatColor() {
+	public static CompChatColor nextChatColor() {
 		final char letter = CHAT_COLORS[nextInt(CHAT_COLORS.length)];
 
-		return ChatColor.getByChar(letter);
+		return CompChatColor.getByChar(letter);
 	}
 
 	/**

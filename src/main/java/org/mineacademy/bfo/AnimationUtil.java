@@ -9,10 +9,10 @@ import javax.annotation.Nullable;
 import org.mineacademy.bfo.model.BukkitRunnable;
 import org.mineacademy.bfo.model.SimpleScoreboard;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.CompChatColor;
 import org.mineacademy.bfo.remain.Remain;
 
 import lombok.NonNull;
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
 
@@ -32,12 +32,12 @@ public class AnimationUtil {
 	 * The animation ends once the firstColor reached the length of the message, which results in a half cycle. For a full cycle, use {@link #rightToLeftFull}
 	 *
 	 * @param message     The message to be animated
-	 * @param firstColor  The color for the first section of the message (example color: {@link ChatColor#YELLOW})
-	 * @param middleColor The color for the middle section of the message, a 1 character long section that separates between the first and last sections (example color: {@link ChatColor#WHITE}).
-	 * @param lastColor   The color for the last section of the message (example color: {@link ChatColor#GOLD}).
+	 * @param firstColor  The color for the first section of the message (example color: {@link CompChatColor#YELLOW})
+	 * @param middleColor The color for the middle section of the message, a 1 character long section that separates between the first and last sections (example color: {@link CompChatColor#WHITE}).
+	 * @param lastColor   The color for the last section of the message (example color: {@link CompChatColor#GOLD}).
 	 * @return List of ordered string frames.
 	 */
-	public static List<String> leftToRight(String message, ChatColor firstColor, @Nullable ChatColor middleColor, ChatColor lastColor) {
+	public static List<String> leftToRight(String message, CompChatColor firstColor, @Nullable CompChatColor middleColor, CompChatColor lastColor) {
 		final List<String> result = new ArrayList<>();
 		final String msg = Common.colorize(message);
 
@@ -46,7 +46,7 @@ public class AnimationUtil {
 			final String middle = frame == msg.length() ? "" : String.valueOf(msg.charAt(frame));
 			final String last = frame == msg.length() ? "" : msg.substring(frame + 1);
 
-			final ChatColor middleColorFinal = middleColor != null ? middleColor : firstColor;
+			final CompChatColor middleColorFinal = middleColor != null ? middleColor : firstColor;
 
 			result.add(firstColor + first + middleColorFinal + middle + lastColor + last);
 		}
@@ -58,12 +58,12 @@ public class AnimationUtil {
 	 * The animation ends once the firstColor reached the start of the message, which results in a half cycle. For a full cycle, use {@link #rightToLeftFull}
 	 *
 	 * @param message     The message to be animated
-	 * @param firstColor  The color for the first section of the message (example color: {@link ChatColor#YELLOW})
-	 * @param middleColor The color for the middle section of the message, a 1 character long section that separates between the first and last sections (example color: {@link ChatColor#WHITE}).
-	 * @param lastColor   The color for the last section of the message (example color: {@link ChatColor#GOLD}).
+	 * @param firstColor  The color for the first section of the message (example color: {@link CompChatColor#YELLOW})
+	 * @param middleColor The color for the middle section of the message, a 1 character long section that separates between the first and last sections (example color: {@link CompChatColor#WHITE}).
+	 * @param lastColor   The color for the last section of the message (example color: {@link CompChatColor#GOLD}).
 	 * @return List of ordered string frames.
 	 */
-	public static List<String> rightToLeft(String message, ChatColor firstColor, @Nullable ChatColor middleColor, ChatColor lastColor) {
+	public static List<String> rightToLeft(String message, CompChatColor firstColor, @Nullable CompChatColor middleColor, CompChatColor lastColor) {
 		final String msg = Common.colorize(message);
 		final List<String> result = new ArrayList<>();
 
@@ -72,7 +72,7 @@ public class AnimationUtil {
 			final String middle = frame == msg.length() ? "" : String.valueOf(msg.charAt(frame));
 			final String last = frame == msg.length() ? "" : msg.substring(frame + 1);
 
-			final ChatColor middleColorFinal = middleColor != null ? middleColor : firstColor;
+			final CompChatColor middleColorFinal = middleColor != null ? middleColor : firstColor;
 
 			result.add(firstColor + first + middleColorFinal + middle + lastColor + last);
 		}
@@ -84,12 +84,12 @@ public class AnimationUtil {
 	 * A full cycle animation is a cycle in this pattern: lastColor -> firstColor -> lastColor.
 	 *
 	 * @param message     The message to be animated
-	 * @param firstColor  The color for the first section of the message (example color: {@link ChatColor#YELLOW})
-	 * @param middleColor The color for the middle section of the message, a 1 character long section that separates between the first and last sections (example color: {@link ChatColor#WHITE}).
-	 * @param lastColor   The color for the last section of the message (example color: {@link ChatColor#GOLD}).
+	 * @param firstColor  The color for the first section of the message (example color: {@link CompChatColor#YELLOW})
+	 * @param middleColor The color for the middle section of the message, a 1 character long section that separates between the first and last sections (example color: {@link CompChatColor#WHITE}).
+	 * @param lastColor   The color for the last section of the message (example color: {@link CompChatColor#GOLD}).
 	 * @return List of ordered string frames.
 	 */
-	public static List<String> leftToRightFull(String message, ChatColor firstColor, @Nullable ChatColor middleColor, ChatColor lastColor) {
+	public static List<String> leftToRightFull(String message, CompChatColor firstColor, @Nullable CompChatColor middleColor, CompChatColor lastColor) {
 		final List<String> result = new ArrayList<>();
 
 		result.addAll(leftToRight(message, firstColor, middleColor, lastColor));
@@ -103,12 +103,12 @@ public class AnimationUtil {
 	 * A full cycle animation is a cycle in this pattern: lastColor -> firstColor -> lastColor.
 	 *
 	 * @param message     The message to be animated
-	 * @param firstColor  The color for the first section of the message (example color: {@link ChatColor#YELLOW})
-	 * @param middleColor The color for the middle section of the message, a 1 character long section that separates between the first and last sections (example color: {@link ChatColor#WHITE}).
-	 * @param lastColor   The color for the last section of the message (example color: {@link ChatColor#GOLD}).
+	 * @param firstColor  The color for the first section of the message (example color: {@link CompChatColor#YELLOW})
+	 * @param middleColor The color for the middle section of the message, a 1 character long section that separates between the first and last sections (example color: {@link CompChatColor#WHITE}).
+	 * @param lastColor   The color for the last section of the message (example color: {@link CompChatColor#GOLD}).
 	 * @return List of ordered string frames.
 	 */
-	public static List<String> rightToLeftFull(String message, ChatColor firstColor, @Nullable ChatColor middleColor, ChatColor lastColor) {
+	public static List<String> rightToLeftFull(String message, CompChatColor firstColor, @Nullable CompChatColor middleColor, CompChatColor lastColor) {
 		final List<String> result = new ArrayList<>();
 
 		result.addAll(rightToLeft(message, firstColor, middleColor, lastColor));
@@ -127,7 +127,7 @@ public class AnimationUtil {
 	 * @param colors   The flickering colors, ordered by array index.
 	 * @return List of ordered string frames.
 	 */
-	public static List<String> flicker(String message, int amount, int duration, ChatColor[] colors) {
+	public static List<String> flicker(String message, int amount, int duration, CompChatColor[] colors) {
 		final List<String> result = new ArrayList<>();
 
 		for (int frame = 0; frame < amount; frame++)

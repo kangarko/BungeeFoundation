@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.LogRecord;
 
+import org.mineacademy.bfo.remain.CompChatColor;
+
 import lombok.AccessLevel;
 import lombok.Setter;
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Plugin;
 
@@ -47,8 +48,8 @@ final class FoundationFilter {
 			return false;
 
 		// Replace & color codes
-		for (final ChatColor color : ChatColor.values()) {
-			message = message.replace("&" + color.toString().charAt(0), "");
+		for (final CompChatColor color : CompChatColor.values()) {
+			message = message.replace("&" + color.toString().charAt(1), "");
 			message = message.replace(color.toString(), "");
 		}
 

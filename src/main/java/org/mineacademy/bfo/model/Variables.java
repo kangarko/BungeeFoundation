@@ -18,10 +18,10 @@ import org.mineacademy.bfo.collection.StrictList;
 import org.mineacademy.bfo.collection.StrictMap;
 import org.mineacademy.bfo.collection.expiringmap.ExpiringMap;
 import org.mineacademy.bfo.plugin.SimplePlugin;
+import org.mineacademy.bfo.remain.CompChatColor;
 import org.mineacademy.bfo.settings.SimpleLocalization;
 import org.mineacademy.bfo.settings.SimpleSettings;
 
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -299,7 +299,7 @@ public final class Variables {
 				String plain = component.getLegacyText();
 
 				// And we remove the white prefix that is by default added in every component
-				if (plain.startsWith(ChatColor.COLOR_CHAR + "f" + ChatColor.COLOR_CHAR + "f"))
+				if (plain.startsWith(CompChatColor.COLOR_CHAR + "f" + CompChatColor.COLOR_CHAR + "f"))
 					plain = plain.substring(4);
 
 				message = message.replace(variableKey, plain);

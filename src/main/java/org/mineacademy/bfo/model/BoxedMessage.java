@@ -5,11 +5,11 @@ import java.util.Objects;
 
 import org.mineacademy.bfo.ChatUtil;
 import org.mineacademy.bfo.Common;
+import org.mineacademy.bfo.remain.CompChatColor;
 import org.mineacademy.bfo.remain.Remain;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -32,7 +32,7 @@ public final class BoxedMessage {
 	/**
 	 * The color of the top and bottom line
 	 */
-	public static ChatColor LINE_COLOR = ChatColor.DARK_GRAY;
+	public static CompChatColor LINE_COLOR = CompChatColor.DARK_GRAY;
 
 	/**
 	 * All message recipients

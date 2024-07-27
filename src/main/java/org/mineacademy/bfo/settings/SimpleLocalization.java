@@ -8,8 +8,7 @@ import org.mineacademy.bfo.command.PermsCommand;
 import org.mineacademy.bfo.command.ReloadCommand;
 import org.mineacademy.bfo.model.ChatPaginator;
 import org.mineacademy.bfo.plugin.SimplePlugin;
-
-import net.md_5.bungee.api.ChatColor;
+import org.mineacademy.bfo.remain.CompChatColor;
 
 /**
  * A simple implementation of a basic localization file.
@@ -199,12 +198,12 @@ public class SimpleLocalization extends YamlStaticConfig {
 		/**
 		 * The primary color shown in the ----- COMMAND ----- header
 		 */
-		public static ChatColor HEADER_COLOR = ChatColor.GOLD;
+		public static CompChatColor HEADER_COLOR = CompChatColor.GOLD;
 
 		/**
 		 * The secondary color shown in the ----- COMMAND ----- header such as in /chc ?
 		 */
-		public static ChatColor HEADER_SECONDARY_COLOR = ChatColor.RED;
+		public static CompChatColor HEADER_SECONDARY_COLOR = CompChatColor.RED;
 
 		/**
 		 * Key for when plugin is reloading {@link org.mineacademy.bfo.plugin.SimplePlugin}
@@ -339,10 +338,10 @@ public class SimpleLocalization extends YamlStaticConfig {
 				HEADER_NO_SUBCOMMANDS_PERMISSION = getString("Header_No_Subcommands_Permission");
 
 			if (isSetDefault("Header_Color"))
-				HEADER_COLOR = get("Header_Color", ChatColor.class);
+				HEADER_COLOR = get("Header_Color", CompChatColor.class);
 
 			if (isSetDefault("Header_Secondary_Color"))
-				HEADER_SECONDARY_COLOR = get("Header_Secondary_Color", ChatColor.class);
+				HEADER_SECONDARY_COLOR = get("Header_Secondary_Color", CompChatColor.class);
 
 			if (isSet("Reloading"))
 				RELOADING = getString("Reloading");

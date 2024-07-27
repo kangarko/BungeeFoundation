@@ -13,7 +13,6 @@ import java.util.function.Function;
 
 import org.mineacademy.bfo.Common;
 import org.mineacademy.bfo.Messenger;
-import org.mineacademy.bfo.PlayerUtil;
 import org.mineacademy.bfo.ReflectionUtil;
 import org.mineacademy.bfo.TabUtil;
 import org.mineacademy.bfo.Valid;
@@ -777,7 +776,7 @@ public abstract class SimpleCommand extends net.md_5.bungee.api.plugin.Command i
 	 * @return
 	 */
 	protected final boolean hasPerm(CommandSender sender, String permission) {
-		return permission == null ? true : PlayerUtil.hasPerm(sender, permission.replace("{label}", this.getLabel()));
+		return permission == null ? true : sender.hasPermission(permission.replace("{label}", this.getLabel()));
 	}
 
 	// ----------------------------------------------------------------------

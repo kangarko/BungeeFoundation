@@ -69,9 +69,9 @@ public final class Common {
 	// ------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Pattern used to match colors with & or {@link ChatColor#COLOR_CHAR}
+	 * Pattern used to match colors with & or {@link CompChatColor#COLOR_CHAR}
 	 */
-	private static final Pattern COLOR_AND_DECORATION_REGEX = Pattern.compile("(&|" + ChatColor.COLOR_CHAR + ")[0-9a-fk-orA-FK-OR]");
+	private static final Pattern COLOR_AND_DECORATION_REGEX = Pattern.compile("(&|" + CompChatColor.COLOR_CHAR + ")[0-9a-fk-orA-FK-OR]");
 
 	/**
 	 * Pattern used to match colors with #HEX code for MC 1.16+
@@ -83,7 +83,7 @@ public final class Common {
 	/**
 	 * Pattern used to match colors with #HEX code for MC 1.16+
 	 */
-	private static final Pattern RGB_X_COLOR_REGEX = Pattern.compile("(" + ChatColor.COLOR_CHAR + "x)(" + ChatColor.COLOR_CHAR + "[0-9a-fA-F]){6}");
+	private static final Pattern RGB_X_COLOR_REGEX = Pattern.compile("(" + CompChatColor.COLOR_CHAR + "x)(" + CompChatColor.COLOR_CHAR + "[0-9a-fA-F]){6}");
 
 	/**
 	 * We use this to send messages with colors to your console
@@ -212,7 +212,7 @@ public final class Common {
 	public static void broadcastWithPerm(final String showPermission, final String message, final boolean log) {
 		if (message != null && !message.equals("none")) {
 			for (final ProxiedPlayer online : Remain.getOnlinePlayers())
-				if (PlayerUtil.hasPerm(online, showPermission))
+				if (online.hasPermission(showPermission))
 					tellJson(online, message);
 
 			if (log)
@@ -232,7 +232,7 @@ public final class Common {
 
 		if (!legacy.equals("none")) {
 			for (final ProxiedPlayer online : Remain.getOnlinePlayers())
-				if (PlayerUtil.hasPerm(online, permission))
+				if (online.hasPermission(permission))
 					online.sendMessage(message);
 
 			if (log)
@@ -498,7 +498,7 @@ public final class Common {
 	}
 
 	/**
-	 * Replace the & letter with the {@link ChatColor#COLOR_CHAR} in the message.
+	 * Replace the & letter with the {@link CompChatColor#COLOR_CHAR} in the message.
 	 *
 	 * @param messages the messages to replace color codes with '&'
 	 * @return the colored message
@@ -508,7 +508,7 @@ public final class Common {
 	}
 
 	/**
-	 * Replace the & letter with the {@link ChatColor#COLOR_CHAR} in the message.
+	 * Replace the & letter with the {@link CompChatColor#COLOR_CHAR} in the message.
 	 *
 	 * @param messages the messages to replace color codes with '&'
 	 * @return the colored message
@@ -522,7 +522,7 @@ public final class Common {
 	}
 
 	/**
-	 * Replace the & letter with the {@link ChatColor#COLOR_CHAR} in the message.
+	 * Replace the & letter with the {@link CompChatColor#COLOR_CHAR} in the message.
 	 * <p>
 	 * Also replaces {prefix} with {@link #getTellPrefix()}
 	 *
@@ -547,7 +547,7 @@ public final class Common {
 			String replacement = "";
 
 			try {
-				replacement = ChatColor.of("#" + colorCode).toString();
+				replacement = CompChatColor.of("#" + colorCode).toString();
 
 			} catch (final IllegalArgumentException ex) {
 			}
@@ -571,7 +571,7 @@ public final class Common {
 	}
 
 	/**
-	 * Replaces the {@link ChatColor#COLOR_CHAR} colors with & letters
+	 * Replaces the {@link CompChatColor#COLOR_CHAR} colors with & letters
 	 *
 	 * @param messages
 	 * @return
@@ -584,17 +584,17 @@ public final class Common {
 	}
 
 	/**
-	 * Replaces the {@link ChatColor#COLOR_CHAR} colors with & letters
+	 * Replaces the {@link CompChatColor#COLOR_CHAR} colors with & letters
 	 *
 	 * @param message
 	 * @return
 	 */
 	public static String revertColorizing(final String message) {
-		return message.replaceAll("(?i)" + ChatColor.COLOR_CHAR + "([0-9a-fk-or])", "&$1");
+		return message.replaceAll("(?i)" + CompChatColor.COLOR_CHAR + "([0-9a-fk-or])", "&$1");
 	}
 
 	/**
-	 * Remove all {@link ChatColor#COLOR_CHAR} as well as & letter colors from the message
+	 * Remove all {@link CompChatColor#COLOR_CHAR} as well as & letter colors from the message
 	 *
 	 * @param message
 	 * @return
@@ -621,7 +621,7 @@ public final class Common {
 		while (matcher.find())
 			message = matcher.replaceAll("");
 
-		message = message.replace(ChatColor.COLOR_CHAR + "x", "");
+		message = message.replace(CompChatColor.COLOR_CHAR + "x", "");
 
 		return message;
 	}
@@ -637,7 +637,7 @@ public final class Common {
 	}
 
 	/**
-	 * Returns if the message contains either {@link ChatColor#COLOR_CHAR} or & letter colors
+	 * Returns if the message contains either {@link CompChatColor#COLOR_CHAR} or & letter colors
 	 *
 	 * @param message
 	 * @return
@@ -647,7 +647,7 @@ public final class Common {
 	}
 
 	/**
-	 * Returns the last color, either & or {@link ChatColor#COLOR_CHAR} from the given message
+	 * Returns the last color, either & or {@link CompChatColor#COLOR_CHAR} from the given message
 	 *
 	 * @param message or empty if none
 	 * @return
@@ -691,7 +691,7 @@ public final class Common {
 	 * @return
 	 */
 	public static String lastColorChar(final String message) {
-		return lastColor(message, ChatColor.COLOR_CHAR);
+		return lastColor(message, CompChatColor.COLOR_CHAR);
 	}
 
 	private static String lastColor(final String msg, final char colorChar) {
@@ -913,7 +913,7 @@ public final class Common {
 	 * @param delimiterColor
 	 * @return
 	 */
-	public static String fancyBar(final int min, final char minChar, final int max, final char maxChar, final ChatColor delimiterColor) {
+	public static String fancyBar(final int min, final char minChar, final int max, final char maxChar, final CompChatColor delimiterColor) {
 		String formatted = "";
 
 		for (int i = 0; i < min; i++)
@@ -1640,7 +1640,7 @@ public final class Common {
 		else if (arg instanceof Collection)
 			return Common.join((Collection<?>) arg, ", ", Common::simplify);
 
-		else if (arg instanceof ChatColor)
+		else if (arg instanceof CompChatColor)
 			return ((Enum<?>) arg).name().toLowerCase();
 
 		else if (arg instanceof Enum)

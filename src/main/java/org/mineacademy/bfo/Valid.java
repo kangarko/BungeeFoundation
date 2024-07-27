@@ -132,7 +132,7 @@ public final class Valid {
 	 * @return
 	 */
 	public boolean checkPermission(final CommandSender sender, final String permission) {
-		if (!PlayerUtil.hasPerm(sender, permission)) {
+		if (!sender.hasPermission(permission)) {
 			Common.tell(sender, SimpleLocalization.NO_PERMISSION.replace("{permission}", permission));
 
 			return false;

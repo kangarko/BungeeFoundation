@@ -24,6 +24,7 @@ import org.mineacademy.bfo.model.IsInList;
 import org.mineacademy.bfo.model.RangedSimpleTime;
 import org.mineacademy.bfo.model.RangedValue;
 import org.mineacademy.bfo.model.SimpleTime;
+import org.mineacademy.bfo.remain.CompChatColor;
 import org.mineacademy.bfo.remain.Remain;
 import org.mineacademy.bfo.settings.ConfigSection;
 
@@ -260,8 +261,8 @@ public final class SerializeUtil {
 		else if (classOf == RangedSimpleTime.class)
 			object = RangedSimpleTime.parse(object.toString());
 
-		else if (classOf == net.md_5.bungee.api.ChatColor.class)
-			object = net.md_5.bungee.api.ChatColor.of(object.toString());
+		else if (classOf == ChatColor.class)
+			object = ChatColor.of(object.toString());
 
 		else if (classOf == UUID.class)
 			object = UUID.fromString(object.toString());
@@ -300,7 +301,8 @@ public final class SerializeUtil {
 		}
 
 		else if (Color.class.isAssignableFrom(classOf))
-			object = ChatColor.of(object.toString()).getColor();
+			object = CompChatColor.of(object.toString()).getColor();
+
 		else if (List.class.isAssignableFrom(classOf) && object instanceof List) {
 			// Good
 
