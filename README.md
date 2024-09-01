@@ -32,7 +32,7 @@ BungeeFoundation is a library for bootstrapping BungeeCord plugins.
 <plugin>
   <groupId>org.apache.maven.plugins</groupId>
   <artifactId>maven-shade-plugin</artifactId>
-  <version>3.2.4</version>
+  <version>3.6.0</version>
   <executions>
     <execution>
       <phase>package</phase>
